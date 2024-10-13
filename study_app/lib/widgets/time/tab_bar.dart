@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 class MyTabBar extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onTabSelected;
+  final bool isChangeTime; // 修正: 'final' を追加
 
   const MyTabBar({
     Key? key,
     required this.selectedIndex,
     required this.onTabSelected,
+    this.isChangeTime = false, // 修正: デフォルト値 false を追加
   }) : super(key: key);
 
   @override
@@ -18,10 +20,8 @@ class MyTabBar extends StatelessWidget {
         final screenWidth = MediaQuery.of(context).size.width;
 
         if (tapPosition < screenWidth / 2) {
-          // 左側（友達タブ）がタップされた
           onTabSelected(0);
         } else {
-          // 右側（コミュニティータブ）がタップされた
           onTabSelected(1);
         }
       },
@@ -41,14 +41,14 @@ class MyTabBar extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            // 左側（友達）
+            // 左側（記録）
             Expanded(
               child: Column(
                 children: [
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 16.0),
                     child: Text(
-                      '友達',
+                      '記録',
                       style: TextStyle(
                         color:
                             selectedIndex == 0 ? Colors.white : Colors.white70,
@@ -65,14 +65,14 @@ class MyTabBar extends StatelessWidget {
                 ],
               ),
             ),
-            // 右側（コミュニティ）
+            // 右側（ストップウォッチ）
             Expanded(
               child: Column(
                 children: [
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 16.0),
                     child: Text(
-                      'コミュニティー',
+                      'ストップウォッチ',
                       style: TextStyle(
                         color:
                             selectedIndex == 1 ? Colors.white : Colors.white70,

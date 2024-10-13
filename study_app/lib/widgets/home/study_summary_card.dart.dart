@@ -1,14 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:study_app/main.dart';
+import 'package:study_app/screens/preview_detail.dart';
+import 'package:study_app/screens/other_user_display.dart';
+import 'package:study_app/theme/color.dart';
+import 'package:study_app/widgets/preview_detail.dart/detail_card.dart';
+import 'package:like_button/like_button.dart';
 
 class StudySummaryCard extends StatefulWidget {
-  final profileImgUrl;
-  final name;
-  final studyTime;
-  final goodNum;
-  final isPushGood;
-  final commentNum;
-  final achivementLevel;
-  final oneWord;
+  final String profileImgUrl;
+  final String name;
+  final int studyTime;
+  final int goodNum;
+  final bool isPushFavorite;
+  final int commentNum;
+  final int achivementLevel;
+  final String oneWord;
+  final String userId;
 
   // コンストラクター
   const StudySummaryCard({
@@ -17,11 +25,13 @@ class StudySummaryCard extends StatefulWidget {
     required this.name,
     required this.studyTime,
     required this.goodNum,
-    required this.isPushGood,
+    required this.isPushFavorite,
     required this.commentNum,
     required this.achivementLevel,
     required this.oneWord,
+    required this.userId,
   }) : super(key: key);
+
   @override
   State<StatefulWidget> createState() => _StudySummaryCardState();
 }
@@ -39,8 +49,13 @@ class _StudySummaryCardState extends State<StudySummaryCard> {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () {
-        // カード全体がタップされたときに実行するアクション
-        print('${widget.name} のカードがタップされました');
+        // ここで必要なアクションを実行する（例: 詳細画面に遷移）
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PreviewDetailScreen(),
+          ),
+        );
       },
       child: Card(
         child: Column(
@@ -48,25 +63,47 @@ class _StudySummaryCardState extends State<StudySummaryCard> {
             Row(
               children: [
                 if (widget.profileImgUrl.isNotEmpty)
-                  Padding(
-                    padding: EdgeInsets.only(
-                        left: 10, top: 10, bottom: 3, right: 20),
-                    child: Container(
-                      width: 42.0,
-                      height: 42.0,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(21.0),
-                        image: DecorationImage(
-                          image: NetworkImage(widget.profileImgUrl),
-                          fit: BoxFit.cover,
+                  GestureDetector(
+                    onTap: () {
+                      // プロフィール画像がタップされたときにOtherUserDisplayへ遷移
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => OtherUserDisplay(),
+                        ),
+                      );
+                    },
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                          left: 10, top: 10, bottom: 3, right: 20),
+                      child: Container(
+                        width: 42.0,
+                        height: 42.0,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(21.0),
+                          image: DecorationImage(
+                            image: NetworkImage(widget.profileImgUrl),
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
                     ),
                   )
                 else
-                  Icon(
-                    Icons.account_circle,
-                    size: 42.0,
+                  GestureDetector(
+                    onTap: () {
+                      // アイコンがタップされたときにOtherUserDisplayへ遷移
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => OtherUserDisplay(),
+                        ),
+                      );
+                    },
+                    child: Icon(
+                      Icons.account_circle,
+                      size: 42.0,
+                    ),
                   ),
                 Text(
                   widget.name,
@@ -86,10 +123,25 @@ class _StudySummaryCardState extends State<StudySummaryCard> {
             ),
             HitoKotoCard(oneWord: widget.oneWord),
             ProgressCard(achivementLevel: widget.achivementLevel),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Icon(Icons.mode_comment_outlined),
+                Text(widget.commentNum.toString()),
+                SizedBox(
+                  width: 10,
+                ),
+                LikeButton(
+                  padding: EdgeInsets.only(right: 20),
+                  isLiked: widget.isPushFavorite,
+                  likeCount: widget.goodNum,
+                ),
+              ],
+            )
           ],
         ),
         color: Colors.white,
-        margin: const EdgeInsets.only(left: 20, right: 20, top: 10),
+        margin: const EdgeInsets.only(left: 10, right: 10, top: 10),
         elevation: 8,
         shadowColor: Colors.black,
         shape: RoundedRectangleBorder(
@@ -108,38 +160,23 @@ class HitoKotoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.only(left: 10, right: 15),
+      height: 70,
+      margin: EdgeInsets.only(left: 4, right: 4),
       padding: EdgeInsets.all(5.0),
       decoration: BoxDecoration(
-        color: Colors.grey[100], // Light background
+        color: backGroundColor, // 背景色を設定
         borderRadius: BorderRadius.circular(10),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: EdgeInsets.symmetric(vertical: 4, horizontal: 5),
-                decoration: BoxDecoration(
-                  color: Colors.orange,
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: Text(
-                  'ひとこと',
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
+      child: Center(
+        // Containerの中央に配置
+        child: Text(
+          oneWord.isEmpty ? "まだ勉強中かも???" : oneWord,
+          textAlign: TextAlign.center, // テキストを中央揃え
+          softWrap: true, // テキストが折り返されるように設定
+          style: TextStyle(
+            fontSize: 16, // 必要に応じてフォントサイズを調整
           ),
-          Center(
-            child: Text(oneWord.isEmpty ? "まだ勉強中かも???" : oneWord),
-          )
-        ],
+        ),
       ),
     );
   }
@@ -155,18 +192,18 @@ class ProgressCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
         child: Padding(
-      padding: EdgeInsets.only(top: 10, bottom: 5),
+      padding: EdgeInsets.only(bottom: 5),
       child: Column(
         children: [
           Row(
             children: [
               Padding(
-                padding: EdgeInsets.only(left: 30),
+                padding: EdgeInsets.only(left: 18, bottom: 9),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
                     "目標達成度",
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                   ),
                 ),
               ),
@@ -198,7 +235,7 @@ class GradientProgressBar extends StatelessWidget {
     return Container(
       height: 20,
       width: MediaQuery.of(context).size.width *
-          0.8, // Width of the entire progress bar
+          0.85, // Width of the entire progress bar
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         color: Colors.grey[300], // background color for the remaining part
@@ -207,7 +244,7 @@ class GradientProgressBar extends StatelessWidget {
         children: [
           Container(
             width: MediaQuery.of(context).size.width *
-                0.8 *
+                0.85 *
                 value, // Progress width
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),

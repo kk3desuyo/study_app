@@ -18,10 +18,8 @@ class MyTabBar extends StatelessWidget {
         final screenWidth = MediaQuery.of(context).size.width;
 
         if (tapPosition < screenWidth / 2) {
-          // 左側（友達タブ）がタップされた
           onTabSelected(0);
         } else {
-          // 右側（コミュニティータブ）がタップされた
           onTabSelected(1);
         }
       },
@@ -41,14 +39,15 @@ class MyTabBar extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            // 左側（友達）
+            // 左側（記録）
             Expanded(
               child: Column(
                 children: [
                   Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16.0),
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 7.0), // ここで縦の余白を調整
                     child: Text(
-                      '友達',
+                      '記録',
                       style: TextStyle(
                         color:
                             selectedIndex == 0 ? Colors.white : Colors.white70,
@@ -65,14 +64,15 @@ class MyTabBar extends StatelessWidget {
                 ],
               ),
             ),
-            // 右側（コミュニティ）
+            // 右側（タイムライン）
             Expanded(
               child: Column(
                 children: [
                   Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16.0),
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 7.0), // ここで縦の余白を調整
                     child: Text(
-                      'コミュニティー',
+                      'タイムライン',
                       style: TextStyle(
                         color:
                             selectedIndex == 1 ? Colors.white : Colors.white70,

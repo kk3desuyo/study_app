@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
 import 'package:study_app/screens/home.dart';
+import 'package:study_app/screens/preview_detail.dart';
+import 'package:study_app/screens/time.dart';
 import 'package:study_app/theme/color.dart';
+import 'package:study_app/widgets/app_bar.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() {
   runApp(const MyApp());
@@ -12,92 +18,191 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      localizationsDelegates: [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: [
+        const Locale('en'), // 英語
+        const Locale('ja'), // 日本語
+      ],
       title: 'Flutter Demo',
       theme: ThemeData(
+        appBarTheme: AppBarTheme(
+          backgroundColor: Colors.white, // AppBarの背景色を白に
+          elevation: 0, // AppBarの影をなくす
+        ),
         primarySwatch: Colors.blue,
       ),
-      home: const MyStatefulWidget(),
+      home: const Home(),
     );
   }
 }
 
-class MyStatefulWidget extends StatefulWidget {
-  const MyStatefulWidget({Key? key}) : super(key: key);
+class Home extends StatefulWidget {
+  const Home({Key? key}) : super(key: key);
 
   @override
-  State<MyStatefulWidget> createState() => _MyStatefulWidgetState();
+  _HomeState createState() => _HomeState();
 }
 
-class _MyStatefulWidgetState extends State<MyStatefulWidget> {
-  static const _screens = [
-    HomeScreen(),
-    HomeScreen(),
-    HomeScreen(),
-    HomeScreen(),
-  ];
+class _HomeState extends State<Home> {
+  // PersistentTabControllerのインスタンスを作成
+  late PersistentTabController _controller;
 
-  int _selectedIndex = 0;
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+  @override
+  void initState() {
+    super.initState();
+    // 初期化時にコントローラを設定
+    _controller = PersistentTabController(initialIndex: 2); // 2は真ん中のボタンに対応
   }
+
+  var _pages = <Widget>[
+    HomeScreen(),
+    PreviewDetailScreen(),
+    TimePage(), // 真ん中のタブに表示するページ
+    HomeScreen(),
+    HomeScreen()
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: Transform.translate(
-        offset: const Offset(0, 20), // 下に20px移動（この数値で位置を調整できます）
-        child: Container(
-          width: 75,
-          height: 75,
-          decoration: BoxDecoration(
-            color: Color.fromRGBO(mainColorR, mainColorG, mainColorB, 1),
-            borderRadius: BorderRadius.circular(35), // 角丸
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.5), // 影の色
-                spreadRadius: 5, // 影の広がり
-                blurRadius: 7, // ぼかし
-                offset: const Offset(0, 3), // 影の位置
+      resizeToAvoidBottomInset:
+          false, // Prevent layout resize when keyboard appears
+      body: Stack(
+        children: [
+          PersistentTabView(
+            context,
+            controller: _controller,
+            screens: _pages,
+            items: [
+              PersistentBottomNavBarItem(
+                icon: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(height: 4),
+                    Icon(
+                      Icons.home,
+                      size: 33,
+                    ),
+                    SizedBox(height: 1),
+                    Text(
+                      'ホーム',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+                activeColorPrimary: primary,
+                inactiveColorPrimary: Colors.grey,
+              ),
+              PersistentBottomNavBarItem(
+                icon: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(height: 4),
+                    Icon(
+                      Icons.stacked_bar_chart,
+                      size: 33,
+                    ),
+                    SizedBox(height: 1),
+                    Text(
+                      'レポート',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+                activeColorPrimary: primary,
+                inactiveColorPrimary: Colors.grey,
+              ),
+              PersistentBottomNavBarItem(
+                icon: SizedBox.shrink(),
+              ),
+              PersistentBottomNavBarItem(
+                icon: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(height: 4),
+                    Icon(
+                      Icons.notifications,
+                      size: 33,
+                    ),
+                    SizedBox(height: 1),
+                    Text(
+                      '通知',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+                activeColorPrimary: primary,
+                inactiveColorPrimary: Colors.grey,
+              ),
+              PersistentBottomNavBarItem(
+                icon: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(height: 4),
+                    Icon(
+                      Icons.person,
+                      size: 33,
+                    ),
+                    SizedBox(height: 1),
+                    Text(
+                      'アカウント',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+                activeColorPrimary: primary,
+                inactiveColorPrimary: Colors.grey,
               ),
             ],
+            navBarStyle: NavBarStyle.style15,
+            backgroundColor: Colors.white,
           ),
-          child: IconButton(
-            icon: const Icon(
-              Icons.access_time, // 時計アイコン
-              size: 60.0,
-              color: Colors.white, // アイコンの色
-            ),
-            onPressed: () {
-              //時間計測画面に遷移
-              _onItemTapped(2);
-            },
-          ),
-        ),
-      ),
-      body: _screens[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.white,
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'ホーム'),
-          BottomNavigationBarItem(
-              icon: Icon(
-                Icons.stacked_bar_chart,
+          Positioned(
+            bottom: kBottomNavigationBarHeight - 10,
+            left: MediaQuery.of(context).size.width / 2 - 35,
+            child: GestureDetector(
+              onTap: () {
+                _controller.jumpToTab(2);
+              },
+              child: Container(
+                width: 70,
+                height: 70,
+                decoration: BoxDecoration(
+                  color: Colors.orange,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 8,
+                      spreadRadius: 1,
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  Icons.access_time,
+                  size: 55.0,
+                  color: Colors.white,
+                ),
               ),
-              label: 'レポート'),
-          BottomNavigationBarItem(icon: Icon(Icons.notifications), label: ''),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.notifications), label: 'お知らせ'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'アカウント'),
+            ),
+          ),
         ],
-        selectedItemColor:
-            Color.fromRGBO(mainColorR, mainColorG, mainColorB, 1),
-        type: BottomNavigationBarType.fixed,
       ),
     );
   }
