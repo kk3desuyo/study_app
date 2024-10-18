@@ -19,6 +19,7 @@ class MyTabBar extends StatelessWidget {
         final screenWidth = MediaQuery.of(context).size.width;
 
         if (tapPosition < screenWidth / 2) {
+          // 左側（友達タブ）がタップされた
           onTabSelected(0);
         } else {
           onTabSelected(1);
@@ -27,7 +28,7 @@ class MyTabBar extends StatelessWidget {
       child: Container(
         margin: EdgeInsets.only(left: 10, right: 10, top: 10),
         decoration: BoxDecoration(
-          color: primary,
+          color: subTheme,
           borderRadius: BorderRadius.circular(50),
           boxShadow: const [
             BoxShadow(
@@ -40,15 +41,13 @@ class MyTabBar extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            // 左側（記録）
             Expanded(
               child: Column(
                 children: [
                   Padding(
-                    padding:
-                        const EdgeInsets.symmetric(vertical: 7.0), // ここで縦の余白を調整
+                    padding: const EdgeInsets.symmetric(vertical: 10.0),
                     child: Text(
-                      '記録',
+                      '通知',
                       style: TextStyle(
                         color:
                             selectedIndex == 0 ? Colors.white : Colors.white70,
@@ -65,15 +64,14 @@ class MyTabBar extends StatelessWidget {
                 ],
               ),
             ),
-            // 右側（タイムライン）
+            // 右側（コミュニティ）
             Expanded(
               child: Column(
                 children: [
                   Padding(
-                    padding:
-                        const EdgeInsets.symmetric(vertical: 7.0), // ここで縦の余白を調整
+                    padding: const EdgeInsets.symmetric(vertical: 10.0),
                     child: Text(
-                      'タイムライン',
+                      'お知らせ',
                       style: TextStyle(
                         color:
                             selectedIndex == 1 ? Colors.white : Colors.white70,

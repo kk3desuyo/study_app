@@ -75,7 +75,7 @@ class _StudySummaryCardState extends State<StudySummaryCard> {
                     },
                     child: Padding(
                       padding: EdgeInsets.only(
-                          left: 10, top: 10, bottom: 3, right: 20),
+                          left: 10, top: 4, bottom: 3, right: 20),
                       child: Container(
                         width: 42.0,
                         height: 42.0,
@@ -202,7 +202,7 @@ class ProgressCard extends StatelessWidget {
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    "目標達成度",
+                    "今日の目標達成度",
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                   ),
                 ),
@@ -253,7 +253,7 @@ class GradientProgressBar extends StatelessWidget {
               borderRadius: BorderRadius.circular(20),
               child: ShaderMask(
                 shaderCallback: (bounds) => LinearGradient(
-                  colors: [Colors.orange, Colors.deepOrangeAccent],
+                  colors: [primary, Colors.deepOrangeAccent],
                 ).createShader(
                     Rect.fromLTWH(0, 0, bounds.width, bounds.height)),
                 child: Container(

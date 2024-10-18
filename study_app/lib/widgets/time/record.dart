@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:study_app/theme/color.dart';
@@ -97,7 +95,7 @@ class _RecordState extends State<Record> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.warning, color: Colors.orange),
+                Icon(Icons.warning, color: subTheme),
                 const SizedBox(height: 10),
                 const Text(
                   '時間を変更すると、記録した勉強時間はランキングには反映されません。時間の変更を行いますか?',
@@ -138,7 +136,10 @@ class _RecordState extends State<Record> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   ),
-                  onPressed: widget.onChangedTime,
+                  onPressed: () {
+                    widget.onChangedTime();
+                    Navigator.of(context).pop();
+                  },
                   child: const Text(
                     'OK',
                     style: TextStyle(color: Colors.white),
@@ -153,9 +154,12 @@ class _RecordState extends State<Record> {
   }
 
   void _showTimePickerModal() async {
+    print("showModal open");
+    print(widget.isTimeChange);
     if (!widget.isTimeChange) {
       await _showConfirmTimeChange();
     }
+    print("confirm result" + widget.isTimeChange.toString());
 
     if (widget.isTimeChange) {
       showModalBottomSheet(
@@ -285,7 +289,7 @@ class _RecordState extends State<Record> {
                   width: 100,
                   height: 10,
                   decoration: BoxDecoration(
-                    color: primary,
+                    color: subTheme,
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
@@ -294,7 +298,7 @@ class _RecordState extends State<Record> {
               Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: IconButton(
-                  icon: const Icon(Icons.close, color: primary),
+                  icon: const Icon(Icons.close, color: subTheme),
                   onPressed: () {
                     Navigator.pop(context);
                   },
@@ -421,7 +425,7 @@ class _RecordState extends State<Record> {
                     padding:
                         const EdgeInsets.symmetric(vertical: 2, horizontal: 25),
                     decoration: BoxDecoration(
-                      color: Colors.orange,
+                      color: subTheme,
                       borderRadius: BorderRadius.circular(15),
                     ),
                     child: const Text(
@@ -450,7 +454,7 @@ class _RecordState extends State<Record> {
                     padding:
                         const EdgeInsets.symmetric(vertical: 2, horizontal: 10),
                     decoration: BoxDecoration(
-                      color: Colors.orange,
+                      color: subTheme,
                       borderRadius: BorderRadius.circular(15),
                     ),
                     child: const Text(
@@ -472,7 +476,17 @@ class _RecordState extends State<Record> {
               const SizedBox(width: 20),
               ElevatedButton(
                 onPressed: _showTimePickerModal,
-                child: const Text("時間変更"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white, // 背景色を白に設定
+                  side: BorderSide(color: subTheme), // ボーダーをオレンジに設定
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(5), // 角を半径5に設定
+                  ),
+                ),
+                child: const Text(
+                  "時間変更",
+                  style: TextStyle(color: subTheme), // テキストの色をオレンジに設定
+                ),
               ),
             ],
           ),
@@ -483,7 +497,7 @@ class _RecordState extends State<Record> {
                 padding:
                     const EdgeInsets.symmetric(vertical: 1, horizontal: 25),
                 decoration: BoxDecoration(
-                  color: Colors.orange,
+                  color: subTheme,
                   borderRadius: BorderRadius.circular(15),
                 ),
                 child: const Text(
@@ -520,7 +534,7 @@ class _RecordState extends State<Record> {
                 padding:
                     const EdgeInsets.symmetric(vertical: 2, horizontal: 25),
                 decoration: BoxDecoration(
-                  color: Colors.orange,
+                  color: subTheme,
                   borderRadius: BorderRadius.circular(15),
                 ),
                 child: const Text(
@@ -570,7 +584,7 @@ class _RecordState extends State<Record> {
             child: const Text("記録する"),
             style: ElevatedButton.styleFrom(
               minimumSize: const Size(200, 35),
-              backgroundColor: primary,
+              backgroundColor: subTheme,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),

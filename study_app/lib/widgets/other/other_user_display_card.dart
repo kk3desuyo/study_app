@@ -86,7 +86,7 @@ class _OtherUserDisplayCardState extends State<OtherUserDisplayCard> {
             children: <Widget>[
               Card(
                 child: Padding(
-                    padding: EdgeInsets.only(top: 3, left: 4),
+                    padding: EdgeInsets.only(top: 6, left: 6),
                     child: Column(
                       children: [
                         Row(
@@ -116,11 +116,7 @@ class _OtherUserDisplayCardState extends State<OtherUserDisplayCard> {
                                   size: 50.0,
                                 ),
                               ),
-                            Text(
-                              widget.name,
-                              style: TextStyle(
-                                  fontSize: 18, fontWeight: FontWeight.w500),
-                            ),
+
                             Spacer(),
                             Expanded(
                               child: ElevatedButton(
@@ -173,6 +169,9 @@ class _OtherUserDisplayCardState extends State<OtherUserDisplayCard> {
                             //いいねを押している場合
                           ],
                         ),
+                        SizedBox(
+                          height: 5,
+                        ),
                         TagsWidget(tags: widget.tags),
                         Padding(
                             padding:
@@ -196,14 +195,15 @@ class _OtherUserDisplayCardState extends State<OtherUserDisplayCard> {
                             children: [
                               Flexible(
                                 child: Container(
-                                  height: 30,
+                                  height: 35,
+                                  width: 120,
                                   padding: EdgeInsets.symmetric(horizontal: 15),
                                   decoration: BoxDecoration(
                                     color: widget.isFollow
                                         ? Colors.white
-                                        : Colors.orange,
+                                        : primary,
                                     borderRadius: BorderRadius.circular(5),
-                                    border: Border.all(color: Colors.orange),
+                                    border: Border.all(color: primary),
                                   ),
                                   child: ElevatedButton(
                                     onPressed: _onFollow,
@@ -227,6 +227,9 @@ class _OtherUserDisplayCardState extends State<OtherUserDisplayCard> {
                               ),
                             ],
                           ),
+                        ),
+                        SizedBox(
+                          height: 5,
                         ),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -279,7 +282,7 @@ class _OtherUserDisplayCardState extends State<OtherUserDisplayCard> {
                                           padding: EdgeInsets.symmetric(
                                               vertical: 2, horizontal: 20),
                                           decoration: BoxDecoration(
-                                            color: Colors.orange,
+                                            color: primary,
                                             borderRadius:
                                                 BorderRadius.circular(15),
                                           ),
@@ -308,8 +311,8 @@ class _OtherUserDisplayCardState extends State<OtherUserDisplayCard> {
                                         {'name': '数学', 'color': Colors.blue},
                                         {'name': '理科', 'color': Colors.green},
                                         {'name': '歴史', 'color': Colors.red},
-                                        {'name': '国語', 'color': Colors.orange},
-                                        {'name': '国語', 'color': Colors.orange},
+                                        {'name': '国語', 'color': primary},
+                                        {'name': '国語', 'color': primary},
                                       ],
                                     )
                                   ],

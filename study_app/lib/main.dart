@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
 import 'package:study_app/screens/home.dart';
+import 'package:study_app/screens/notification.dart';
 import 'package:study_app/screens/preview_detail.dart';
 import 'package:study_app/screens/time.dart';
 import 'package:study_app/theme/color.dart';
 import 'package:study_app/widgets/app_bar.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:badges/badges.dart' as custom_badge; // 追加
 
 void main() {
   runApp(const MyApp());
@@ -62,7 +64,7 @@ class _HomeState extends State<Home> {
     HomeScreen(),
     PreviewDetailScreen(),
     TimePage(), // 真ん中のタブに表示するページ
-    HomeScreen(),
+    NotificationPage(),
     HomeScreen()
   ];
 
@@ -111,7 +113,7 @@ class _HomeState extends State<Home> {
                     ),
                     SizedBox(height: 1),
                     Text(
-                      'レポート',
+                      'ランキング',
                       style: TextStyle(
                         color: Colors.black,
                         fontSize: 12,
@@ -126,23 +128,30 @@ class _HomeState extends State<Home> {
                 icon: SizedBox.shrink(),
               ),
               PersistentBottomNavBarItem(
-                icon: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SizedBox(height: 4),
-                    Icon(
-                      Icons.notifications,
-                      size: 33,
-                    ),
-                    SizedBox(height: 1),
-                    Text(
-                      '通知',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontSize: 12,
+                icon: custom_badge.Badge(
+                  position: custom_badge.BadgePosition.topEnd(top: -5, end: -5),
+                  badgeContent: Text(
+                    '3', // 通知の数をここに設定
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  badgeColor: Colors.red,
+                  child: Column(
+                    children: [
+                      SizedBox(height: 4),
+                      Icon(
+                        Icons.notifications,
+                        size: 33,
                       ),
-                    ),
-                  ],
+                      SizedBox(height: 1),
+                      Text(
+                        '通知',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 activeColorPrimary: primary,
                 inactiveColorPrimary: Colors.grey,
@@ -184,7 +193,7 @@ class _HomeState extends State<Home> {
                 width: 70,
                 height: 70,
                 decoration: BoxDecoration(
-                  color: Colors.orange,
+                  color: primary,
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(

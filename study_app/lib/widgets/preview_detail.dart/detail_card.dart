@@ -53,7 +53,7 @@ class _DetailCardState extends State<DetailCard> {
         children: <Widget>[
           Card(
             child: Padding(
-                padding: EdgeInsets.only(top: 3, left: 4),
+                padding: EdgeInsets.only(top: 10, left: 8),
                 child: Column(
                   children: [
                     Row(
@@ -121,16 +121,55 @@ class _DetailCardState extends State<DetailCard> {
                         ),
                       ],
                     ),
-                    HitoKotoCard(oneWord: widget.oneWord),
+                    Container(
+                      height: 70,
+                      margin: EdgeInsets.only(left: 4, right: 4, bottom: 10),
+                      padding: EdgeInsets.all(5.0),
+                      decoration: BoxDecoration(
+                        color: backGroundColor, // 背景色を設定
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Center(
+                        // Containerの中央に配置
+                        child: Text(
+                          widget.oneWord.isEmpty
+                              ? "まだ勉強中かも???"
+                              : widget.oneWord,
+                          textAlign: TextAlign.center, // テキストを中央揃え
+                          softWrap: true, // テキストが折り返されるように設定
+                          style: TextStyle(
+                            fontSize: 16, // 必要に応じてフォントサイズを調整
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: MediaQuery.of(context).size.width * 0.86,
+                          height: 1,
+                          color: Colors.grey.withOpacity(0.5),
+                        ),
+                      ],
+                    ),
+                    SizedBox(
+                      height: 10,
+                    ),
                     Padding(
                       padding: const EdgeInsets.only(top: 5),
                       child:
                           ProgressCard(achivementLevel: widget.achivementLevel),
                     ),
+                    SizedBox(
+                      height: 5,
+                    ),
                     Padding(
                       padding: const EdgeInsets.only(right: 4, left: 4),
                       child: DisplayBooks(),
                     ),
+
                     // Padding(
                     //   padding: const EdgeInsets.only(top: 7, left: 3, right: 3),
                     //   child: SizedBox(
@@ -167,44 +206,120 @@ class _DetailCardState extends State<DetailCard> {
                     Padding(
                       padding: const EdgeInsets.only(left: 4, right: 4, top: 4),
                       child: Comments(
+                        replays: [
+                          ReplayInfo(
+                              replayToId: 1,
+                              id: 1,
+                              dateTime: DateTime.now(),
+                              profileUrl:
+                                  "https://lh3.googleusercontent.com/a/AItbvmn9YJ5sdBnrBlBqVN1Eu6ZB9QD5K8tzLDxX6ONo=s96-c",
+                              content: "1",
+                              name: "jo"),
+                          ReplayInfo(
+                              replayToId: 1,
+                              id: 2,
+                              dateTime: DateTime.now(),
+                              profileUrl:
+                                  "https://lh3.googleusercontent.com/a/AItbvmn9YJ5sdBnrBlBqVN1Eu6ZB9QD5K8tzLDxX6ONo=s96-c",
+                              content: "2",
+                              name: "jo"),
+                          ReplayInfo(
+                              replayToId: 1,
+                              id: 3,
+                              dateTime: DateTime.now(),
+                              profileUrl:
+                                  "https://lh3.googleusercontent.com/a/AItbvmn9YJ5sdBnrBlBqVN1Eu6ZB9QD5K8tzLDxX6ONo=s96-c",
+                              content: "3",
+                              name: "jo"),
+                          ReplayInfo(
+                              replayToId: 1,
+                              id: 1,
+                              dateTime: DateTime.now(),
+                              profileUrl:
+                                  "https://lh3.googleusercontent.com/a/AItbvmn9YJ5sdBnrBlBqVN1Eu6ZB9QD5K8tzLDxX6ONo=s96-c",
+                              content: "4",
+                              name: "jo"),
+                        ],
                         comments: [
                           CommentInfo(
+                              id: 1,
                               dateTime: DateTime.now(),
                               profileUrl:
                                   "https://lh3.googleusercontent.com/a/AItbvmn9YJ5sdBnrBlBqVN1Eu6ZB9QD5K8tzLDxX6ONo=s96-c",
                               content: "aaaa",
                               name: "jo"),
                           CommentInfo(
+                              id: 2,
                               dateTime: DateTime.now(),
                               profileUrl:
                                   "https://lh3.googleusercontent.com/a/AItbvmn9YJ5sdBnrBlBqVN1Eu6ZB9QD5K8tzLDxX6ONo=s96-c",
                               content: "aaaa",
                               name: "jo"),
                           CommentInfo(
+                              id: 3,
                               dateTime: DateTime.now(),
                               profileUrl:
                                   "https://lh3.googleusercontent.com/a/AItbvmn9YJ5sdBnrBlBqVN1Eu6ZB9QD5K8tzLDxX6ONo=s96-c",
                               content: "aaaa",
                               name: "jo"),
                           CommentInfo(
+                              id: 4,
                               dateTime: DateTime.now(),
                               profileUrl:
                                   "https://lh3.googleusercontent.com/a/AItbvmn9YJ5sdBnrBlBqVN1Eu6ZB9QD5K8tzLDxX6ONo=s96-c",
                               content: "aaaa",
                               name: "jo"),
                           CommentInfo(
+                              id: 5,
                               dateTime: DateTime.now(),
                               profileUrl:
                                   "https://lh3.googleusercontent.com/a/AItbvmn9YJ5sdBnrBlBqVN1Eu6ZB9QD5K8tzLDxX6ONo=s96-c",
                               content: "aaaa",
                               name: "jo"),
                           CommentInfo(
+                              id: 6,
                               dateTime: DateTime.now(),
                               profileUrl:
                                   "https://lh3.googleusercontent.com/a/AItbvmn9YJ5sdBnrBlBqVN1Eu6ZB9QD5K8tzLDxX6ONo=s96-c",
                               content: "aaaa",
                               name: "jo"),
                           CommentInfo(
+                              id: 7,
+                              dateTime: DateTime.now(),
+                              profileUrl:
+                                  "https://lh3.googleusercontent.com/a/AItbvmn9YJ5sdBnrBlBqVN1Eu6ZB9QD5K8tzLDxX6ONo=s96-c",
+                              content: "aaaa",
+                              name: "jo"),
+                          CommentInfo(
+                              id: 8,
+                              dateTime: DateTime.now(),
+                              profileUrl:
+                                  "https://lh3.googleusercontent.com/a/AItbvmn9YJ5sdBnrBlBqVN1Eu6ZB9QD5K8tzLDxX6ONo=s96-c",
+                              content: "aaaa",
+                              name: "jo"),
+                          CommentInfo(
+                              id: 9,
+                              dateTime: DateTime.now(),
+                              profileUrl:
+                                  "https://lh3.googleusercontent.com/a/AItbvmn9YJ5sdBnrBlBqVN1Eu6ZB9QD5K8tzLDxX6ONo=s96-c",
+                              content: "aaaa",
+                              name: "jo"),
+                          CommentInfo(
+                              id: 10,
+                              dateTime: DateTime.now(),
+                              profileUrl:
+                                  "https://lh3.googleusercontent.com/a/AItbvmn9YJ5sdBnrBlBqVN1Eu6ZB9QD5K8tzLDxX6ONo=s96-c",
+                              content: "aaaa",
+                              name: "jo"),
+                          CommentInfo(
+                              id: 11,
+                              dateTime: DateTime.now(),
+                              profileUrl:
+                                  "https://lh3.googleusercontent.com/a/AItbvmn9YJ5sdBnrBlBqVN1Eu6ZB9QD5K8tzLDxX6ONo=s96-c",
+                              content: "aaaa",
+                              name: "jo"),
+                          CommentInfo(
+                              id: 12,
                               dateTime: DateTime.now(),
                               profileUrl:
                                   "https://lh3.googleusercontent.com/a/AItbvmn9YJ5sdBnrBlBqVN1Eu6ZB9QD5K8tzLDxX6ONo=s96-c",

@@ -44,59 +44,94 @@ class _BookSelectionPageState extends State<BookSelectionPage> {
     return Scaffold(
       backgroundColor: backGroundColor,
       appBar: const MyAppBar(), // AppBarはそのまま
-      floatingActionButton: Container(
-        child: FloatingActionButton(
-          onPressed: () {},
-          backgroundColor: primary,
-          child: const Icon(
-            color: Colors.white,
-            Icons.add,
-            size: 50,
-          ),
-        ),
-        decoration: BoxDecoration(
-          shape: BoxShape.rectangle, // rectangleを使用
-          color: Colors.green, // 背景色を指定
-          borderRadius: BorderRadius.circular(50), // ここでradiusを設定
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black26,
-              blurRadius: 10, // ぼかしの範囲
-              offset: Offset(0, 4), // 影の位置
-            ),
-          ],
-        ),
-      ),
 
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ドロップダウンメニューをAppBarの下に配置
             Padding(
               padding: const EdgeInsets.all(8.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        // ボタンがタップされた時の処理をここに書く
+                        print("教材を追加するボタンが押されました");
+                      },
+                      child: Container(
+                        padding:
+                            EdgeInsets.symmetric(vertical: 10, horizontal: 13),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(5),
+                          border: Border.all(
+                            color: primary,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment:
+                              MainAxisAlignment.center, // アイテムを中央に配置
+                          children: [
+                            Text(
+                              '教材を追加する',
+                              style: TextStyle(
+                                fontSize: 15,
+                                color: primary,
+                                fontWeight: FontWeight.w900,
+                                fontFamily: "KiwiMaru-Regular",
+                              ),
+                            ),
+                            SizedBox(width: 5), // テキストとアイコンの間にスペースを追加
+                            Icon(
+                              Icons.add,
+                              color: primary,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // ドロップダウンメニューをAppBarの下に配置
+            Padding(
+              padding: const EdgeInsets.only(right: 8, left: 0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end, // 右上に配置
                 children: [
                   Flexible(
                     fit: FlexFit.loose,
-                    child: DropdownButton<String>(
-                      dropdownColor: Colors.white,
-                      value: selectedCategory,
-                      hint: const Text('全てのカテゴリー'),
-                      items: bookCategories.map((category) {
-                        return DropdownMenuItem<String>(
-                          value: category,
-                          child: Text(category),
-                        );
-                      }).toList(),
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          selectedCategory = newValue;
-                        });
-                      },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white, // 選択中の背景色を白に設定
+                        borderRadius: BorderRadius.circular(5),
+                        border: Border.all(
+                          color: backGroundColor,
+                        ),
+                      ),
+                      padding: EdgeInsets.symmetric(horizontal: 10),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: selectedCategory,
+                          hint: const Text('全てのカテゴリー'),
+                          items: bookCategories.map((category) {
+                            return DropdownMenuItem<String>(
+                              value: category,
+                              child: Text(category),
+                            );
+                          }).toList(),
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              selectedCategory = newValue;
+                            });
+                          },
+                          dropdownColor: Colors.white, // ドロップダウンの背景色を白に設定
+                        ),
+                      ),
                     ),
-                  )
+                  ),
                 ],
               ),
             ),
@@ -113,7 +148,7 @@ class _BookSelectionPageState extends State<BookSelectionPage> {
                         padding:
                             EdgeInsets.symmetric(vertical: 2, horizontal: 13),
                         decoration: BoxDecoration(
-                          color: Colors.orange,
+                          color: primary,
                           borderRadius: BorderRadius.circular(15),
                         ),
                         child: Text(
@@ -166,7 +201,7 @@ class _BookSelectionPageState extends State<BookSelectionPage> {
                 Container(
                   padding: EdgeInsets.symmetric(vertical: 2, horizontal: 13),
                   decoration: BoxDecoration(
-                    color: Colors.orange,
+                    color: primary,
                     borderRadius: BorderRadius.circular(15),
                   ),
                   child: Text(
@@ -196,8 +231,8 @@ class _BookSelectionPageState extends State<BookSelectionPage> {
               ),
               itemCount: filteredBookInfos.length,
               itemBuilder: (BuildContext context, int index) {
-                final bookKey = filteredBookInfos.keys.elementAt(index);
-                final book = filteredBookInfos[bookKey]!;
+                final bookKey = widget.bookInfos.keys.elementAt(index);
+                final book = widget.bookInfos[bookKey]!;
                 return GestureDetector(
                   onTap: () {
                     widget.onBookSelected(bookKey); // 本が選択された時にコールバックを呼ぶ

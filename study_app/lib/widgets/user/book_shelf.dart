@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:study_app/theme/color.dart';
 
 class Book {
   final String bookImgUrl;
@@ -54,7 +55,7 @@ class _BookShelfCardState extends State<BookShelfCard> {
             Container(
               padding: EdgeInsets.symmetric(vertical: 2, horizontal: 27),
               decoration: BoxDecoration(
-                color: Colors.orange,
+                color: primary,
                 borderRadius: BorderRadius.circular(15),
               ),
               child: Text(

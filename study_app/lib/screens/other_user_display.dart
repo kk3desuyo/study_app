@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:study_app/theme/color.dart';
 import 'package:study_app/widgets/app_bar.dart';
 import 'package:study_app/widgets/other/other_user_display_card.dart';
+import 'package:study_app/widgets/user/app_bar.dart';
 import 'package:study_app/widgets/user/tag.dart';
 
 class OtherUserDisplay extends StatefulWidget {
@@ -16,7 +17,9 @@ class _OtherUserDisplayState extends State<OtherUserDisplay> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: backGroundColor,
-      appBar: const MyAppBar(),
+      appBar: const MyAppBarUser(
+        userName: "ss",
+      ),
       body: OtherUserDisplayCard(
         followNum: 10,
         followersNum: 10,

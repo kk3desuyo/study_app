@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:study_app/theme/color.dart';
 
 class MyTabBar extends StatelessWidget {
   final int selectedIndex;
@@ -28,7 +29,7 @@ class MyTabBar extends StatelessWidget {
       child: Container(
         margin: EdgeInsets.only(left: 10, right: 10, top: 10),
         decoration: BoxDecoration(
-          color: Colors.orange,
+          color: primary,
           borderRadius: BorderRadius.circular(50),
           boxShadow: const [
             BoxShadow(
@@ -46,7 +47,7 @@ class MyTabBar extends StatelessWidget {
               child: Column(
                 children: [
                   Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16.0),
+                    padding: const EdgeInsets.symmetric(vertical: 11.0),
                     child: Text(
                       '友達',
                       style: TextStyle(
@@ -70,7 +71,7 @@ class MyTabBar extends StatelessWidget {
               child: Column(
                 children: [
                   Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16.0),
+                    padding: const EdgeInsets.symmetric(vertical: 11.0),
                     child: Text(
                       'コミュニティー',
                       style: TextStyle(

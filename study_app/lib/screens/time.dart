@@ -25,6 +25,8 @@ class _TimePage extends State<TimePage> {
     setState(() {
       isChangeTime = true;
     });
+    print("onChangedTime");
+    print(isChangeTime);
   }
 
   void onTabSelected(int newTabSelect) {
@@ -38,7 +40,6 @@ class _TimePage extends State<TimePage> {
     setState(() {
       studyTime = newStudyTime;
     });
-    print(studyTime);
   }
 
   @override
@@ -91,7 +92,7 @@ class _TimePage extends State<TimePage> {
                         ),
                         // 高さをデバイスのサイズに基づいて調整
                         child: Record(
-                          isTimeChange: false,
+                          isTimeChange: isChangeTime,
                           onChangedTime: onChangedTime,
                           bookInfos: {
                             1: Book(

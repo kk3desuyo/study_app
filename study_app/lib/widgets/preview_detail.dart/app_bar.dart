@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:study_app/theme/color.dart';
 
-class MyAppBar extends StatelessWidget implements PreferredSizeWidget {
-  const MyAppBar({Key? key}) : super(key: key);
+class MyAppBarPrev extends StatelessWidget implements PreferredSizeWidget {
+  const MyAppBarPrev({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -16,27 +16,17 @@ class MyAppBar extends StatelessWidget implements PreferredSizeWidget {
               icon: Icon(
                 size: 45,
                 Icons.arrow_circle_left_rounded,
-                color: Colors.orange,
+                color: primary,
               ))
           : null,
       backgroundColor: Colors.white,
-      centerTitle: false,
+      centerTitle: true, // タイトルを中央に配置
       title: const Text(
-        "Study Plus",
+        "今日のレポート",
         style: TextStyle(
-            fontSize: 25, fontWeight: FontWeight.bold, color: primary),
+            fontSize: 20, fontWeight: FontWeight.bold, color: primary),
       ),
-      actions: [
-        IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.group, size: 33, color: primary)),
-        Padding(
-          padding: EdgeInsets.only(right: 15),
-          child: IconButton(
-              onPressed: () {},
-              icon: const Icon(Icons.settings, size: 30, color: primary)),
-        )
-      ],
+      actions: [], // アイコンを削除
     );
   }
 
@@ -48,7 +38,7 @@ class MyScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: MyAppBar(),
+      appBar: MyAppBarPrev(),
       resizeToAvoidBottomInset: false, // キーボード表示時に他のUI要素が動かないようにする
       body: Center(
         child: Column(
