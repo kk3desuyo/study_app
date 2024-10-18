@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:study_app/main.dart';
 import 'package:study_app/screens/book_shelf_screen.dart';
+import 'package:study_app/screens/other_user_display_book.dart';
 import 'package:study_app/screens/preview_detail.dart';
 import 'package:study_app/theme/color.dart';
 import 'package:like_button/like_button.dart';
@@ -9,6 +10,7 @@ import 'package:study_app/widgets/preview_detail.dart/comment_card.dart';
 import 'package:study_app/widgets/preview_detail.dart/display_books.dart';
 import 'package:study_app/widgets/preview_detail.dart/week_chart.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:study_app/widgets/user/book_shelf.dart';
 import 'package:study_app/widgets/user/goal.dart';
 import 'package:study_app/widgets/user/stacked_graph.dart';
 import 'package:study_app/widgets/user/tab_bar.dart';
@@ -119,14 +121,8 @@ class _OtherUserDisplayCardState extends State<OtherUserDisplayCard> {
 
                             Spacer(),
                             Expanded(
-                              child: ElevatedButton(
-                                onPressed: () => {},
-                                style: ElevatedButton.styleFrom(
-                                  padding: EdgeInsets.zero,
-                                  minimumSize: Size(60, 50),
-                                  backgroundColor: Colors.transparent,
-                                  shadowColor: Colors.transparent,
-                                ),
+                              child: InkWell(
+                                onTap: () => {},
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
@@ -144,13 +140,8 @@ class _OtherUserDisplayCardState extends State<OtherUserDisplayCard> {
                               ),
                             ),
                             Expanded(
-                              child: ElevatedButton(
-                                onPressed: () => {},
-                                style: ElevatedButton.styleFrom(
-                                  padding: EdgeInsets.zero,
-                                  backgroundColor: Colors.transparent,
-                                  shadowColor: Colors.transparent,
-                                ),
+                              child: InkWell(
+                                onTap: () => {},
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
@@ -201,25 +192,22 @@ class _OtherUserDisplayCardState extends State<OtherUserDisplayCard> {
                                   decoration: BoxDecoration(
                                     color: widget.isFollow
                                         ? Colors.white
-                                        : primary,
+                                        : subTheme,
                                     borderRadius: BorderRadius.circular(5),
-                                    border: Border.all(color: primary),
+                                    border: Border.all(color: subTheme),
                                   ),
-                                  child: ElevatedButton(
-                                    onPressed: _onFollow,
-                                    style: ElevatedButton.styleFrom(
-                                      padding: EdgeInsets.zero,
-                                      backgroundColor: Colors.transparent,
-                                      shadowColor: Colors.transparent,
-                                    ),
-                                    child: Text(
-                                      widget.isFollow ? "フォロー中" : 'フォロー',
-                                      style: TextStyle(
-                                        color: widget.isFollow
-                                            ? primary
-                                            : Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 13,
+                                  child: InkWell(
+                                    onTap: _onFollow,
+                                    child: Center(
+                                      child: Text(
+                                        widget.isFollow ? "フォロー中" : 'フォロー',
+                                        style: TextStyle(
+                                          color: widget.isFollow
+                                              ? subTheme
+                                              : Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 13,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -282,7 +270,7 @@ class _OtherUserDisplayCardState extends State<OtherUserDisplayCard> {
                                           padding: EdgeInsets.symmetric(
                                               vertical: 2, horizontal: 20),
                                           decoration: BoxDecoration(
-                                            color: primary,
+                                            color: subTheme,
                                             borderRadius:
                                                 BorderRadius.circular(15),
                                           ),
@@ -320,30 +308,59 @@ class _OtherUserDisplayCardState extends State<OtherUserDisplayCard> {
                               ),
                             ),
                           ),
-                          ElevatedButton(
-                              onPressed: () => {
+                          InkWell(
+                              onTap: () => {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) => BookShelf(),
+                                        builder: (context) =>
+                                            OtherUserBookShelf(
+                                          bookInfos: {
+                                            1: Book(
+                                              isRecentlyUse: false,
+                                              bookImgUrl:
+                                                  'https://thumbnail.image.rakuten.co.jp/@0_mall/learners/cabinet/08213828/08213829/imgrc1358308.jpg',
+                                              category: 'Math',
+                                              name: 'Algebra Basics',
+                                              id: 1,
+                                            ),
+                                            2: Book(
+                                              isRecentlyUse: true,
+                                              bookImgUrl:
+                                                  'https://thumbnail.image.rakuten.co.jp/@0_mall/learners/cabinet/08213828/08213829/imgrc0091358308.jpg',
+                                              category: 'Science',
+                                              name: 'Physics Principles',
+                                              id: 2,
+                                            ),
+                                            3: Book(
+                                              isRecentlyUse: true,
+                                              bookImgUrl:
+                                                  'https://thumbnail.image.rakuten.co.jp/@0_mall/learners/cabinet/08213828/08213829/imgrc0091358308.jpg',
+                                              category: 'Science',
+                                              name: 'Physics Principles',
+                                              id: 2,
+                                            ),
+                                            4: Book(
+                                              isRecentlyUse: true,
+                                              bookImgUrl:
+                                                  'https://thumbnail.image.rakuten.co.jp/@0_mall/learners/cabinet/08213828/08213829/imgrc0091358308.jpg',
+                                              category: 'Science',
+                                              name: 'Physics Principles',
+                                              id: 2,
+                                            ),
+                                            5: Book(
+                                              isRecentlyUse: true,
+                                              bookImgUrl:
+                                                  'https://thumbnail.image.rakuten.co.jp/@0_mall/learners/cabinet/08213828/08213829/imgrc0091358308.jpg',
+                                              category: 'Science',
+                                              name: 'Physics Principles',
+                                              id: 2,
+                                            ),
+                                          },
+                                        ),
                                       ),
                                     )
                                   },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.transparent,
-                                padding: EdgeInsets
-                                    .zero, // No padding around the button itself
-                                minimumSize:
-                                    Size.zero, // Remove the minimum size
-                                tapTargetSize: MaterialTapTargetSize
-                                    .shrinkWrap, // Shrink the tap target to the child size
-                                elevation:
-                                    0, // You can adjust the button elevation as needed
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(
-                                      5), // Match the card's rounded corners
-                                ),
-                              ),
                               child: Padding(
                                 padding: const EdgeInsets.all(4.0),
                                 child: Card(
@@ -368,8 +385,8 @@ class _OtherUserDisplayCardState extends State<OtherUserDisplayCard> {
                                               padding: EdgeInsets.symmetric(
                                                   vertical: 4, horizontal: 27),
                                               decoration: BoxDecoration(
-                                                color: Colors
-                                                    .orange, // Button background color
+                                                color:
+                                                    subTheme, // Button background color
                                                 borderRadius:
                                                     BorderRadius.circular(
                                                         20), // Rounded button

@@ -38,7 +38,7 @@ class GoalCard extends StatelessWidget {
                         padding:
                             EdgeInsets.symmetric(vertical: 2, horizontal: 27),
                         decoration: BoxDecoration(
-                          color: primary,
+                          color: subTheme,
                           borderRadius: BorderRadius.circular(15),
                         ),
                         child: Text(
@@ -168,7 +168,7 @@ class GoalCard extends StatelessWidget {
           child: CircularProgressIndicator(
             value: progress,
             backgroundColor: Colors.grey[300], // 未達成部分の色を設定
-            valueColor: AlwaysStoppedAnimation<Color>(primary), // 達成部分の色
+            valueColor: AlwaysStoppedAnimation<Color>(subTheme), // 達成部分の色
             strokeWidth: 8,
           ),
         ),

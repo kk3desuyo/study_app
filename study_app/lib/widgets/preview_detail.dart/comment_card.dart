@@ -3,6 +3,7 @@ import 'package:study_app/theme/color.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class CommentInfo {
+  final int userId;
   final String profileUrl;
   final String content;
   final String name;
@@ -11,6 +12,7 @@ class CommentInfo {
 
   // コンストラクタの定義
   CommentInfo({
+    required this.userId,
     required this.profileUrl,
     required this.content,
     required this.name,

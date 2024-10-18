@@ -50,13 +50,14 @@ class _TimePage extends State<TimePage> {
       body: SingleChildScrollView(
         // スクロールを可能にする
         child: Padding(
-          padding: const EdgeInsets.only(top: 5, left: 5, right: 5),
+          padding: const EdgeInsets.only(left: 5, right: 5),
           child: Column(
             children: [
-              MyTabBar(
-                  isChangeTime: isChangeTime,
-                  selectedIndex: selectedTab,
-                  onTabSelected: onTabSelected),
+              if (!isChangeTime)
+                MyTabBar(
+                    isChangeTime: isChangeTime,
+                    selectedIndex: selectedTab,
+                    onTabSelected: onTabSelected),
               selectedTab == 1
                   ? Padding(
                       padding: const EdgeInsets.only(
@@ -80,66 +81,53 @@ class _TimePage extends State<TimePage> {
                         ),
                       ),
                     )
-                  : Padding(
-                      padding: const EdgeInsets.only(
-                          left: 8, right: 8, top: 9, bottom: 5),
-                      child: Container(
-                        height: MediaQuery.of(context).size.height * 0.6,
-                        // 丸角を設定
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(20), // 角を丸くする
+                  : Record(
+                      isTimeChange: isChangeTime,
+                      onChangedTime: onChangedTime,
+                      bookInfos: {
+                        1: Book(
+                          isRecentlyUse: false,
+                          bookImgUrl:
+                              'https://thumbnail.image.rakuten.co.jp/@0_mall/learners/cabinet/08213828/08213829/imgrc1358308.jpg',
+                          category: 'Math',
+                          name: 'Algebra Basics',
+                          id: 1,
                         ),
-                        // 高さをデバイスのサイズに基づいて調整
-                        child: Record(
-                          isTimeChange: isChangeTime,
-                          onChangedTime: onChangedTime,
-                          bookInfos: {
-                            1: Book(
-                              isRecentlyUse: false,
-                              bookImgUrl:
-                                  'https://thumbnail.image.rakuten.co.jp/@0_mall/learners/cabinet/08213828/08213829/imgrc1358308.jpg',
-                              category: 'Math',
-                              name: 'Algebra Basics',
-                              id: 1,
-                            ),
-                            2: Book(
-                              isRecentlyUse: true,
-                              bookImgUrl:
-                                  'https://thumbnail.image.rakuten.co.jp/@0_mall/learners/cabinet/08213828/08213829/imgrc0091358308.jpg',
-                              category: 'Science',
-                              name: 'Physics Principles',
-                              id: 2,
-                            ),
-                            3: Book(
-                              isRecentlyUse: true,
-                              bookImgUrl:
-                                  'https://thumbnail.image.rakuten.co.jp/@0_mall/learners/cabinet/08213828/08213829/imgrc0091358308.jpg',
-                              category: 'Science',
-                              name: 'Physics Principles',
-                              id: 2,
-                            ),
-                            4: Book(
-                              isRecentlyUse: true,
-                              bookImgUrl:
-                                  'https://thumbnail.image.rakuten.co.jp/@0_mall/learners/cabinet/08213828/08213829/imgrc0091358308.jpg',
-                              category: 'Science',
-                              name: 'Physics Principles',
-                              id: 2,
-                            ),
-                            5: Book(
-                              isRecentlyUse: true,
-                              bookImgUrl:
-                                  'https://thumbnail.image.rakuten.co.jp/@0_mall/learners/cabinet/08213828/08213829/imgrc0091358308.jpg',
-                              category: 'Science',
-                              name: 'Physics Principles',
-                              id: 2,
-                            ),
-                          },
-                          studyTime: studyTime,
-                          // 子ウィジェットにコールバックを渡す
+                        2: Book(
+                          isRecentlyUse: true,
+                          bookImgUrl:
+                              'https://thumbnail.image.rakuten.co.jp/@0_mall/learners/cabinet/08213828/08213829/imgrc0091358308.jpg',
+                          category: 'Science',
+                          name: 'Physics Principles',
+                          id: 2,
                         ),
-                      ),
+                        3: Book(
+                          isRecentlyUse: true,
+                          bookImgUrl:
+                              'https://thumbnail.image.rakuten.co.jp/@0_mall/learners/cabinet/08213828/08213829/imgrc0091358308.jpg',
+                          category: 'Science',
+                          name: 'Physics Principles',
+                          id: 2,
+                        ),
+                        4: Book(
+                          isRecentlyUse: true,
+                          bookImgUrl:
+                              'https://thumbnail.image.rakuten.co.jp/@0_mall/learners/cabinet/08213828/08213829/imgrc0091358308.jpg',
+                          category: 'Science',
+                          name: 'Physics Principles',
+                          id: 2,
+                        ),
+                        5: Book(
+                          isRecentlyUse: true,
+                          bookImgUrl:
+                              'https://thumbnail.image.rakuten.co.jp/@0_mall/learners/cabinet/08213828/08213829/imgrc0091358308.jpg',
+                          category: 'Science',
+                          name: 'Physics Principles',
+                          id: 2,
+                        ),
+                      },
+                      studyTime: studyTime,
+                      // 子ウィジェットにコールバックを渡す
                     ),
             ],
           ),

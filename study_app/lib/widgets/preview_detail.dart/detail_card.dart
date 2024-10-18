@@ -242,6 +242,7 @@ class _DetailCardState extends State<DetailCard> {
                         ],
                         comments: [
                           CommentInfo(
+                              userId: 11,
                               id: 1,
                               dateTime: DateTime.now(),
                               profileUrl:
@@ -249,6 +250,7 @@ class _DetailCardState extends State<DetailCard> {
                               content: "aaaa",
                               name: "jo"),
                           CommentInfo(
+                              userId: 11,
                               id: 2,
                               dateTime: DateTime.now(),
                               profileUrl:
@@ -256,6 +258,7 @@ class _DetailCardState extends State<DetailCard> {
                               content: "aaaa",
                               name: "jo"),
                           CommentInfo(
+                              userId: 11,
                               id: 3,
                               dateTime: DateTime.now(),
                               profileUrl:
@@ -263,6 +266,7 @@ class _DetailCardState extends State<DetailCard> {
                               content: "aaaa",
                               name: "jo"),
                           CommentInfo(
+                              userId: 11,
                               id: 4,
                               dateTime: DateTime.now(),
                               profileUrl:
@@ -270,6 +274,7 @@ class _DetailCardState extends State<DetailCard> {
                               content: "aaaa",
                               name: "jo"),
                           CommentInfo(
+                              userId: 11,
                               id: 5,
                               dateTime: DateTime.now(),
                               profileUrl:
@@ -277,6 +282,7 @@ class _DetailCardState extends State<DetailCard> {
                               content: "aaaa",
                               name: "jo"),
                           CommentInfo(
+                              userId: 11,
                               id: 6,
                               dateTime: DateTime.now(),
                               profileUrl:
@@ -284,6 +290,7 @@ class _DetailCardState extends State<DetailCard> {
                               content: "aaaa",
                               name: "jo"),
                           CommentInfo(
+                              userId: 11,
                               id: 7,
                               dateTime: DateTime.now(),
                               profileUrl:
@@ -291,6 +298,7 @@ class _DetailCardState extends State<DetailCard> {
                               content: "aaaa",
                               name: "jo"),
                           CommentInfo(
+                              userId: 11,
                               id: 8,
                               dateTime: DateTime.now(),
                               profileUrl:
@@ -298,6 +306,7 @@ class _DetailCardState extends State<DetailCard> {
                               content: "aaaa",
                               name: "jo"),
                           CommentInfo(
+                              userId: 11,
                               id: 9,
                               dateTime: DateTime.now(),
                               profileUrl:
@@ -305,6 +314,7 @@ class _DetailCardState extends State<DetailCard> {
                               content: "aaaa",
                               name: "jo"),
                           CommentInfo(
+                              userId: 11,
                               id: 10,
                               dateTime: DateTime.now(),
                               profileUrl:
@@ -312,6 +322,7 @@ class _DetailCardState extends State<DetailCard> {
                               content: "aaaa",
                               name: "jo"),
                           CommentInfo(
+                              userId: 11,
                               id: 11,
                               dateTime: DateTime.now(),
                               profileUrl:
@@ -319,6 +330,7 @@ class _DetailCardState extends State<DetailCard> {
                               content: "aaaa",
                               name: "jo"),
                           CommentInfo(
+                              userId: 11,
                               id: 12,
                               dateTime: DateTime.now(),
                               profileUrl:

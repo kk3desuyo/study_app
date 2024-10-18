@@ -27,7 +27,7 @@ class MyTabBar extends StatelessWidget {
       child: Container(
         margin: EdgeInsets.only(left: 10, right: 10, top: 10),
         decoration: BoxDecoration(
-          color: primary,
+          color: subTheme,
           borderRadius: BorderRadius.circular(50),
           boxShadow: const [
             BoxShadow(

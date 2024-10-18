@@ -4,13 +4,13 @@ import 'package:study_app/theme/color.dart';
 class MyTabBar extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onTabSelected;
-  final bool isChangeTime; // 修正: 'final' を追加
+  final bool isChangeTime;
 
   const MyTabBar({
     Key? key,
     required this.selectedIndex,
     required this.onTabSelected,
-    this.isChangeTime = false, // 修正: デフォルト値 false を追加
+    required this.isChangeTime,
   }) : super(key: key);
 
   @override
@@ -22,7 +22,7 @@ class MyTabBar extends StatelessWidget {
 
         if (tapPosition < screenWidth / 2) {
           onTabSelected(0);
-        } else {
+        } else if (!isChangeTime) {
           onTabSelected(1);
         }
       },
@@ -67,29 +67,31 @@ class MyTabBar extends StatelessWidget {
               ),
             ),
             // 右側（ストップウォッチ）
-            Expanded(
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16.0),
-                    child: Text(
-                      'ストップウォッチ',
-                      style: TextStyle(
-                        color:
-                            selectedIndex == 1 ? Colors.white : Colors.white70,
-                        fontWeight: FontWeight.bold,
+            if (!isChangeTime)
+              Expanded(
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16.0),
+                      child: Text(
+                        'ストップウォッチ',
+                        style: TextStyle(
+                          color: selectedIndex == 1
+                              ? Colors.white
+                              : Colors.white70,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
-                  ),
-                  if (selectedIndex == 1)
-                    Container(
-                      height: 4,
-                      width: 40,
-                      color: Colors.white, // 選択中のタブに白いバーを表示
-                    ),
-                ],
+                    if (selectedIndex == 1)
+                      Container(
+                        height: 4,
+                        width: 40,
+                        color: Colors.white, // 選択中のタブに白いバーを表示
+                      ),
+                  ],
+                ),
               ),
-            ),
           ],
         ),
       ),

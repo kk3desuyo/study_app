@@ -2,7 +2,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:study_app/theme/color.dart';
 import 'package:study_app/widgets/time/book_preview.dart';
-
 import 'package:study_app/widgets/time/date_select.dart';
 import 'package:study_app/widgets/user/book_shelf.dart';
 import '../preview_detail.dart/display_books.dart';
@@ -13,13 +12,13 @@ class Record extends StatefulWidget {
   final VoidCallback onChangedTime;
   final bool isTimeChange;
 
-  const Record(
-      {Key? key,
-      required this.studyTime,
-      required this.bookInfos,
-      required this.onChangedTime,
-      required this.isTimeChange})
-      : super(key: key);
+  const Record({
+    Key? key,
+    required this.studyTime,
+    required this.bookInfos,
+    required this.onChangedTime,
+    required this.isTimeChange,
+  }) : super(key: key);
 
   @override
   State<Record> createState() => _RecordState();
@@ -400,199 +399,212 @@ class _RecordState extends State<Record> {
     print("再描画がトリガーされました");
     return Padding(
       padding: const EdgeInsets.only(left: 4, right: 4, top: 10),
-      child: Column(
-        children: [
-          if (widget.isTimeChange)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
-                SizedBox(width: 5),
-                Text(
-                  "今回の勉強時間はランキングに反映されません。",
-                  style: TextStyle(
-                    color: Colors.red,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
+      child: SingleChildScrollView(
+        child: Container(
+          width: double.infinity,
+          child: Card(
+            color: Colors.white,
+            elevation: 4,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15),
             ),
-          Row(
-            children: [
-              Column(
-                children: [
-                  const SizedBox(height: 5),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(vertical: 2, horizontal: 25),
-                    decoration: BoxDecoration(
-                      color: subTheme,
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: const Text(
-                      '日付',
-                      style: TextStyle(
-                          fontSize: 15,
-                          color: Colors.white,
-                          fontWeight: FontWeight.w900,
-                          fontFamily: "KiwiMaru-Regular"),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(width: 10),
-              DateTimePickerWidget(),
-            ],
-          ),
-          const SizedBox(height: 15),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              Column(
-                children: [
-                  const SizedBox(height: 5),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(vertical: 2, horizontal: 10),
-                    decoration: BoxDecoration(
-                      color: subTheme,
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: const Text(
-                      '勉強時間',
-                      style: TextStyle(
-                          fontSize: 15,
-                          color: Colors.white,
-                          fontWeight: FontWeight.w900,
-                          fontFamily: "KiwiMaru-Regular"),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(width: 15),
-              Text(
-                formatTimeInJapanese(selectedHour * 60 + selectedMinute),
-                style: const TextStyle(fontSize: 18),
-              ),
-              const SizedBox(width: 20),
-              ElevatedButton(
-                onPressed: _showTimePickerModal,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white, // 背景色を白に設定
-                  side: BorderSide(color: subTheme), // ボーダーをオレンジに設定
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(5), // 角を半径5に設定
-                  ),
-                ),
-                child: const Text(
-                  "時間変更",
-                  style: TextStyle(color: subTheme), // テキストの色をオレンジに設定
-                ),
-              ),
-            ],
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 1, horizontal: 25),
-                decoration: BoxDecoration(
-                  color: subTheme,
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: const Text(
-                  '教材',
-                  style: TextStyle(
-                      fontSize: 15,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                      fontFamily: "KiwiMaru-Regular"),
-                ),
-              ),
-              const SizedBox(width: 14),
-              GestureDetector(
-                onTap: _openBookSelectionPage,
-                child: selectedBook == -1
-                    ? _buildAddBookCard()
-                    : widget.bookInfos.containsKey(selectedBook)
-                        ? BookCard(
-                            name: widget.bookInfos[selectedBook]!.name,
-                            bookImgUrl:
-                                widget.bookInfos[selectedBook]!.bookImgUrl,
-                            studyTime: 300,
-                            isDisplayTime: false,
-                          )
-                        : _buildAddBookCard(),
-              ),
-            ],
-          ),
-          const SizedBox(height: 15),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 2, horizontal: 25),
-                decoration: BoxDecoration(
-                  color: subTheme,
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: const Text(
-                  'メモ',
-                  style: TextStyle(
-                      fontSize: 15,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                      fontFamily: "KiwiMaru-Regular"),
-                ),
-              ),
-            ],
-          ),
-          Expanded(
             child: Padding(
-              padding: const EdgeInsets.only(top: 4, left: 2),
-              child: Container(
-                height: 50,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(12.0),
-                ),
-                child: const TextField(
-                  maxLines: 2,
-                  minLines: 2,
-                  style: TextStyle(
-                    fontSize: 11.0,
-                    color: Colors.black,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: 'めも',
-                    hintStyle: TextStyle(
-                      fontSize: 11.0,
-                      color: Colors.grey,
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  if (widget.isTimeChange)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const [
+                        Text(
+                          "今回の勉強時間はランキングに反映されません。",
+                          style: TextStyle(
+                              color: Colors.red,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13),
+                        ),
+                      ],
                     ),
-                    border: InputBorder.none,
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 16.0, vertical: 15.0),
+                  Row(
+                    children: [
+                      Column(
+                        children: [
+                          const SizedBox(height: 5),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 2, horizontal: 25),
+                            decoration: BoxDecoration(
+                              color: subTheme,
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                            child: const Text(
+                              '日付',
+                              style: TextStyle(
+                                  fontSize: 15,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w900,
+                                  fontFamily: "KiwiMaru-Regular"),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(width: 10),
+                      DateTimePickerWidget(),
+                    ],
                   ),
-                ),
+                  const SizedBox(height: 15),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      Column(
+                        children: [
+                          const SizedBox(height: 5),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 2, horizontal: 10),
+                            decoration: BoxDecoration(
+                              color: subTheme,
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                            child: const Text(
+                              '勉強時間',
+                              style: TextStyle(
+                                  fontSize: 15,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w900,
+                                  fontFamily: "KiwiMaru-Regular"),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(width: 15),
+                      Text(
+                        formatTimeInJapanese(
+                            selectedHour * 60 + selectedMinute),
+                        style: const TextStyle(fontSize: 18),
+                      ),
+                      const SizedBox(width: 20),
+                      ElevatedButton(
+                        onPressed: _showTimePickerModal,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white, // 背景色を白に設定
+                          side: BorderSide(color: subTheme), // ボーダーをオレンジに設定
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(5), // 角を半径5に設定
+                          ),
+                        ),
+                        child: const Text(
+                          "時間変更",
+                          style: TextStyle(color: subTheme), // テキストの色をオレンジに設定
+                        ),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 1, horizontal: 25),
+                        decoration: BoxDecoration(
+                          color: subTheme,
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: const Text(
+                          '教材',
+                          style: TextStyle(
+                              fontSize: 15,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w900,
+                              fontFamily: "KiwiMaru-Regular"),
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      GestureDetector(
+                        onTap: _openBookSelectionPage,
+                        child: selectedBook == -1
+                            ? _buildAddBookCard()
+                            : widget.bookInfos.containsKey(selectedBook)
+                                ? BookCard(
+                                    name: widget.bookInfos[selectedBook]!.name,
+                                    bookImgUrl: widget
+                                        .bookInfos[selectedBook]!.bookImgUrl,
+                                    studyTime: 300,
+                                    isDisplayTime: false,
+                                  )
+                                : _buildAddBookCard(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 15),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 2, horizontal: 25),
+                        decoration: BoxDecoration(
+                          color: subTheme,
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: const Text(
+                          'メモ',
+                          style: TextStyle(
+                              fontSize: 15,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w900,
+                              fontFamily: "KiwiMaru-Regular"),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4, left: 2),
+                    child: Container(
+                      height: 150,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(12.0),
+                      ),
+                      child: const TextField(
+                        maxLines: 2,
+                        minLines: 2,
+                        style: TextStyle(
+                          fontSize: 11.0,
+                          color: Colors.black,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: 'めも',
+                          hintStyle: TextStyle(
+                            fontSize: 11.0,
+                            color: Colors.grey,
+                          ),
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(
+                              horizontal: 16.0, vertical: 15.0),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  ElevatedButton(
+                    onPressed: () => {},
+                    child: const Text("記録する"),
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size(200, 35),
+                      backgroundColor: subTheme,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                ],
               ),
             ),
           ),
-          const SizedBox(height: 3),
-          ElevatedButton(
-            onPressed: () => {},
-            child: const Text("記録する"),
-            style: ElevatedButton.styleFrom(
-              minimumSize: const Size(200, 35),
-              backgroundColor: subTheme,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-          ),
-          const SizedBox(height: 5),
-        ],
+        ),
       ),
     );
   }

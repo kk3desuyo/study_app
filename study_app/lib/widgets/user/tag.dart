@@ -19,7 +19,7 @@ class _TagsWidget extends State<TagsWidget> {
         ),
         Icon(
           Icons.local_offer,
-          color: primary,
+          color: subTheme,
         ),
         SizedBox(
           width: 10,
