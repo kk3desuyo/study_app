@@ -72,7 +72,7 @@ class _HomeState extends State<Home> {
 
   var _pages = <Widget>[
     HomeScreen(),
-    PreviewDetailScreen(),
+    HomeScreen(),
     TimePage(),
     NotificationPage(),
     HomeScreen()

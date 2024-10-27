@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:study_app/main.dart';
+import 'package:study_app/models/book.dart';
 import 'package:study_app/screens/book_shelf_screen.dart';
 import 'package:study_app/screens/other_user_display_book.dart';
 import 'package:study_app/screens/preview_detail.dart';
@@ -317,44 +318,44 @@ class _OtherUserDisplayCardState extends State<OtherUserDisplayCard> {
                                             OtherUserBookShelf(
                                           bookInfos: {
                                             1: Book(
-                                              isRecentlyUse: false,
-                                              bookImgUrl:
+                                              lastUsedDate: DateTime.now(),
+                                              imageUrl:
                                                   'https://thumbnail.image.rakuten.co.jp/@0_mall/learners/cabinet/08213828/08213829/imgrc1358308.jpg',
                                               category: 'Math',
-                                              name: 'Algebra Basics',
-                                              id: 1,
+                                              title: 'Algebra Basics',
+                                              id: '1',
                                             ),
                                             2: Book(
-                                              isRecentlyUse: true,
-                                              bookImgUrl:
+                                              lastUsedDate: DateTime.now(),
+                                              imageUrl:
                                                   'https://thumbnail.image.rakuten.co.jp/@0_mall/learners/cabinet/08213828/08213829/imgrc0091358308.jpg',
                                               category: 'Science',
-                                              name: 'Physics Principles',
-                                              id: 2,
+                                              title: 'Physics Principles',
+                                              id: '2',
                                             ),
                                             3: Book(
-                                              isRecentlyUse: true,
-                                              bookImgUrl:
+                                              lastUsedDate: DateTime.now(),
+                                              imageUrl:
                                                   'https://thumbnail.image.rakuten.co.jp/@0_mall/learners/cabinet/08213828/08213829/imgrc0091358308.jpg',
                                               category: 'Science',
-                                              name: 'Physics Principles',
-                                              id: 2,
+                                              title: 'Physics Principles',
+                                              id: '3',
                                             ),
                                             4: Book(
-                                              isRecentlyUse: true,
-                                              bookImgUrl:
+                                              lastUsedDate: DateTime.now(),
+                                              imageUrl:
                                                   'https://thumbnail.image.rakuten.co.jp/@0_mall/learners/cabinet/08213828/08213829/imgrc0091358308.jpg',
                                               category: 'Science',
-                                              name: 'Physics Principles',
-                                              id: 2,
+                                              title: 'Physics Principles',
+                                              id: '4',
                                             ),
                                             5: Book(
-                                              isRecentlyUse: true,
-                                              bookImgUrl:
+                                              lastUsedDate: DateTime.now(),
+                                              imageUrl:
                                                   'https://thumbnail.image.rakuten.co.jp/@0_mall/learners/cabinet/08213828/08213829/imgrc0091358308.jpg',
                                               category: 'Science',
-                                              name: 'Physics Principles',
-                                              id: 2,
+                                              title: 'Physics Principles',
+                                              id: '5',
                                             ),
                                           },
                                         ),
@@ -416,21 +417,36 @@ class _OtherUserDisplayCardState extends State<OtherUserDisplayCard> {
                                               MainAxisAlignment.spaceEvenly,
                                           children: [
                                             BookCard(
-                                              name: "aaa",
-                                              bookImgUrl:
-                                                  'https://tshop.r10s.jp/learners/cabinet/08213828/08213829/imgrc0091358308.jpg?_ex=200x200&s=0&r=1',
+                                              book: Book(
+                                                lastUsedDate: DateTime.now(),
+                                                imageUrl:
+                                                    'https://tshop.r10s.jp/learners/cabinet/08213828/08213829/imgrc0091358308.jpg?_ex=200x200&s=0&r=1',
+                                                category: 'Science',
+                                                title: 'Physics Principles',
+                                                id: '1',
+                                              ),
                                               studyTime: 300,
                                             ),
                                             BookCard(
-                                              name: "aaa",
-                                              bookImgUrl:
-                                                  'https://tshop.r10s.jp/learners/cabinet/08213828/08213829/imgrc0091358308.jpg?_ex=200x200&s=0&r=1',
+                                              book: Book(
+                                                lastUsedDate: DateTime.now(),
+                                                imageUrl:
+                                                    'https://tshop.r10s.jp/learners/cabinet/08213828/08213829/imgrc0091358308.jpg?_ex=200x200&s=0&r=1',
+                                                category: 'Science',
+                                                title: 'Physics Principles',
+                                                id: '2',
+                                              ),
                                               studyTime: 300,
                                             ),
                                             BookCard(
-                                              name: "aaa",
-                                              bookImgUrl:
-                                                  'https://tshop.r10s.jp/learners/cabinet/08213828/08213829/imgrc0091358308.jpg?_ex=200x200&s=0&r=1',
+                                              book: Book(
+                                                lastUsedDate: DateTime.now(),
+                                                imageUrl:
+                                                    'https://tshop.r10s.jp/learners/cabinet/08213828/08213829/imgrc0091358308.jpg?_ex=200x200&s=0&r=1',
+                                                category: 'Science',
+                                                title: 'Physics Principles',
+                                                id: '3',
+                                              ),
                                               studyTime: 300,
                                             ),
                                           ],

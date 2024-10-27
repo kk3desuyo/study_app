@@ -5,6 +5,7 @@ import 'package:study_app/widgets/time/circular_countdown_timer.dart';
 import 'package:study_app/widgets/time/tab_bar.dart';
 import 'package:study_app/widgets/user/book_shelf.dart';
 import 'package:study_app/widgets/time/record.dart';
+import 'package:study_app/models/book.dart'; // Adjust the path as necessary
 
 class TimePage extends StatefulWidget {
   const TimePage({
@@ -86,44 +87,44 @@ class _TimePage extends State<TimePage> {
                       onChangedTime: onChangedTime,
                       bookInfos: {
                         1: Book(
-                          isRecentlyUse: false,
-                          bookImgUrl:
+                          lastUsedDate: DateTime.now(),
+                          imageUrl:
                               'https://thumbnail.image.rakuten.co.jp/@0_mall/learners/cabinet/08213828/08213829/imgrc1358308.jpg',
                           category: 'Math',
-                          name: 'Algebra Basics',
-                          id: 1,
+                          title: 'Algebra Basics',
+                          id: '1',
                         ),
                         2: Book(
-                          isRecentlyUse: true,
-                          bookImgUrl:
+                          lastUsedDate: DateTime.now(),
+                          imageUrl:
                               'https://thumbnail.image.rakuten.co.jp/@0_mall/learners/cabinet/08213828/08213829/imgrc0091358308.jpg',
                           category: 'Science',
-                          name: 'Physics Principles',
-                          id: 2,
+                          title: 'Physics Principles',
+                          id: '2',
                         ),
                         3: Book(
-                          isRecentlyUse: true,
-                          bookImgUrl:
+                          lastUsedDate: DateTime.now(),
+                          imageUrl:
                               'https://thumbnail.image.rakuten.co.jp/@0_mall/learners/cabinet/08213828/08213829/imgrc0091358308.jpg',
                           category: 'Science',
-                          name: 'Physics Principles',
-                          id: 2,
+                          title: 'Physics Principles',
+                          id: '3',
                         ),
                         4: Book(
-                          isRecentlyUse: true,
-                          bookImgUrl:
+                          lastUsedDate: DateTime.now(),
+                          imageUrl:
                               'https://thumbnail.image.rakuten.co.jp/@0_mall/learners/cabinet/08213828/08213829/imgrc0091358308.jpg',
                           category: 'Science',
-                          name: 'Physics Principles',
-                          id: 2,
+                          title: 'Physics Principles',
+                          id: '4',
                         ),
                         5: Book(
-                          isRecentlyUse: true,
-                          bookImgUrl:
+                          lastUsedDate: DateTime.now(),
+                          imageUrl:
                               'https://thumbnail.image.rakuten.co.jp/@0_mall/learners/cabinet/08213828/08213829/imgrc0091358308.jpg',
                           category: 'Science',
-                          name: 'Physics Principles',
-                          id: 2,
+                          title: 'Physics Principles',
+                          id: '5',
                         ),
                       },
                       studyTime: studyTime,

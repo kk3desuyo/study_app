@@ -16,6 +16,7 @@ class StudySummaryCard extends StatefulWidget {
   final int commentNum;
   final int achivementLevel;
   final String oneWord;
+  final String dailyGoalId;
 
   // コンストラクター
   const StudySummaryCard({
@@ -27,6 +28,7 @@ class StudySummaryCard extends StatefulWidget {
     required this.commentNum,
     required this.achivementLevel,
     required this.oneWord,
+    required this.dailyGoalId,
   }) : super(key: key);
 
   @override
@@ -50,7 +52,10 @@ class _StudySummaryCardState extends State<StudySummaryCard> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => PreviewDetailScreen(),
+            builder: (context) => PreviewDetailScreen(
+              dailyGoalId: widget.dailyGoalId,
+              user: widget.user,
+            ),
           ),
         );
       },

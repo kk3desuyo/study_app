@@ -98,7 +98,9 @@ class _HomeScreenState extends State<HomeScreen> {
           // タイムラインのデータに基づいてウィジェットを返す
           return ListView(
             children: followedUserStudySummary.map((goal) {
+              print(goal['dailyGoalId' + "aaaaa"]);
               return StudySummaryCard(
+                dailyGoalId: goal['dailyGoalId'] ?? '',
                 user: User(
                   id: goal['user']['id'] ?? '',
                   name: goal['user']['name'] ?? '',

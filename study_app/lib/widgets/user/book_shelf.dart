@@ -1,28 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:study_app/theme/color.dart';
-
-class Book {
-  final String bookImgUrl;
-  final String category;
-  final String name;
-  final int id;
-  final bool isRecentlyUse;
-
-  Book(
-      {required this.bookImgUrl,
-      required this.category,
-      required this.id,
-      required this.name,
-      required this.isRecentlyUse});
-}
+import 'package:study_app/models/book.dart'; // Import the Book model
 
 class BookShelfCard extends StatefulWidget {
-  final List<Book> books;
-  final Set<String> categorySet; // Setを定義
+  final List<Book> books; // List<Book>に変更
 
   BookShelfCard({
-    required this.books,
-    this.categorySet = const <String>{}, // デフォルトで空のSetを持つ
+    required this.books, // Required list of books
     Key? key,
   }) : super(key: key);
 
@@ -76,23 +60,23 @@ class _BookShelfCardState extends State<BookShelfCard> {
             children: [
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white, // 背景色を白に設定
-                  borderRadius: BorderRadius.circular(5), // 角を少し丸くする（オプション）
-                  border: Border.all(color: Colors.grey), // 境界線を設定（オプション）
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(5),
+                  border: Border.all(color: Colors.grey),
                 ),
                 padding: EdgeInsets.symmetric(horizontal: 10),
                 child: DropdownButton<String>(
-                  style: TextStyle(color: Colors.black), // テキストのスタイルを調整
-                  value: isSelectedCategory, // 選択された値
-                  items: _buildDropdownItems(), // ドロップダウンのアイテム
+                  style: TextStyle(color: Colors.black),
+                  value: isSelectedCategory,
+                  items: _buildDropdownItems(),
                   onChanged: (String? value) {
                     if (value != null) {
                       setState(() {
-                        isSelectedCategory = value; // ドロップダウンの選択に基づいて状態を更新
+                        isSelectedCategory = value;
                       });
                     }
                   },
-                  dropdownColor: Colors.white, // ドロップダウンメニューの背景色を白に設定
+                  dropdownColor: Colors.white,
                 ),
               ),
             ],
@@ -101,16 +85,15 @@ class _BookShelfCardState extends State<BookShelfCard> {
         Expanded(
           child: GridView.builder(
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3, // 例: 3列にする場合
+              crossAxisCount: 3,
               crossAxisSpacing: 10,
               mainAxisSpacing: 10,
             ),
-            itemCount: _filteredBooks().length, // フィルタリングしたアイテム数
+            itemCount: _filteredBooks().length,
             itemBuilder: (context, index) {
               return Container(
                 child: Center(
-                  child:
-                      _buildBookCard(_filteredBooks()[index]), // フィルタリングされた本を表示
+                  child: _buildBookCard(_filteredBooks()[index]),
                 ),
               );
             },
@@ -133,38 +116,42 @@ class _BookShelfCardState extends State<BookShelfCard> {
 
   // ドロップダウンのアイテムを生成
   List<DropdownMenuItem<String>> _buildDropdownItems() {
-    // 重複しないカテゴリーリストを生成
     final categories =
         widget.books.map((book) => book.category).toSet().toList();
-
-    // デフォルトの「全てのカテゴリー」をリストの先頭に追加
     categories.insert(0, '全てのカテゴリー');
 
     return categories
         .map((category) => DropdownMenuItem<String>(
-              value: category,
+              value: category as String,
               child: Text(category),
             ))
         .toList();
   }
 
+  // 最近使用した教材かどうかを調べる関数
+  bool isRecentlyUsed(Book book) {
+    // ここに最近使用したかどうかを判定するロジックを追加
+    // 例えば、book.lastUsedDateが一定期間内であればtrueを返す
+    return book.lastUsedDate
+        .isAfter(DateTime.now().subtract(Duration(days: 30)));
+  }
+
   Widget _buildBookCard(Book book) {
     return Card(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10), // カードの角を丸くする
+        borderRadius: BorderRadius.circular(10),
       ),
-      elevation: 5, // 影をつける
+      elevation: 5,
       child: Column(
         children: [
           Expanded(
             child: FadeInImage.assetNetwork(
-              placeholder:
-                  'assets/images/book_placeholder.png', // プレースホルダーとしてのローカル画像（本アイコン）
-              image: book.bookImgUrl,
-              fit: BoxFit.cover, // 画像をカード内に収める
+              placeholder: 'assets/images/book_placeholder.png',
+              image: book.imageUrl,
+              fit: BoxFit.cover,
               imageErrorBuilder: (context, error, stackTrace) {
                 return Image.asset(
-                  'assets/images/book_placeholder.png', // エラー時に表示する画像
+                  'assets/images/book_placeholder.png',
                   fit: BoxFit.cover,
                 );
               },
@@ -173,12 +160,25 @@ class _BookShelfCardState extends State<BookShelfCard> {
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Text(
-              book.category,
+              book.title,
               overflow: TextOverflow.ellipsis,
               maxLines: 1,
               style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Text(
+              isRecentlyUsed(book) ? 'Recently Used' : '',
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: Colors.red,
               ),
             ),
           ),

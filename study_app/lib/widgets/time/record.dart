@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:study_app/models/book.dart';
 import 'package:study_app/theme/color.dart';
 import 'package:study_app/widgets/time/book_preview.dart';
 import 'package:study_app/widgets/time/date_select.dart';
@@ -359,9 +360,8 @@ class _RecordState extends State<Record> {
                 });
               },
               child: BookCard(
-                bookImgUrl: book.bookImgUrl,
-                name: book.name,
-                studyTime: 300,
+                book: book,
+                studyTime: 0,
                 isDisplayTime: false,
               ),
             );
@@ -526,9 +526,7 @@ class _RecordState extends State<Record> {
                             ? _buildAddBookCard()
                             : widget.bookInfos.containsKey(selectedBook)
                                 ? BookCard(
-                                    name: widget.bookInfos[selectedBook]!.name,
-                                    bookImgUrl: widget
-                                        .bookInfos[selectedBook]!.bookImgUrl,
+                                    book: widget.bookInfos[selectedBook]!,
                                     studyTime: 300,
                                     isDisplayTime: false,
                                   )

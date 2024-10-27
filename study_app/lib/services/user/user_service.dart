@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart'
-    as auth; // Firebase Authをエイリアスでインポート
+import 'package:firebase_auth/firebase_auth.dart' as auth;
+import 'package:study_app/models/studyMaterial.dart';
 import 'package:study_app/models/user.dart';
 
 class UserService {
@@ -8,6 +8,8 @@ class UserService {
       FirebaseFirestore.instance.collection('users');
   final CollectionReference follows =
       FirebaseFirestore.instance.collection('follows');
+  final CollectionReference studySessions =
+      FirebaseFirestore.instance.collection('studySession');
 
   // Firebase Authのインスタンス
   final auth.FirebaseAuth _auth = auth.FirebaseAuth.instance;
@@ -16,6 +18,50 @@ class UserService {
   String? getCurrentUserId() {
     auth.User? user = _auth.currentUser;
     return user?.uid;
+  }
+
+// ユーザーが今日勉強した教材とその勉強時間を取得する関数
+  Future<List<StudyMaterial>> getTodayStudyMaterials(
+      {required String userId}) async {
+    try {
+      // 今日の開始と終了のTimestampを取得
+      DateTime now = DateTime.now();
+      DateTime startOfDay = DateTime(now.year, now.month, now.day);
+      DateTime endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59);
+
+      // FirestoreでユーザーIDと今日の日付の範囲を条件にクエリ
+      QuerySnapshot querySnapshot = await studySessions
+          .where('userId', isEqualTo: userId)
+          .where('timeStamp',
+              isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
+          .where('timeStamp', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
+          .get();
+
+      // クエリ結果をリストに変換し、StudyMaterialオブジェクトを生成
+      List<StudyMaterial> studyMaterialsList = querySnapshot.docs.map((doc) {
+        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+        return StudyMaterial.fromFirestore(data);
+      }).toList();
+
+      return studyMaterialsList;
+    } catch (e) {
+      print('Error getting today\'s study materials: $e');
+      throw Exception('Failed to get today\'s study materials');
+    }
+  } // ユーザーのプロフィール画像URLを取得する関数
+
+  Future<String?> getUserProfileImage(String userId) async {
+    try {
+      DocumentSnapshot doc = await users.doc(userId).get();
+      if (doc.exists && doc.data() != null) {
+        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+        return data['profileImgUrl'] as String?;
+      }
+      return null; // ユーザーが見つからない場合
+    } catch (e) {
+      print('Error getting user profile image: $e');
+      throw Exception('Failed to get user profile image');
+    }
   }
 
   // フォローしているユーザーのIDを全て取得する関数

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:study_app/models/book.dart';
 import 'package:study_app/theme/color.dart';
 import 'package:study_app/widgets/app_bar.dart';
 import 'package:study_app/widgets/preview_detail.dart/display_books.dart';
@@ -34,9 +35,9 @@ class _OtherUserBookShelfState extends State<OtherUserBookShelf> {
     Map<int, Book> filteredBookInfos;
 
     if (selectedCategory == null || selectedCategory == '全てのカテゴリー') {
-      // "全てのカテゴリー" が選ばれている場合は、isRecentlyUseがtrueのもののみ表示
+      // "全てのカテゴリー" が選ばれている場合は、wasUsedRecentlyがtrueのもののみ表示
       filteredBookInfos = Map.fromEntries(widget.bookInfos.entries
-          .where((entry) => entry.value.isRecentlyUse == true));
+          .where((entry) => entry.value.wasUsedRecently() == true));
     } else {
       // その他のカテゴリーが選ばれている場合は、選ばれたカテゴリーでフィルタリング
       filteredBookInfos = Map.fromEntries(widget.bookInfos.entries
@@ -137,8 +138,7 @@ class _OtherUserBookShelfState extends State<OtherUserBookShelf> {
                     onBookSelected(bookKey); // 本が選択された時にコールバックを呼ぶ
                   },
                   child: BookCard(
-                    bookImgUrl: book.bookImgUrl,
-                    name: book.name,
+                    book: book,
                     studyTime: 300,
                     isDisplayTime: false,
                   ),

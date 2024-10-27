@@ -1,52 +1,53 @@
 import 'package:flutter/material.dart';
+import 'package:study_app/services/user/user_service.dart';
 import 'package:study_app/theme/color.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:study_app/models/user.dart';
-
-class CommentInfo {
-  final User user;
-  final String content;
-  final DateTime dateTime;
-  final int id;
-
-  // コンストラクタの定義
-  CommentInfo({
-    required this.user,
-    required this.content,
-    required this.dateTime,
-    required this.id,
-  });
-}
-
-class ReplayInfo {
-  final User user;
-  final String content;
-  final DateTime dateTime;
-  final int id;
-  final int replayToId;
-
-  // コンストラクタの定義
-  ReplayInfo({
-    required this.user,
-    required this.content,
-    required this.dateTime,
-    required this.id,
-    required this.replayToId,
-  });
-}
+import 'package:study_app/models/comment.dart';
+import 'package:study_app/models/reply.dart';
 
 class Comments extends StatefulWidget {
-  final List<CommentInfo> comments;
-  final List<ReplayInfo> replays;
+  final List<Comment> comments;
+  final List<Reply> replies;
 
-  Comments({required this.comments, required this.replays});
+  Comments({required this.comments, required this.replies});
 
   @override
   _CommentsState createState() => _CommentsState();
 }
 
 class _CommentsState extends State<Comments> {
-  Map<int, bool> showAllReplies = {};
+  String timeAgo(DateTime dateTime) {
+    Duration diff = DateTime.now().difference(dateTime);
+    if (diff.inDays > 1) {
+      return '${diff.inDays} days ago';
+    } else if (diff.inHours > 1) {
+      return '${diff.inHours} hours ago';
+    } else if (diff.inMinutes > 1) {
+      return '${diff.inMinutes} minutes ago';
+    } else {
+      return 'just now';
+    }
+  }
+
+  Map<String, bool> showAllReplies = {};
+  Map<String, String?> profileImageCache = {};
+  UserService userService = UserService();
+
+  Future<String?> _fetchProfileImage(String userId) async {
+    if (profileImageCache.containsKey(userId)) {
+      return profileImageCache[userId];
+    }
+
+    try {
+      String? imageUrl = await userService.getUserProfileImage(userId);
+      profileImageCache[userId] = imageUrl;
+      return imageUrl;
+    } catch (e) {
+      print('Error fetching profile image: $e');
+      return null;
+    }
+  }
 
   void _onTapCommentModal() {
     showModalBottomSheet(
@@ -62,7 +63,7 @@ class _CommentsState extends State<Comments> {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState) {
             return Container(
-              height: MediaQuery.of(context).size.height * 0.8, // 画面の90%の高さに設定
+              height: MediaQuery.of(context).size.height * 0.8,
               padding: EdgeInsets.all(15),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -81,39 +82,58 @@ class _CommentsState extends State<Comments> {
                       child: Column(
                         children: widget.comments.map((comment) {
                           bool showAll = showAllReplies[comment.id] ?? false;
-                          List<ReplayInfo> replies = widget.replays
-                              .where(
-                                  (replay) => replay.replayToId == comment.id)
+                          List<Reply> replies = widget.replies
+                              .where((reply) => reply.commentId == comment.id)
                               .toList();
+
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              ListTile(
-                                leading: CircleAvatar(
-                                  backgroundImage:
-                                      NetworkImage(comment.user.profileImgUrl),
-                                ),
-                                title: Text(comment.user.name),
-                                subtitle: Text(comment.content),
-                                trailing: Text(timeAgo(comment.dateTime)),
+                              FutureBuilder<String?>(
+                                future: _fetchProfileImage(comment.userId),
+                                builder: (context, snapshot) {
+                                  return ListTile(
+                                    leading: CircleAvatar(
+                                      backgroundImage: snapshot.hasData &&
+                                              snapshot.data != null
+                                          ? NetworkImage(snapshot.data!)
+                                          : AssetImage(
+                                                  'assets/images/default_avatar.png')
+                                              as ImageProvider,
+                                    ),
+                                    title: Text(comment.userId),
+                                    subtitle: Text(comment.content),
+                                    trailing: Text(timeAgo(comment.dateTime)),
+                                  );
+                                },
                               ),
-                              // 返信を表示
                               ...replies
                                   .take(showAll ? replies.length : 2)
-                                  .map((replay) => Padding(
+                                  .map((reply) => Padding(
                                         padding:
                                             const EdgeInsets.only(left: 40.0),
-                                        child: ListTile(
-                                          leading: CircleAvatar(
-                                            radius: 12, // アイコンのサイズを小さく
-                                            backgroundImage: NetworkImage(
-                                              replay.user.profileImgUrl,
-                                            ),
-                                          ),
-                                          title: Text(replay.user.name),
-                                          subtitle: Text(replay.content),
-                                          trailing:
-                                              Text(timeAgo(replay.dateTime)),
+                                        child: FutureBuilder<String?>(
+                                          future:
+                                              _fetchProfileImage(reply.userId),
+                                          builder: (context, snapshot) {
+                                            return ListTile(
+                                              leading: CircleAvatar(
+                                                radius: 12,
+                                                backgroundImage: snapshot
+                                                            .hasData &&
+                                                        snapshot.data != null
+                                                    ? NetworkImage(
+                                                        snapshot.data!)
+                                                    : AssetImage(
+                                                            'assets/images/default_avatar.png')
+                                                        as ImageProvider,
+                                              ),
+                                              title: Text(reply.userId),
+                                              subtitle: Text(reply.content),
+                                              trailing:
+                                                  Text(timeAgo(reply.dateTime)),
+                                            );
+                                          },
                                         ),
                                       ))
                                   .toList(),
@@ -153,8 +173,6 @@ class _CommentsState extends State<Comments> {
                         ],
                       ),
                       child: Row(
-                        crossAxisAlignment: CrossAxisAlignment
-                            .center, // Ensure button is vertically centered
                         children: <Widget>[
                           Expanded(
                             child: TextField(
@@ -172,14 +190,11 @@ class _CommentsState extends State<Comments> {
                             onPressed: () {
                               // Send action
                             },
-                            padding: EdgeInsets.only(
-                                bottom:
-                                    2), // Adjust this value to raise the icon
                           ),
                         ],
                       ),
                     ),
-                  )
+                  ),
                 ],
               ),
             );
@@ -207,23 +222,16 @@ class _CommentsState extends State<Comments> {
                 child: Text(
                   'コメント',
                   style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                      fontFamily: "KiwiMaru-Regular"),
+                    fontSize: 12,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
               ),
-              SizedBox(
-                width: 10,
-              ),
+              SizedBox(width: 10),
               Icon(Icons.mode_comment_outlined),
-              SizedBox(
-                width: 3,
-              ),
+              SizedBox(width: 3),
               Text(widget.comments.length.toString()),
-              SizedBox(
-                width: 20,
-              ),
               Spacer(),
               InkWell(
                 onTap: _onTapCommentModal,
@@ -243,7 +251,6 @@ class _CommentsState extends State<Comments> {
                           fontSize: 10,
                           color: subTheme,
                           fontWeight: FontWeight.w900,
-                          fontFamily: "KiwiMaru-Regular",
                         ),
                       ),
                       Icon(
@@ -254,14 +261,13 @@ class _CommentsState extends State<Comments> {
                     ],
                   ),
                 ),
-              )
+              ),
             ],
           ),
         ),
-        // コメントが4つ未満の場合はメッセージを表示
         if (widget.comments.isEmpty)
           Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.symmetric(vertical: 40),
             child: Text(
               "応援コメントを送ろう!",
               style: GoogleFonts.kiwiMaru(
@@ -272,85 +278,27 @@ class _CommentsState extends State<Comments> {
               ),
             ),
           ),
-
-        // コメントのリストから最大4つを表示
-        ...widget.comments
-            .take(4) // 最初の4つのコメントのみ取得
-            .map((comment) => Padding(
-                  padding: const EdgeInsets.only(top: 3, left: 9, right: 9),
-                  child: CommentCard(
-                    user: comment.user,
-                    content: comment.content,
-                    dateTime: comment.dateTime,
+        ...widget.comments.take(4).map((comment) {
+          return Padding(
+            padding: const EdgeInsets.only(top: 3, left: 9, right: 9),
+            child: FutureBuilder<String?>(
+              future: _fetchProfileImage(comment.userId),
+              builder: (context, snapshot) {
+                return CommentCard(
+                  user: User(
+                    id: comment.userId,
+                    name: comment.userId,
+                    profileImgUrl: snapshot.data ?? '',
                   ),
-                ))
-            .toList(),
-
-        Padding(
-          padding: const EdgeInsets.only(top: 10, bottom: 8, left: 5, right: 5),
-          child: Container(
-            height: 35,
-            padding: EdgeInsets.only(left: 10),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(30.0),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 4.0,
-                  offset: Offset(0, 2),
-                ),
-              ],
+                  content: comment.content,
+                  dateTime: comment.dateTime,
+                );
+              },
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment
-                  .center, // Ensure button is vertically centered
-              children: <Widget>[
-                Expanded(
-                  child: TextField(
-                    decoration: InputDecoration(
-                      hintText: 'コメントを追加',
-                      border: InputBorder.none,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: Icon(
-                    Icons.send,
-                    color: subTheme,
-                  ),
-                  onPressed: () {
-                    // Send action
-                  },
-                  padding: EdgeInsets.only(
-                      bottom: 2), // Adjust this value to raise the icon
-                ),
-              ],
-            ),
-          ),
-        )
+          );
+        }).toList(),
       ],
     );
-  }
-}
-
-String timeAgo(DateTime commentTime) {
-  final Duration difference = DateTime.now().difference(commentTime);
-
-  if (difference.inMinutes < 1) {
-    return '1分前';
-  } else if (difference.inMinutes < 60) {
-    return '${difference.inMinutes}分前';
-  } else if (difference.inHours < 24) {
-    return '${difference.inHours}時間前';
-  } else if (difference.inDays < 7) {
-    return '${difference.inDays}日前';
-  } else if (difference.inDays < 30) {
-    return '${(difference.inDays / 7).floor()}週間前';
-  } else if (difference.inDays < 365) {
-    return '${(difference.inDays / 30).floor()}か月前';
-  } else {
-    return '${(difference.inDays / 365).floor()}年前';
   }
 }
 

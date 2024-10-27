@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:study_app/models/book.dart';
 import 'package:study_app/theme/color.dart';
 import 'package:study_app/widgets/app_bar.dart';
 import 'package:study_app/widgets/user/book_shelf.dart';
@@ -19,31 +20,31 @@ class _BookShelfState extends State<BookShelf> {
       body: BookShelfCard(
         books: [
           Book(
-              isRecentlyUse: true,
-              name: "aaa",
-              id: 0,
-              bookImgUrl:
+              lastUsedDate: DateTime.now(),
+              title: "aaa",
+              id: "0",
+              imageUrl:
                   "http://t3.gstatic.com/licensed-image?q=tbn:ANd9GcTiDykdw3K7dEito1ZrEIVJkxq1P7R06m5sTim49JhDE2eyT6bfXKjazXDuqPSyGokfYaUmLCYaER-Hc-PVnt0",
               category: "理科"),
           Book(
-              isRecentlyUse: true,
-              name: "aaa",
-              id: 1,
-              bookImgUrl:
+              lastUsedDate: DateTime.now(),
+              title: "aaa",
+              id: "1",
+              imageUrl:
                   "http://t3.gstatic.com/licensed-image?q=tbn:ANd9GcTiDykdw3K7dEito1ZrEIVJkxq1P7R06m5sTim49JhDE2eyT6bfXKjazXDuqPSyGokfYaUmLCYaER-Hc-PVnt0",
               category: "国語"),
           Book(
-              isRecentlyUse: true,
-              name: "aaa",
-              id: 2,
-              bookImgUrl:
+              lastUsedDate: DateTime.now(),
+              title: "aaa",
+              id: "2",
+              imageUrl:
                   "http://t3.gstatic.com/licensed-image?q=tbn:ANd9GcTiDykdw3K7dEito1ZrEIVJkxq1P7R06m5sTim49JhDE2eyT6bfXKjazXDuqPSyGokfYaUmLCYaER-Hc-PVnt0",
               category: "数学"),
           Book(
-              isRecentlyUse: true,
-              name: "aaa",
-              id: 3,
-              bookImgUrl:
+              lastUsedDate: DateTime.now(),
+              title: "aaa",
+              id: "3",
+              imageUrl:
                   "http://t3.gstatic.com/licensed-image?q=tbn:ANd9GcTiDykdw3K7dEito1ZrEIVJkxq1P7R06m5sTim49JhDE2eyT6bfXKjazXDuqPSyGokfYaUmLCYaER-Hc-PVnt0",
               category: "理科"),
         ],
