@@ -178,7 +178,7 @@ class GoalCalender extends StatelessWidget {
                       // 目標達成した日付にアイコンを表示
                       if (achievedDates.any((d) => isSameDay(d, day))) {
                         return SizedBox(
-                          width: 22,
+                          width: 28,
                           child: Stack(
                             alignment: Alignment.center,
                             children: [

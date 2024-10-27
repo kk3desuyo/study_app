@@ -5,7 +5,8 @@ import 'package:study_app/screens/other_user_display_book.dart';
 import 'package:study_app/screens/preview_detail.dart';
 import 'package:study_app/theme/color.dart';
 import 'package:like_button/like_button.dart';
-import 'package:study_app/widgets/home/study_summary_card.dart.dart';
+import 'package:study_app/models/user.dart';
+
 import 'package:study_app/widgets/preview_detail.dart/comment_card.dart';
 import 'package:study_app/widgets/preview_detail.dart/display_books.dart';
 import 'package:study_app/widgets/preview_detail.dart/week_chart.dart';
@@ -17,10 +18,8 @@ import 'package:study_app/widgets/user/tab_bar.dart';
 import 'package:study_app/widgets/user/tag.dart';
 
 class OtherUserDisplayCard extends StatefulWidget {
-  final String profileImgUrl;
-  final String name;
+  final User user;
   final int studyTime;
-
   final int commentNum;
   final int achivementLevel;
   final String oneWord;
@@ -29,21 +28,21 @@ class OtherUserDisplayCard extends StatefulWidget {
   bool isFollow;
   int followNum;
   int followersNum;
+
   // コンストラクター
-  OtherUserDisplayCard(
-      {Key? key,
-      required this.studyTimes,
-      required this.profileImgUrl,
-      required this.name,
-      required this.studyTime,
-      required this.commentNum,
-      required this.achivementLevel,
-      required this.oneWord,
-      required this.tags,
-      required this.isFollow,
-      required this.followNum,
-      required this.followersNum})
-      : super(key: key);
+  OtherUserDisplayCard({
+    Key? key,
+    required this.user,
+    required this.studyTimes,
+    required this.studyTime,
+    required this.commentNum,
+    required this.achivementLevel,
+    required this.oneWord,
+    required this.tags,
+    required this.isFollow,
+    required this.followNum,
+    required this.followersNum,
+  }) : super(key: key);
 
   @override
   State<StatefulWidget> createState() => _OtherUserDisplayCardState();
@@ -52,6 +51,7 @@ class OtherUserDisplayCard extends StatefulWidget {
 class _OtherUserDisplayCardState extends State<OtherUserDisplayCard> {
   //選択中のタブを保持
   int _selectedIndex = 0;
+
   // 分(int型)で受け取ってx時間xx分の形式の文字列を返却
   String convertMinutesToHoursAndMinutes(int totalMinutes) {
     int hours = totalMinutes ~/ 60;
@@ -93,7 +93,7 @@ class _OtherUserDisplayCardState extends State<OtherUserDisplayCard> {
                       children: [
                         Row(
                           children: [
-                            if (widget.profileImgUrl.isNotEmpty)
+                            if (widget.user.profileImgUrl.isNotEmpty)
                               Padding(
                                 padding: EdgeInsets.only(
                                     left: 10, bottom: 3, right: 20),
@@ -103,7 +103,8 @@ class _OtherUserDisplayCardState extends State<OtherUserDisplayCard> {
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(21.0),
                                     image: DecorationImage(
-                                      image: NetworkImage(widget.profileImgUrl),
+                                      image: NetworkImage(
+                                          widget.user.profileImgUrl),
                                       fit: BoxFit.cover,
                                     ),
                                   ),
@@ -118,7 +119,6 @@ class _OtherUserDisplayCardState extends State<OtherUserDisplayCard> {
                                   size: 50.0,
                                 ),
                               ),
-
                             Spacer(),
                             Expanded(
                               child: InkWell(
@@ -174,7 +174,7 @@ class _OtherUserDisplayCardState extends State<OtherUserDisplayCard> {
                                   style: TextStyle(color: Colors.black),
                                   overflow: TextOverflow.ellipsis,
                                   maxLines: 2,
-                                  child: Text("英単語をいっぱい覚えたいです。"),
+                                  child: Text(widget.oneWord),
                                 ),
                               ],
                             )),

@@ -6,30 +6,27 @@ import 'package:study_app/screens/other_user_display.dart';
 import 'package:study_app/theme/color.dart';
 import 'package:study_app/widgets/preview_detail.dart/detail_card.dart';
 import 'package:like_button/like_button.dart';
+import 'package:study_app/models/user.dart';
 
 class StudySummaryCard extends StatefulWidget {
-  final String profileImgUrl;
-  final String name;
+  final User user;
   final int studyTime;
   final int goodNum;
   final bool isPushFavorite;
   final int commentNum;
   final int achivementLevel;
   final String oneWord;
-  final String userId;
 
   // コンストラクター
   const StudySummaryCard({
     Key? key,
-    required this.profileImgUrl,
-    required this.name,
+    required this.user,
     required this.studyTime,
     required this.goodNum,
     required this.isPushFavorite,
     required this.commentNum,
     required this.achivementLevel,
     required this.oneWord,
-    required this.userId,
   }) : super(key: key);
 
   @override
@@ -62,14 +59,16 @@ class _StudySummaryCardState extends State<StudySummaryCard> {
           children: [
             Row(
               children: [
-                if (widget.profileImgUrl.isNotEmpty)
+                if (widget.user.profileImgUrl.isNotEmpty)
                   GestureDetector(
                     onTap: () {
                       // プロフィール画像がタップされたときにOtherUserDisplayへ遷移
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => OtherUserDisplay(),
+                          builder: (context) => OtherUserDisplay(
+                            user: widget.user,
+                          ),
                         ),
                       );
                     },
@@ -82,7 +81,7 @@ class _StudySummaryCardState extends State<StudySummaryCard> {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(21.0),
                           image: DecorationImage(
-                            image: NetworkImage(widget.profileImgUrl),
+                            image: NetworkImage(widget.user.profileImgUrl),
                             fit: BoxFit.cover,
                           ),
                         ),
@@ -96,7 +95,9 @@ class _StudySummaryCardState extends State<StudySummaryCard> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => OtherUserDisplay(),
+                          builder: (context) => OtherUserDisplay(
+                            user: widget.user,
+                          ),
                         ),
                       );
                     },
@@ -106,7 +107,7 @@ class _StudySummaryCardState extends State<StudySummaryCard> {
                     ),
                   ),
                 Text(
-                  widget.name,
+                  widget.user.name,
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
                 ),
                 Spacer(),

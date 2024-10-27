@@ -1,39 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:study_app/theme/color.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:study_app/models/user.dart';
 
 class CommentInfo {
-  final int userId;
-  final String profileUrl;
+  final User user;
   final String content;
-  final String name;
   final DateTime dateTime;
   final int id;
 
   // コンストラクタの定義
   CommentInfo({
-    required this.userId,
-    required this.profileUrl,
+    required this.user,
     required this.content,
-    required this.name,
     required this.dateTime,
     required this.id,
   });
 }
 
 class ReplayInfo {
-  final String profileUrl;
+  final User user;
   final String content;
-  final String name;
   final DateTime dateTime;
   final int id;
   final int replayToId;
 
   // コンストラクタの定義
   ReplayInfo({
-    required this.profileUrl,
+    required this.user,
     required this.content,
-    required this.name,
     required this.dateTime,
     required this.id,
     required this.replayToId,
@@ -96,9 +91,9 @@ class _CommentsState extends State<Comments> {
                               ListTile(
                                 leading: CircleAvatar(
                                   backgroundImage:
-                                      NetworkImage(comment.profileUrl),
+                                      NetworkImage(comment.user.profileImgUrl),
                                 ),
-                                title: Text(comment.name),
+                                title: Text(comment.user.name),
                                 subtitle: Text(comment.content),
                                 trailing: Text(timeAgo(comment.dateTime)),
                               ),
@@ -112,10 +107,10 @@ class _CommentsState extends State<Comments> {
                                           leading: CircleAvatar(
                                             radius: 12, // アイコンのサイズを小さく
                                             backgroundImage: NetworkImage(
-                                              replay.profileUrl,
+                                              replay.user.profileImgUrl,
                                             ),
                                           ),
-                                          title: Text(replay.name),
+                                          title: Text(replay.user.name),
                                           subtitle: Text(replay.content),
                                           trailing:
                                               Text(timeAgo(replay.dateTime)),
@@ -284,8 +279,7 @@ class _CommentsState extends State<Comments> {
             .map((comment) => Padding(
                   padding: const EdgeInsets.only(top: 3, left: 9, right: 9),
                   child: CommentCard(
-                    profileUrl: comment.profileUrl,
-                    userName: comment.name,
+                    user: comment.user,
                     content: comment.content,
                     dateTime: comment.dateTime,
                   ),
@@ -361,14 +355,12 @@ String timeAgo(DateTime commentTime) {
 }
 
 class CommentCard extends StatelessWidget {
-  final String profileUrl;
-  final String userName;
+  final User user;
   final String content;
   final DateTime dateTime;
 
   CommentCard({
-    required this.profileUrl,
-    required this.userName,
+    required this.user,
     required this.content,
     required this.dateTime,
   });
@@ -413,10 +405,10 @@ class CommentCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start, // これで全体の高さを上に揃える
             children: [
-              if (profileUrl.isNotEmpty)
+              if (user.profileImgUrl.isNotEmpty)
                 CircleAvatar(
                   radius: 15,
-                  backgroundImage: NetworkImage(profileUrl),
+                  backgroundImage: NetworkImage(user.profileImgUrl),
                 )
               else
                 Icon(
@@ -428,7 +420,7 @@ class CommentCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    userName,
+                    user.name,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,

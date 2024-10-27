@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:study_app/screens/other_user_display.dart';
 import 'package:study_app/theme/color.dart';
 import 'package:like_button/like_button.dart';
-import 'package:study_app/widgets/home/study_summary_card.dart.dart';
+import 'package:study_app/models/user.dart';
+import 'package:study_app/widgets/home/study_summary_card.dart';
 import 'package:study_app/widgets/preview_detail.dart/comment_card.dart';
 import 'package:study_app/widgets/preview_detail.dart/display_books.dart';
 import 'package:study_app/widgets/preview_detail.dart/week_chart.dart';
 import 'package:fl_chart/fl_chart.dart';
 
 class DetailCard extends StatefulWidget {
-  final String profileImgUrl;
-  final String name;
+  final User user;
   final int studyTime;
   final int goodNum;
   bool isPushFavorite;
@@ -22,9 +22,8 @@ class DetailCard extends StatefulWidget {
   // コンストラクター
   DetailCard({
     Key? key,
+    required this.user,
     required this.studyTimes,
-    required this.profileImgUrl,
-    required this.name,
     required this.studyTime,
     required this.goodNum,
     required this.isPushFavorite,
@@ -58,14 +57,16 @@ class _DetailCardState extends State<DetailCard> {
                   children: [
                     Row(
                       children: [
-                        if (widget.profileImgUrl.isNotEmpty)
+                        if (widget.user.profileImgUrl.isNotEmpty)
                           GestureDetector(
                             onTap: () {
                               // プロフィール画像がタップされたときにOtherUserDisplayへ遷移
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => OtherUserDisplay(),
+                                  builder: (context) => OtherUserDisplay(
+                                    user: widget.user,
+                                  ),
                                 ),
                               );
                             },
@@ -78,7 +79,8 @@ class _DetailCardState extends State<DetailCard> {
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(21.0),
                                   image: DecorationImage(
-                                    image: NetworkImage(widget.profileImgUrl),
+                                    image:
+                                        NetworkImage(widget.user.profileImgUrl),
                                     fit: BoxFit.cover,
                                   ),
                                 ),
@@ -92,7 +94,9 @@ class _DetailCardState extends State<DetailCard> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => OtherUserDisplay(),
+                                  builder: (context) => OtherUserDisplay(
+                                    user: widget.user,
+                                  ),
                                 ),
                               );
                             },
@@ -102,7 +106,7 @@ class _DetailCardState extends State<DetailCard> {
                             ),
                           ),
                         Text(
-                          widget.name,
+                          widget.user.name,
                           style: TextStyle(
                               fontSize: 18, fontWeight: FontWeight.w500),
                         ),
@@ -143,7 +147,6 @@ class _DetailCardState extends State<DetailCard> {
                         ),
                       ),
                     ),
-
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -169,174 +172,192 @@ class _DetailCardState extends State<DetailCard> {
                       padding: const EdgeInsets.only(right: 4, left: 4),
                       child: DisplayBooks(),
                     ),
-
-                    // Padding(
-                    //   padding: const EdgeInsets.only(top: 7, left: 3, right: 3),
-                    //   child: SizedBox(
-                    //     width: double.infinity,
-                    //     child: Stack(
-                    //       children: [
-                    //         AspectRatio(
-                    //           aspectRatio: 2.0,
-                    //           child: DecoratedBox(
-                    //             decoration: const BoxDecoration(
-                    //               borderRadius: BorderRadius.all(
-                    //                 Radius.circular(18),
-                    //               ),
-                    //               color: Color.fromRGBO(35, 45, 55, 1),
-                    //             ),
-                    //             child: Padding(
-                    //               padding: const EdgeInsets.only(
-                    //                 right: 18,
-                    //                 left: 8,
-                    //                 top: 20,
-                    //                 bottom: 8,
-                    //               ),
-                    //               child: LineChart(
-                    //                 weekChart(widget.studyTimes),
-                    //               ),
-                    //             ),
-                    //           ),
-                    //         ),
-                    //         // コメントタイトルをグラフの上に配置する部分
-                    //       ],
-                    //     ),
-                    //   ),
-                    // ),
                     Padding(
                       padding: const EdgeInsets.only(left: 4, right: 4, top: 4),
                       child: Comments(
                         replays: [
                           ReplayInfo(
-                              replayToId: 1,
-                              id: 1,
-                              dateTime: DateTime.now(),
-                              profileUrl:
+                            replayToId: 1,
+                            id: 1,
+                            dateTime: DateTime.now(),
+                            user: User(
+                              profileImgUrl:
                                   "https://lh3.googleusercontent.com/a/AItbvmn9YJ5sdBnrBlBqVN1Eu6ZB9QD5K8tzLDxX6ONo=s96-c",
-                              content: "1",
-                              name: "jo"),
+                              name: "jo",
+                              id: "1",
+                            ),
+                            content: "1",
+                          ),
                           ReplayInfo(
-                              replayToId: 1,
-                              id: 2,
-                              dateTime: DateTime.now(),
-                              profileUrl:
+                            replayToId: 1,
+                            id: 2,
+                            dateTime: DateTime.now(),
+                            user: User(
+                              profileImgUrl:
                                   "https://lh3.googleusercontent.com/a/AItbvmn9YJ5sdBnrBlBqVN1Eu6ZB9QD5K8tzLDxX6ONo=s96-c",
-                              content: "2",
-                              name: "jo"),
+                              name: "jo",
+                              id: "2",
+                            ),
+                            content: "2",
+                          ),
                           ReplayInfo(
-                              replayToId: 1,
-                              id: 3,
-                              dateTime: DateTime.now(),
-                              profileUrl:
+                            replayToId: 1,
+                            id: 3,
+                            dateTime: DateTime.now(),
+                            user: User(
+                              profileImgUrl:
                                   "https://lh3.googleusercontent.com/a/AItbvmn9YJ5sdBnrBlBqVN1Eu6ZB9QD5K8tzLDxX6ONo=s96-c",
-                              content: "3",
-                              name: "jo"),
+                              name: "jo",
+                              id: "3",
+                            ),
+                            content: "3",
+                          ),
                           ReplayInfo(
-                              replayToId: 1,
-                              id: 1,
-                              dateTime: DateTime.now(),
-                              profileUrl:
+                            replayToId: 1,
+                            id: 4,
+                            dateTime: DateTime.now(),
+                            user: User(
+                              profileImgUrl:
                                   "https://lh3.googleusercontent.com/a/AItbvmn9YJ5sdBnrBlBqVN1Eu6ZB9QD5K8tzLDxX6ONo=s96-c",
-                              content: "4",
-                              name: "jo"),
+                              name: "jo",
+                              id: "4",
+                            ),
+                            content: "4",
+                          ),
                         ],
                         comments: [
                           CommentInfo(
-                              userId: 11,
-                              id: 1,
-                              dateTime: DateTime.now(),
-                              profileUrl:
+                            id: 1,
+                            dateTime: DateTime.now(),
+                            user: User(
+                              profileImgUrl:
                                   "https://lh3.googleusercontent.com/a/AItbvmn9YJ5sdBnrBlBqVN1Eu6ZB9QD5K8tzLDxX6ONo=s96-c",
-                              content: "aaaa",
-                              name: "jo"),
+                              name: "jo",
+                              id: "11",
+                            ),
+                            content: "aaaa",
+                          ),
                           CommentInfo(
-                              userId: 11,
-                              id: 2,
-                              dateTime: DateTime.now(),
-                              profileUrl:
+                            id: 2,
+                            dateTime: DateTime.now(),
+                            user: User(
+                              profileImgUrl:
                                   "https://lh3.googleusercontent.com/a/AItbvmn9YJ5sdBnrBlBqVN1Eu6ZB9QD5K8tzLDxX6ONo=s96-c",
-                              content: "aaaa",
-                              name: "jo"),
+                              name: "jo",
+                              id: "12",
+                            ),
+                            content: "aaaa",
+                          ),
                           CommentInfo(
-                              userId: 11,
-                              id: 3,
-                              dateTime: DateTime.now(),
-                              profileUrl:
+                            id: 3,
+                            dateTime: DateTime.now(),
+                            user: User(
+                              profileImgUrl:
                                   "https://lh3.googleusercontent.com/a/AItbvmn9YJ5sdBnrBlBqVN1Eu6ZB9QD5K8tzLDxX6ONo=s96-c",
-                              content: "aaaa",
-                              name: "jo"),
+                              name: "jo",
+                              id: "13",
+                            ),
+                            content: "aaaa",
+                          ),
                           CommentInfo(
-                              userId: 11,
-                              id: 4,
-                              dateTime: DateTime.now(),
-                              profileUrl:
+                            id: 4,
+                            dateTime: DateTime.now(),
+                            user: User(
+                              profileImgUrl:
                                   "https://lh3.googleusercontent.com/a/AItbvmn9YJ5sdBnrBlBqVN1Eu6ZB9QD5K8tzLDxX6ONo=s96-c",
-                              content: "aaaa",
-                              name: "jo"),
+                              name: "jo",
+                              id: "14",
+                            ),
+                            content: "aaaa",
+                          ),
                           CommentInfo(
-                              userId: 11,
-                              id: 5,
-                              dateTime: DateTime.now(),
-                              profileUrl:
+                            id: 5,
+                            dateTime: DateTime.now(),
+                            user: User(
+                              profileImgUrl:
                                   "https://lh3.googleusercontent.com/a/AItbvmn9YJ5sdBnrBlBqVN1Eu6ZB9QD5K8tzLDxX6ONo=s96-c",
-                              content: "aaaa",
-                              name: "jo"),
+                              name: "jo",
+                              id: "15",
+                            ),
+                            content: "aaaa",
+                          ),
                           CommentInfo(
-                              userId: 11,
-                              id: 6,
-                              dateTime: DateTime.now(),
-                              profileUrl:
+                            id: 6,
+                            dateTime: DateTime.now(),
+                            user: User(
+                              profileImgUrl:
                                   "https://lh3.googleusercontent.com/a/AItbvmn9YJ5sdBnrBlBqVN1Eu6ZB9QD5K8tzLDxX6ONo=s96-c",
-                              content: "aaaa",
-                              name: "jo"),
+                              name: "jo",
+                              id: "16",
+                            ),
+                            content: "aaaa",
+                          ),
                           CommentInfo(
-                              userId: 11,
-                              id: 7,
-                              dateTime: DateTime.now(),
-                              profileUrl:
+                            id: 7,
+                            dateTime: DateTime.now(),
+                            user: User(
+                              profileImgUrl:
                                   "https://lh3.googleusercontent.com/a/AItbvmn9YJ5sdBnrBlBqVN1Eu6ZB9QD5K8tzLDxX6ONo=s96-c",
-                              content: "aaaa",
-                              name: "jo"),
+                              name: "jo",
+                              id: "17",
+                            ),
+                            content: "aaaa",
+                          ),
                           CommentInfo(
-                              userId: 11,
-                              id: 8,
-                              dateTime: DateTime.now(),
-                              profileUrl:
+                            id: 8,
+                            dateTime: DateTime.now(),
+                            user: User(
+                              profileImgUrl:
                                   "https://lh3.googleusercontent.com/a/AItbvmn9YJ5sdBnrBlBqVN1Eu6ZB9QD5K8tzLDxX6ONo=s96-c",
-                              content: "aaaa",
-                              name: "jo"),
+                              name: "jo",
+                              id: "18",
+                            ),
+                            content: "aaaa",
+                          ),
                           CommentInfo(
-                              userId: 11,
-                              id: 9,
-                              dateTime: DateTime.now(),
-                              profileUrl:
+                            id: 9,
+                            dateTime: DateTime.now(),
+                            user: User(
+                              profileImgUrl:
                                   "https://lh3.googleusercontent.com/a/AItbvmn9YJ5sdBnrBlBqVN1Eu6ZB9QD5K8tzLDxX6ONo=s96-c",
-                              content: "aaaa",
-                              name: "jo"),
+                              name: "jo",
+                              id: "19",
+                            ),
+                            content: "aaaa",
+                          ),
                           CommentInfo(
-                              userId: 11,
-                              id: 10,
-                              dateTime: DateTime.now(),
-                              profileUrl:
+                            id: 10,
+                            dateTime: DateTime.now(),
+                            user: User(
+                              profileImgUrl:
                                   "https://lh3.googleusercontent.com/a/AItbvmn9YJ5sdBnrBlBqVN1Eu6ZB9QD5K8tzLDxX6ONo=s96-c",
-                              content: "aaaa",
-                              name: "jo"),
+                              name: "jo",
+                              id: "20",
+                            ),
+                            content: "aaaa",
+                          ),
                           CommentInfo(
-                              userId: 11,
-                              id: 11,
-                              dateTime: DateTime.now(),
-                              profileUrl:
+                            id: 11,
+                            dateTime: DateTime.now(),
+                            user: User(
+                              profileImgUrl:
                                   "https://lh3.googleusercontent.com/a/AItbvmn9YJ5sdBnrBlBqVN1Eu6ZB9QD5K8tzLDxX6ONo=s96-c",
-                              content: "aaaa",
-                              name: "jo"),
+                              name: "jo",
+                              id: "21",
+                            ),
+                            content: "aaaa",
+                          ),
                           CommentInfo(
-                              userId: 11,
-                              id: 12,
-                              dateTime: DateTime.now(),
-                              profileUrl:
+                            id: 12,
+                            dateTime: DateTime.now(),
+                            user: User(
+                              profileImgUrl:
                                   "https://lh3.googleusercontent.com/a/AItbvmn9YJ5sdBnrBlBqVN1Eu6ZB9QD5K8tzLDxX6ONo=s96-c",
-                              content: "aaaa",
-                              name: "jo"),
+                              name: "jo",
+                              id: "22",
+                            ),
+                            content: "aaaa",
+                          ),
                         ],
                       ),
                     )
