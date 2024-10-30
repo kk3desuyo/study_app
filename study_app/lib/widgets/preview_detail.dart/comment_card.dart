@@ -1,32 +1,66 @@
 import 'package:flutter/material.dart';
+import 'package:study_app/screens/other_user_display.dart';
+import 'package:study_app/services/comment_service.dart';
 import 'package:study_app/services/user/user_service.dart';
 import 'package:study_app/theme/color.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:study_app/models/user.dart';
 import 'package:study_app/models/comment.dart';
 import 'package:study_app/models/reply.dart';
+import 'package:flutter/material.dart';
+import 'package:study_app/models/user.dart';
 
 class Comments extends StatefulWidget {
   final List<Comment> comments;
   final List<Reply> replies;
+  final String dailyGoalId;
+  final Function addNewComment;
+  final Function addNewReply;
 
-  Comments({required this.comments, required this.replies});
+  Comments(
+      {required this.comments,
+      required this.addNewReply,
+      required this.replies,
+      required this.dailyGoalId,
+      required this.addNewComment});
 
   @override
   _CommentsState createState() => _CommentsState();
 }
 
 class _CommentsState extends State<Comments> {
+  TextEditingController _commentController = TextEditingController();
+  Comment? _selectedComment; // 選択されたコメントを保持する変数
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeShowAllReplies();
+  }
+
+  void _initializeShowAllReplies() {
+    for (var comment in widget.comments) {
+      List<Reply> replies = widget.replies
+          .where((reply) => reply.commentId == comment.id)
+          .toList();
+      showAllReplies[comment.id] = replies.length < 3;
+    }
+
+    for (var entry in showAllReplies.entries) {
+      print('Comment ID: ${entry.key}, Show All Replies: ${entry.value}');
+    }
+  }
+
   String timeAgo(DateTime dateTime) {
     Duration diff = DateTime.now().difference(dateTime);
-    if (diff.inDays > 1) {
-      return '${diff.inDays} days ago';
-    } else if (diff.inHours > 1) {
-      return '${diff.inHours} hours ago';
-    } else if (diff.inMinutes > 1) {
-      return '${diff.inMinutes} minutes ago';
+    if (diff.inDays >= 1) {
+      return '${diff.inDays} 日前';
+    } else if (diff.inHours >= 1) {
+      return '${diff.inHours} 時間前';
+    } else if (diff.inMinutes >= 1) {
+      return '${diff.inMinutes} 分前';
     } else {
-      return 'just now';
+      return 'たった今';
     }
   }
 
@@ -62,6 +96,16 @@ class _CommentsState extends State<Comments> {
       builder: (context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState) {
+            List<Comment> sortedComments = List.from(widget.comments)
+              ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
+
+            double _offsetX = 0.0; // ドラッグのオフセットを管理する変数
+
+            // 文字列を30文字以上で省略する関数
+            String _truncateText(String text) {
+              return text.length > 30 ? '${text.substring(0, 30)}...' : text;
+            }
+
             return Container(
               height: MediaQuery.of(context).size.height * 0.8,
               padding: EdgeInsets.all(15),
@@ -80,8 +124,8 @@ class _CommentsState extends State<Comments> {
                   Expanded(
                     child: SingleChildScrollView(
                       child: Column(
-                        children: widget.comments.map((comment) {
-                          bool showAll = showAllReplies[comment.id] ?? false;
+                        children: sortedComments.map((comment) {
+                          // リプライをフィルタリングして取得
                           List<Reply> replies = widget.replies
                               .where((reply) => reply.commentId == comment.id)
                               .toList();
@@ -89,72 +133,214 @@ class _CommentsState extends State<Comments> {
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              FutureBuilder<String?>(
-                                future: _fetchProfileImage(comment.userId),
-                                builder: (context, snapshot) {
-                                  return ListTile(
-                                    leading: CircleAvatar(
-                                      backgroundImage: snapshot.hasData &&
-                                              snapshot.data != null
-                                          ? NetworkImage(snapshot.data!)
-                                          : AssetImage(
-                                                  'assets/images/default_avatar.png')
-                                              as ImageProvider,
-                                    ),
-                                    title: Text(comment.userId),
-                                    subtitle: Text(comment.content),
-                                    trailing: Text(timeAgo(comment.dateTime)),
-                                  );
+                              GestureDetector(
+                                onHorizontalDragUpdate: (details) {
+                                  // 右から左にドラッグされた場合のみ動かす
+                                  if (details.delta.dx < 0) {
+                                    setState(() {
+                                      _offsetX += details.delta.dx;
+                                    });
+                                  }
                                 },
-                              ),
-                              ...replies
-                                  .take(showAll ? replies.length : 2)
-                                  .map((reply) => Padding(
-                                        padding:
-                                            const EdgeInsets.only(left: 40.0),
-                                        child: FutureBuilder<String?>(
-                                          future:
-                                              _fetchProfileImage(reply.userId),
-                                          builder: (context, snapshot) {
-                                            return ListTile(
-                                              leading: CircleAvatar(
-                                                radius: 12,
-                                                backgroundImage: snapshot
-                                                            .hasData &&
-                                                        snapshot.data != null
-                                                    ? NetworkImage(
-                                                        snapshot.data!)
-                                                    : AssetImage(
-                                                            'assets/images/default_avatar.png')
-                                                        as ImageProvider,
-                                              ),
-                                              title: Text(reply.userId),
-                                              subtitle: Text(reply.content),
-                                              trailing:
-                                                  Text(timeAgo(reply.dateTime)),
-                                            );
-                                          },
+                                onHorizontalDragEnd: (details) {
+                                  // ドラッグが終わったら元の位置に戻す
+                                  setState(() {
+                                    _offsetX = 0.0;
+                                    _selectedComment = comment;
+                                  });
+                                },
+                                child: Transform.translate(
+                                  offset: Offset(_offsetX, 0),
+                                  child: FutureBuilder<String?>(
+                                    future: _fetchProfileImage(comment.userId),
+                                    builder: (context, snapshot) {
+                                      return Container(
+                                        margin:
+                                            EdgeInsets.symmetric(vertical: 5),
+                                        padding: EdgeInsets.all(10),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color:
+                                                  Colors.grey.withOpacity(0.3),
+                                              spreadRadius: 1,
+                                              blurRadius: 4,
+                                              offset: Offset(0, 2),
+                                            ),
+                                          ],
                                         ),
-                                      ))
-                                  .toList(),
-                              if (replies.length > 2 && !showAll)
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 40.0),
-                                  child: TextButton(
-                                    onPressed: () {
-                                      setState(() {
-                                        showAllReplies[comment.id] = true;
-                                      });
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                GestureDetector(
+                                                  onTap: () {
+                                                    Navigator.push(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                        builder: (context) =>
+                                                            OtherUserDisplay(
+                                                          user: User(
+                                                            profileImgUrl:
+                                                                snapshot.data ??
+                                                                    '',
+                                                            name: comment
+                                                                .userName,
+                                                            id: comment.userId,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    );
+                                                  },
+                                                  child: CircleAvatar(
+                                                    radius: 20,
+                                                    backgroundImage: snapshot
+                                                                .hasData &&
+                                                            snapshot.data !=
+                                                                null
+                                                        ? NetworkImage(
+                                                            snapshot.data!)
+                                                        : AssetImage(
+                                                                'assets/images/default_avatar.png')
+                                                            as ImageProvider,
+                                                  ),
+                                                ),
+                                                SizedBox(width: 10),
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Row(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .spaceBetween,
+                                                        children: [
+                                                          Expanded(
+                                                            child: Text(
+                                                              comment.userName,
+                                                              style: TextStyle(
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                                fontSize: 16,
+                                                              ),
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .ellipsis,
+                                                            ),
+                                                          ),
+                                                          SizedBox(width: 10),
+                                                          Text(
+                                                            timeAgo(comment
+                                                                .dateTime),
+                                                            style: TextStyle(
+                                                              fontSize: 12,
+                                                              color:
+                                                                  Colors.grey,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      SizedBox(height: 5),
+                                                      Text(
+                                                        comment.content,
+                                                        style: TextStyle(
+                                                            fontSize: 14),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            // リプライの表示
+                                            Column(
+                                              children: [
+                                                for (int i = 0;
+                                                    i < replies.length;
+                                                    i++)
+                                                  if (i < 2 ||
+                                                      (showAllReplies[
+                                                              comment.id] ??
+                                                          false))
+                                                    _buildReplyWidget(
+                                                        replies[i]),
+                                                if (replies.length > 2)
+                                                  TextButton(
+                                                    onPressed: () {
+                                                      setState(() {
+                                                        showAllReplies[
+                                                                comment.id] =
+                                                            !(showAllReplies[
+                                                                    comment
+                                                                        .id] ??
+                                                                false);
+                                                      });
+                                                    },
+                                                    child: Text(
+                                                      showAllReplies[
+                                                                  comment.id] ==
+                                                              true
+                                                          ? '隠す'
+                                                          : '全ての返信を表示',
+                                                      style: TextStyle(
+                                                          color: subTheme),
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      );
                                     },
-                                    child: Text('返信を全て表示'),
                                   ),
                                 ),
+                              ),
                             ],
                           );
                         }).toList(),
                       ),
                     ),
                   ),
+                  if (_selectedComment != null)
+                    Container(
+                      padding: EdgeInsets.all(8),
+                      margin: EdgeInsets.only(bottom: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              '返信先: ${_selectedComment?.userName}\n"${_truncateText(_selectedComment?.content ?? "")}"',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[800],
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.close),
+                            onPressed: () {
+                              setState(() {
+                                _selectedComment = null;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
                   Padding(
                     padding: const EdgeInsets.only(
                         top: 10, bottom: 8, left: 5, right: 5),
@@ -176,6 +362,7 @@ class _CommentsState extends State<Comments> {
                         children: <Widget>[
                           Expanded(
                             child: TextField(
+                              controller: _commentController,
                               decoration: InputDecoration(
                                 hintText: 'コメントを追加',
                                 border: InputBorder.none,
@@ -183,12 +370,35 @@ class _CommentsState extends State<Comments> {
                             ),
                           ),
                           IconButton(
-                            icon: Icon(
-                              Icons.send,
-                              color: subTheme,
-                            ),
-                            onPressed: () {
-                              // Send action
+                            icon: Icon(Icons.send, color: subTheme),
+                            onPressed: () async {
+                              String content = _commentController.text;
+                              if (content.isEmpty) return;
+                              String userId =
+                                  (await userService.getCurrentUserId()) ?? '';
+                              String userName =
+                                  (await userService.getUserName(userId)) ??
+                                      'Unknown User';
+                              DateTime dateTime = DateTime.now();
+                              if (_selectedComment == null)
+                                widget.addNewComment(
+                                  content: content,
+                                  dailyGoalId: widget.dailyGoalId,
+                                  dateTime: dateTime,
+                                  userName: userName,
+                                  userId: userId,
+                                );
+                              else
+                                widget.addNewReply(
+                                    reply: Reply(
+                                  id: '',
+                                  content: content,
+                                  dateTime: dateTime,
+                                  commentId: _selectedComment?.id ?? '',
+                                  userId: userId,
+                                  userName: userName,
+                                ));
+                              _commentController.clear();
                             },
                           ),
                         ],
@@ -204,8 +414,62 @@ class _CommentsState extends State<Comments> {
     );
   }
 
+// Helper function to build a reply widget
+  Widget _buildReplyWidget(Reply reply) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 40, top: 5, bottom: 5),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.reply,
+            size: 16,
+            color: Colors.grey,
+          ),
+          SizedBox(width: 5),
+          FutureBuilder<String?>(
+            future: _fetchProfileImage(reply.userId),
+            builder: (context, snapshot) {
+              return CircleAvatar(
+                radius: 10,
+                backgroundImage: snapshot.hasData && snapshot.data != null
+                    ? NetworkImage(snapshot.data!)
+                    : AssetImage('assets/images/default_avatar.png')
+                        as ImageProvider,
+              );
+            },
+          ),
+          SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(width: 5),
+                Text(
+                  reply.userName,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  reply.content,
+                  style: TextStyle(fontSize: 14),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    List<Comment> sortedComments = List.from(widget.comments)
+      ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
+
     return Column(
       children: [
         Padding(
@@ -278,124 +542,260 @@ class _CommentsState extends State<Comments> {
               ),
             ),
           ),
-        ...widget.comments.take(4).map((comment) {
+        ...sortedComments.take(4).map((comment) {
           return Padding(
-            padding: const EdgeInsets.only(top: 3, left: 9, right: 9),
+            padding: const EdgeInsets.only(left: 9, right: 9),
             child: FutureBuilder<String?>(
               future: _fetchProfileImage(comment.userId),
               builder: (context, snapshot) {
-                return CommentCard(
-                  user: User(
-                    id: comment.userId,
-                    name: comment.userId,
-                    profileImgUrl: snapshot.data ?? '',
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => OtherUserDisplay(
+                          user: User(
+                            profileImgUrl: snapshot.data ?? '',
+                            name: comment.userName,
+                            id: comment.userId,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                  child: CommentCard(
+                    user: User(
+                      id: comment.userId,
+                      name: comment.userName,
+                      profileImgUrl: snapshot.data ?? '',
+                    ),
+                    content: comment.content,
+                    dateTime: comment.dateTime,
                   ),
-                  content: comment.content,
-                  dateTime: comment.dateTime,
                 );
               },
             ),
           );
         }).toList(),
+        Padding(
+          padding: const EdgeInsets.only(top: 10, bottom: 8, left: 5, right: 5),
+          child: Container(
+            height: 35,
+            padding: EdgeInsets.only(left: 10),
+            decoration: BoxDecoration(
+              color: backGroundColor,
+              borderRadius: BorderRadius.circular(30.0),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 4.0,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              children: <Widget>[
+                Expanded(
+                  child: TextField(
+                    controller: _commentController,
+                    decoration: InputDecoration(
+                      hintText: 'コメントを追加',
+                      border: InputBorder.none,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(
+                    Icons.send,
+                    color: subTheme,
+                  ),
+                  onPressed: () async {
+                    String content = _commentController.text;
+                    print(content);
+                    if (content.isEmpty) return;
+                    String userId = (await userService.getCurrentUserId()) ??
+                        ''; // そのままawaitで取得
+                    String userName = (await userService.getUserName(userId)) ??
+                        'Unknown User'; // 同様にそのままawaitで取得
+                    DateTime dateTime = DateTime.now();
+                    // toString()は不要
+
+                    if (_selectedComment == null)
+                      widget.addNewComment(
+                        content: content,
+                        dailyGoalId: widget.dailyGoalId,
+                        dateTime: dateTime,
+                        userName: userName,
+                        userId: userId,
+                      );
+                    else
+                      widget.addNewReply(
+                          reply: Reply(
+                        id: '',
+                        content: content,
+                        dateTime: dateTime,
+                        commentId: _selectedComment?.id ?? '',
+                        userId: userId,
+                        userName: userName,
+                      ));
+                    _commentController.clear();
+
+                    _commentController.clear();
+                    setState(() {});
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
       ],
     );
   }
 }
 
-class CommentCard extends StatelessWidget {
+class CommentCard extends StatefulWidget {
   final User user;
   final String content;
   final DateTime dateTime;
+  final isShowAll;
 
   CommentCard({
     required this.user,
     required this.content,
     required this.dateTime,
+    this.isShowAll = true,
   });
 
+  @override
+  _CommentCardState createState() => _CommentCardState();
+}
+
+class _CommentCardState extends State<CommentCard>
+    with SingleTickerProviderStateMixin {
+  double _offsetX = 0.0;
+  bool _isDragging = false;
+
+  void _onHorizontalDragUpdate(DragUpdateDetails details) {
+    // 右から左にドラッグされた場合のみ動かす
+    if (details.delta.dx < 0) {
+      setState(() {
+        _offsetX += details.delta.dx;
+        _isDragging = true;
+      });
+    }
+  }
+
+  void _onHorizontalDragEnd(DragEndDetails details) {
+    // ドラッグが終わったら元の位置に戻る
+    setState(() {
+      _isDragging = false;
+    });
+
+    // アニメーションで元の位置に戻す
+    Future.delayed(Duration(milliseconds: 100), () {
+      setState(() {
+        _offsetX = 0.0;
+      });
+    });
+  }
+
   String timeAgo(DateTime dateTime) {
-    final difference = DateTime.now().difference(dateTime);
-    if (difference.inDays < 1) {
-      return '${difference.inHours}時間前';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays}日前';
-    } else if (difference.inDays < 30) {
-      return '${(difference.inDays / 7).floor()}週間前';
-    } else if (difference.inDays < 365) {
-      return '${(difference.inDays / 30).floor()}か月前';
+    Duration diff = DateTime.now().difference(dateTime);
+    if (diff.inDays >= 1) {
+      return '${diff.inDays} 日前';
+    } else if (diff.inHours >= 1) {
+      return '${diff.inHours} 時間前';
+    } else if (diff.inMinutes >= 1) {
+      return '${diff.inMinutes} 分前';
     } else {
-      return '${(difference.inDays / 365).floor()}年前';
+      return 'たった今';
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: EdgeInsets.symmetric(
-        vertical: 5,
-      ),
-      padding: EdgeInsets.all(5),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(5),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.5),
-            spreadRadius: 1,
-            blurRadius: 3,
-            offset: Offset(0, 1), // シャドウの位置を調整
+    return GestureDetector(
+      onHorizontalDragUpdate: _onHorizontalDragUpdate,
+      onHorizontalDragEnd: _onHorizontalDragEnd,
+      child: Transform.translate(
+        offset: Offset(_offsetX, 0), // 水平方向にオフセットを適用
+        child: Container(
+          margin: EdgeInsets.symmetric(
+            vertical: 5,
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start, // これで全体の高さを上に揃える
+          padding: EdgeInsets.all(5),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(5),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.5),
+                spreadRadius: 1,
+                blurRadius: 3,
+                offset: Offset(0, 1),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (user.profileImgUrl.isNotEmpty)
-                CircleAvatar(
-                  radius: 15,
-                  backgroundImage: NetworkImage(user.profileImgUrl),
-                )
-              else
-                Icon(
-                  Icons.account_circle,
-                  size: 20.0,
-                ),
-              SizedBox(width: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    user.name,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                  if (widget.user.profileImgUrl.isNotEmpty)
+                    CircleAvatar(
+                      radius: 15,
+                      backgroundImage: NetworkImage(widget.user.profileImgUrl),
+                    )
+                  else
+                    Icon(
+                      Icons.account_circle,
+                      size: 20.0,
                     ),
+                  SizedBox(width: 10),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.user.name,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Spacer(),
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2.0),
+                        child: Text(
+                          timeAgo(widget.dateTime),
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-              Spacer(), // 名前と時間の間にスペースを追加
-              Column(
-                mainAxisAlignment: MainAxisAlignment.start, // これで時間の高さを上に揃える
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: 2.0), // 上に余白を追加
+                  Expanded(
                     child: Text(
-                      timeAgo(dateTime),
-                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                      widget.content,
+                      style: TextStyle(fontSize: 14),
+                      textAlign: TextAlign.center,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
               ),
             ],
           ),
-          Text(
-            content,
-            style: TextStyle(fontSize: 14),
-          ),
-        ],
+        ),
       ),
     );
   }

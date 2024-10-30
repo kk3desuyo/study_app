@@ -6,6 +6,7 @@ class Reply {
   final DateTime dateTime;
   final String commentId;
   final String userId;
+  final String userName; // Added userName field
 
   // コンストラクター
   Reply({
@@ -14,17 +15,20 @@ class Reply {
     required this.dateTime,
     required this.commentId,
     required this.userId,
+    required this.userName, // Added userName parameter
   });
 
   // FirestoreのデータからReplyオブジェクトを生成するファクトリメソッド
-  factory Reply.fromFirestore(String id, Map<String, dynamic> data) {
+  factory Reply.fromFirestore(
+      String id, Map<String, dynamic> data, String commentId) {
     return Reply(
       id: id,
       content: data['content'] ?? '',
       dateTime:
           (data['dateTime'] as Timestamp).toDate(), // TimestampをDateTimeに変換
-      commentId: data['commentId'] ?? '',
+      commentId: commentId ?? '',
       userId: data['userId'] ?? '', // フィールド名をuserIdに統一
+      userName: data['userName'] ?? '', // Added userName field
     );
   }
 
@@ -35,6 +39,7 @@ class Reply {
       'dateTime': Timestamp.fromDate(dateTime), // DateTimeをTimestampに変換
       'commentId': commentId,
       'userId': userId, // フィールド名をuserIdに統一
+      'userName': userName, // Added userName field
     };
   }
 }

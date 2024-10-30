@@ -24,10 +24,15 @@ class DetailCard extends StatefulWidget {
   final List<StudyMaterial> studyMaterials; // モデルを使った新しい引数
   final List<Comment> comments; // Add comments as a new argument
   final List<Reply> replays; // Add replays as a new argument
-
+  final String dailyGoalId; // Add dailyGoalId as a new argument
+  final Function addNewComment; // Add addNewComment as a new argument
+  final Function addNewReply;
   // コンストラクター
   DetailCard({
     Key? key,
+    required this.addNewReply,
+    required this.addNewComment,
+    required this.dailyGoalId,
     required this.user,
     required this.studyTimes,
     required this.studyTime,
@@ -48,6 +53,9 @@ class DetailCard extends StatefulWidget {
 class _DetailCardState extends State<DetailCard> {
   @override
   Widget build(BuildContext context) {
+    print("detail" +
+        widget.replays.length
+            .toString()); // Print the length of the replays list
     return SingleChildScrollView(
       child: Column(
         children: <Widget>[
@@ -77,6 +85,9 @@ class _DetailCardState extends State<DetailCard> {
                   Padding(
                     padding: const EdgeInsets.only(left: 4, right: 4, top: 4),
                     child: Comments(
+                      addNewReply: widget.addNewReply,
+                      addNewComment: widget.addNewComment,
+                      dailyGoalId: widget.dailyGoalId,
                       replies: widget.replays, // Use the replays argument
                       comments: widget.comments, // Use the comments argument
                     ),

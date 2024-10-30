@@ -5,8 +5,8 @@ class Comment {
   final String content;
   final String dailyGoalId;
   final DateTime dateTime;
-
   final String userId;
+  final String userName; // Add userName field
 
   // コンストラクター
   Comment({
@@ -15,6 +15,7 @@ class Comment {
     required this.dailyGoalId,
     required this.dateTime,
     required this.userId,
+    required this.userName, // Add userName to constructor
   });
 
   // FirestoreのデータからCommentオブジェクトを生成するファクトリメソッド
@@ -25,8 +26,8 @@ class Comment {
       dailyGoalId: data['dailyGoalId'] ?? '',
       dateTime:
           (data['dateTime'] as Timestamp).toDate(), // TimestampをDateTimeに変換
-
-      userId: data['userid'] ?? '',
+      userId: data['userId'] ?? '',
+      userName: data['userName'] ?? '', // Add userName to factory method
     );
   }
 
@@ -37,6 +38,7 @@ class Comment {
       'dailyGoalId': dailyGoalId,
       'dateTime': dateTime,
       'userid': userId,
+      'userName': userName, // Add userName to map
     };
   }
 }

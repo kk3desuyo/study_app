@@ -49,7 +49,6 @@ class _StudyTimeDisplayState extends State<StudyTimeDisplay> {
                   ),
                 ],
               ),
-              SizedBox(height: 8),
               Text(
                 _formatStudyTime(widget.studyTime),
                 style: GoogleFonts.roboto(

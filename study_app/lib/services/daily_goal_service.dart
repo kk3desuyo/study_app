@@ -39,8 +39,7 @@ class DailyGoalService {
         for (var goalDoc in dailyGoalsSnapshot.docs) {
           Map<String, dynamic> goalData =
               goalDoc.data() as Map<String, dynamic>;
-          print("aaaa");
-          print(goalDoc.id);
+
           // ドキュメントIDを追加
           goalData['dailyGoalId'] = goalDoc.id;
 

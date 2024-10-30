@@ -17,6 +17,7 @@ class UserService {
   // ユーザーIDをAuthから取得する関数
   String? getCurrentUserId() {
     auth.User? user = _auth.currentUser;
+    print(user?.uid);
     return user?.uid;
   }
 
@@ -125,5 +126,18 @@ class UserService {
     }
   }
 
-  // 他のUserService関数...
+  // ユーザーの名前を取得する関数
+  Future<String?> getUserName(String userId) async {
+    try {
+      DocumentSnapshot doc = await users.doc(userId).get();
+      if (doc.exists && doc.data() != null) {
+        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+        return data['name'] as String?;
+      }
+      return null; // ユーザーが見つからない場合
+    } catch (e) {
+      print('Error getting user name: $e');
+      throw Exception('Failed to get user name');
+    }
+  }
 }

@@ -3,9 +3,8 @@ import 'package:study_app/theme/color.dart';
 import 'package:study_app/widgets/app_bar.dart';
 import 'package:study_app/widgets/time/circular_countdown_timer.dart';
 import 'package:study_app/widgets/time/tab_bar.dart';
-import 'package:study_app/widgets/user/book_shelf.dart';
 import 'package:study_app/widgets/time/record.dart';
-import 'package:study_app/models/book.dart'; // Adjust the path as necessary
+import 'package:study_app/models/book.dart'; // 必要に応じてパスを調整してください
 
 class TimePage extends StatefulWidget {
   const TimePage({
@@ -17,20 +16,40 @@ class TimePage extends StatefulWidget {
 }
 
 class _TimePage extends State<TimePage> {
-  // studyTimeを状態として定義
   int studyTime = 0;
   int selectedTab = 0;
   bool isChangeTime = false;
+  bool isRunning = false;
 
-  void onChangedTime() {
+  void changeRunnnigState(bool newIsRunning) {
     setState(() {
-      isChangeTime = true;
+      isRunning = newIsRunning;
     });
-    print("onChangedTime");
+  }
+
+  bool getIsRunning() {
+    return isRunning;
+  }
+
+  void chagneTime(bool newIsChangeTime) {
+    setState(() {
+      isChangeTime = newIsChangeTime;
+    });
+    print("chagneTime");
     print(isChangeTime);
   }
 
   void onTabSelected(int newTabSelect) {
+    if (newTabSelect == 0 && selectedTab == 1 && isRunning) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('ストップウォッチを停止してください'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+    // タイマーが動いている場合はタブを切り替えない
+    if (isRunning) return;
     setState(() {
       selectedTab = newTabSelect;
     });
@@ -48,90 +67,47 @@ class _TimePage extends State<TimePage> {
     return Scaffold(
       backgroundColor: backGroundColor,
       appBar: const MyAppBar(),
-      body: SingleChildScrollView(
-        // スクロールを可能にする
-        child: Padding(
-          padding: const EdgeInsets.only(left: 5, right: 5),
-          child: Column(
-            children: [
-              if (!isChangeTime)
-                MyTabBar(
-                    isChangeTime: isChangeTime,
-                    selectedIndex: selectedTab,
-                    onTabSelected: onTabSelected),
-              selectedTab == 1
-                  ? Padding(
-                      padding: const EdgeInsets.only(
-                          top: 4, right: 8, left: 8, bottom: 30),
-                      child: Container(
-                        // 丸角を設定
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(20), // 角を丸くする
-                        ),
-                        height: MediaQuery.of(context).size.height * 0.6,
-                        child: Padding(
-                          padding: const EdgeInsets.only(top: 5),
-                          child: StopwatchIndicator(
-                            backgroundColor: backGroundColor,
-                            valueColor: primary,
-                            initialTime: studyTime,
-                            // 子ウィジェットにコールバックを渡す
-                            onTimeChange: updateStudyTime,
-                          ),
-                        ),
+      body: Padding(
+        padding: const EdgeInsets.only(left: 5, right: 5),
+        child: Column(
+          children: [
+            if (!isChangeTime)
+              MyTabBar(
+                  isChangeTime: isChangeTime,
+                  selectedIndex: selectedTab,
+                  onTabSelected: onTabSelected),
+            Expanded(
+              child: IndexedStack(
+                index: selectedTab,
+                children: [
+                  Record(
+                    isTimeChange: isChangeTime,
+                    changeTime: chagneTime,
+                    bookInfos: {
+                      1: Book(
+                        lastUsedDate: DateTime.now(),
+                        imageUrl:
+                            'https://thumbnail.image.rakuten.co.jp/@0_mall/learners/cabinet/08213828/08213829/imgrc1358308.jpg',
+                        category: 'Math',
+                        title: 'Algebra Basics',
+                        id: '1',
                       ),
-                    )
-                  : Record(
-                      isTimeChange: isChangeTime,
-                      onChangedTime: onChangedTime,
-                      bookInfos: {
-                        1: Book(
-                          lastUsedDate: DateTime.now(),
-                          imageUrl:
-                              'https://thumbnail.image.rakuten.co.jp/@0_mall/learners/cabinet/08213828/08213829/imgrc1358308.jpg',
-                          category: 'Math',
-                          title: 'Algebra Basics',
-                          id: '1',
-                        ),
-                        2: Book(
-                          lastUsedDate: DateTime.now(),
-                          imageUrl:
-                              'https://thumbnail.image.rakuten.co.jp/@0_mall/learners/cabinet/08213828/08213829/imgrc0091358308.jpg',
-                          category: 'Science',
-                          title: 'Physics Principles',
-                          id: '2',
-                        ),
-                        3: Book(
-                          lastUsedDate: DateTime.now(),
-                          imageUrl:
-                              'https://thumbnail.image.rakuten.co.jp/@0_mall/learners/cabinet/08213828/08213829/imgrc0091358308.jpg',
-                          category: 'Science',
-                          title: 'Physics Principles',
-                          id: '3',
-                        ),
-                        4: Book(
-                          lastUsedDate: DateTime.now(),
-                          imageUrl:
-                              'https://thumbnail.image.rakuten.co.jp/@0_mall/learners/cabinet/08213828/08213829/imgrc0091358308.jpg',
-                          category: 'Science',
-                          title: 'Physics Principles',
-                          id: '4',
-                        ),
-                        5: Book(
-                          lastUsedDate: DateTime.now(),
-                          imageUrl:
-                              'https://thumbnail.image.rakuten.co.jp/@0_mall/learners/cabinet/08213828/08213829/imgrc0091358308.jpg',
-                          category: 'Science',
-                          title: 'Physics Principles',
-                          id: '5',
-                        ),
-                      },
-                      studyTime: studyTime,
-                      // 子ウィジェットにコールバックを渡す
-                    ),
-            ],
-          ),
+                      // 他の教材情報もここに追加
+                    },
+                    studyTime: studyTime,
+                  ),
+                  StopwatchIndicator(
+                    getIsRunning: getIsRunning,
+                    changeRunnnigState: changeRunnnigState,
+                    backgroundColor: backGroundColor,
+                    valueColor: primary,
+                    initialTime: studyTime,
+                    onTimeChange: updateStudyTime,
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

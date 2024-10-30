@@ -7,9 +7,12 @@ class StopwatchIndicator extends StatefulWidget {
   final TextStyle? timeTextStyle;
   final int initialTime; // 追加: 初期時間を受け取る
   final Function(int) onTimeChange; // 追加: 時間更新のコールバック
-
+  final Function(bool) changeRunnnigState; // 追加: ストップウォッチのスタート/停止を切り替える関数
+  final bool Function() getIsRunning; // 追加: ストップウォッチの状態を取得する関数
   const StopwatchIndicator({
     super.key,
+    required this.getIsRunning,
+    required this.changeRunnnigState,
     required this.backgroundColor,
     required this.valueColor,
     this.timeTextStyle,
@@ -26,7 +29,6 @@ class _StopwatchIndicatorState extends State<StopwatchIndicator>
   late AnimationController _animationController;
   late AnimationController _loopingCircleController;
   Duration elapsedTime = Duration.zero;
-  bool isRunning = false;
 
   @override
   void dispose() {
@@ -64,17 +66,17 @@ class _StopwatchIndicatorState extends State<StopwatchIndicator>
   // ストップウォッチのスタート/停止を切り替える関数
   void toggleStopwatch() {
     setState(() {
-      if (isRunning) {
+      if (widget.getIsRunning()) {
         _animationController.stop();
         _loopingCircleController.stop(); // サークルも停止
-        isRunning = false;
+        widget.changeRunnnigState(false);
 
         // ストップ時に親に時間を通知
         widget.onTimeChange(elapsedTime.inMinutes);
       } else {
         _animationController.forward(from: _animationController.value);
         _loopingCircleController.repeat(); // サークルをループ
-        isRunning = true;
+        widget.changeRunnnigState(true);
       }
     });
   }
@@ -131,10 +133,10 @@ class _StopwatchIndicatorState extends State<StopwatchIndicator>
           const SizedBox(height: 35),
           ElevatedButton(
             onPressed: toggleStopwatch,
-            child: Text(isRunning ? "一時停止" : "スタート"),
+            child: Text(widget.getIsRunning() ? "一時停止" : "スタート"),
             style: ElevatedButton.styleFrom(
               minimumSize: const Size(200, 35),
-              backgroundColor: isRunning ? Colors.red : Colors.blue,
+              backgroundColor: widget.getIsRunning() ? Colors.red : Colors.blue,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),

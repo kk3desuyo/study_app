@@ -3,13 +3,32 @@ import 'package:intl/intl.dart';
 import 'package:study_app/theme/color.dart'; // 日付のフォーマットに使用
 
 class DateTimePickerWidget extends StatefulWidget {
+  final DateTime initialDate;
+  final TimeOfDay initialTime;
+  final ValueChanged<DateTime> onDateChanged;
+  final ValueChanged<TimeOfDay> onTimeChanged;
+
+  DateTimePickerWidget({
+    required this.initialDate,
+    required this.initialTime,
+    required this.onDateChanged,
+    required this.onTimeChanged,
+  });
+
   @override
   _DateTimePickerWidgetState createState() => _DateTimePickerWidgetState();
 }
 
 class _DateTimePickerWidgetState extends State<DateTimePickerWidget> {
-  DateTime _selectedDate = DateTime.now();
-  TimeOfDay _selectedTime = TimeOfDay.now();
+  late DateTime _selectedDate;
+  late TimeOfDay _selectedTime;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedDate = widget.initialDate;
+    _selectedTime = widget.initialTime;
+  }
 
   // 日付選択ダイアログを表示
   Future<void> _selectDate(BuildContext context) async {
@@ -24,6 +43,7 @@ class _DateTimePickerWidgetState extends State<DateTimePickerWidget> {
       setState(() {
         _selectedDate = picked;
       });
+      widget.onDateChanged(_selectedDate);
     }
   }
 
@@ -37,6 +57,7 @@ class _DateTimePickerWidgetState extends State<DateTimePickerWidget> {
       setState(() {
         _selectedTime = picked;
       });
+      widget.onTimeChanged(_selectedTime);
     }
   }
 
@@ -90,13 +111,4 @@ class _DateTimePickerWidgetState extends State<DateTimePickerWidget> {
       ),
     );
   }
-}
-
-void main() {
-  runApp(MaterialApp(
-    home: Scaffold(
-      appBar: AppBar(title: Text('日付と時刻の選択')),
-      body: DateTimePickerWidget(),
-    ),
-  ));
 }

@@ -38,6 +38,47 @@ class _PreviewDetailScreenState extends State<PreviewDetailScreen> {
     fetchReplays();
   }
 
+  void addNewComment({
+    required String content,
+    required String dailyGoalId,
+    required DateTime dateTime,
+    required String userName,
+    required String userId,
+  }) async {
+    Comment newComment = Comment(
+      id: '', // Firestoreに追加する前にはまだIDがないので空文字に設定
+      content: content,
+      dailyGoalId: dailyGoalId,
+      dateTime: dateTime,
+      userName: userName,
+      userId: userId,
+    );
+
+    try {
+      CommentService commentService = CommentService();
+      await commentService.addComment(newComment);
+      print('コメントが正常に追加されました');
+      await fetchComments();
+    } catch (e) {
+      print('コメントの追加に失敗しました: $e');
+    }
+  }
+
+  Future<void> addNewReply({
+    required Reply reply,
+  }) async {
+    Reply newReply = reply;
+
+    try {
+      CommentService commentService = CommentService();
+      await commentService.addReply(newReply);
+      print('返信が正常に追加されました');
+      await fetchReplays();
+    } catch (e) {
+      print('返信の追加に失敗しました: $e');
+    }
+  }
+
   Future<void> fetchComments() async {
     try {
       CommentService commentService = CommentService();
@@ -46,6 +87,7 @@ class _PreviewDetailScreenState extends State<PreviewDetailScreen> {
       setState(() {
         comments = fetchedComments;
       });
+      print(comments[0].userId);
     } catch (e) {
       print('Error fetching comments: $e');
     }
@@ -55,11 +97,11 @@ class _PreviewDetailScreenState extends State<PreviewDetailScreen> {
     try {
       CommentService commentService = CommentService();
       List<Reply> fetchedReplays =
-          await commentService.getRepliesByCommentId(widget.dailyGoalId);
+          await commentService.getRepliesForDailyGoal(widget.dailyGoalId);
       setState(() {
         replays = fetchedReplays;
       });
-      print(fetchedReplays);
+      print("${fetchedReplays.length} fetchReplays");
     } catch (e) {
       print('Error fetching replays: $e');
     }
@@ -92,6 +134,9 @@ class _PreviewDetailScreenState extends State<PreviewDetailScreen> {
       body: isLoading
           ? Center(child: CircularProgressIndicator())
           : DetailCard(
+              addNewReply: addNewReply,
+              addNewComment: addNewComment,
+              dailyGoalId: widget.dailyGoalId,
               replays: replays,
               comments: comments,
               studyMaterials: studyMaterials,

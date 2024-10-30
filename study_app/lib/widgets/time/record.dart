@@ -1,23 +1,26 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 import 'package:study_app/models/book.dart';
+import 'package:study_app/models/study_session.dart';
+import 'package:study_app/services/user/user_service.dart';
 import 'package:study_app/theme/color.dart';
 import 'package:study_app/widgets/time/book_preview.dart';
 import 'package:study_app/widgets/time/date_select.dart';
-import 'package:study_app/widgets/user/book_shelf.dart';
 import '../preview_detail.dart/display_books.dart';
+import 'package:study_app/services/study_session.dart';
 
 class Record extends StatefulWidget {
   final int studyTime;
   final Map<int, Book> bookInfos;
-  final VoidCallback onChangedTime;
+  final Function(bool) changeTime;
   final bool isTimeChange;
 
   const Record({
     Key? key,
     required this.studyTime,
     required this.bookInfos,
-    required this.onChangedTime,
+    required this.changeTime,
     required this.isTimeChange,
   }) : super(key: key);
 
@@ -27,48 +30,30 @@ class Record extends StatefulWidget {
 
 class _RecordState extends State<Record> {
   String isSelectedCategory = '全てのカテゴリー';
-
-  //カテゴリー変更時
-  void _onChangedCategory(String? value) {
-    print(value);
-    if (value != null) {
-      setState(() {
-        isSelectedCategory = value;
-      });
-    }
-  }
-
-  List<DropdownMenuItem<String>> _buildDropdownItems() {
-    final categories =
-        widget.bookInfos.values.map((book) => book.category).toSet().toList();
-    categories.insert(0, '全てのカテゴリー');
-    return categories
-        .map((category) => DropdownMenuItem<String>(
-              value: category,
-              child: Text(category),
-            ))
-        .toList();
-  }
-
-  List<Book> _filteredBooks() {
-    if (isSelectedCategory == '全てのカテゴリー') {
-      return widget.bookInfos.values.toList();
-    } else {
-      return widget.bookInfos.values
-          .where((book) => book.category == isSelectedCategory)
-          .toList();
-    }
-  }
-
+  DateTime selectedDate = DateTime.now();
   int selectedHour = 0;
   int selectedMinute = 0;
-  int selectedBook = -1; // 選択された教材のID
+  int selectedBook = -1;
+  String memo = '';
+  final StudySessionService studySessionService = StudySessionService();
+  bool _isSaving = false;
+  bool _isSuccess = false;
 
-  @override
-  void initState() {
-    super.initState();
-    selectedHour = widget.studyTime ~/ 60;
-    selectedMinute = widget.studyTime % 60;
+  void _openBookSelectionPage() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BookSelectionPage(
+          bookInfos: widget.bookInfos,
+          onBookSelected: (int selectedBookId) {
+            setState(() {
+              selectedBook = selectedBookId;
+            });
+            Navigator.pop(context);
+          },
+        ),
+      ),
+    );
   }
 
   String formatTimeInJapanese(int totalMinutes) {
@@ -77,10 +62,84 @@ class _RecordState extends State<Record> {
     return "$hours時間$minutes分";
   }
 
-  List<Widget> _buildNumberList(int maxNumber) {
-    return List<Widget>.generate(maxNumber + 1, (index) {
-      return Center(child: Text(index.toString().padLeft(2, '0')));
+  void _saveStudySession() async {
+    if (selectedBook == -1) {
+      print('教材が選択されていません');
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+      _isSuccess = false;
     });
+
+    StudySession newSession = StudySession(
+      id: '',
+      bookId: widget.bookInfos[selectedBook]!.id,
+      isTimeChange: widget.isTimeChange,
+      memo: memo,
+      studyTime: selectedHour * 60 + selectedMinute,
+      timeStamp: selectedDate,
+      userId: UserService().getCurrentUserId() ?? 'unknown_user',
+    );
+
+    try {
+      await studySessionService.addStudySession(newSession);
+      print('StudySession saved successfully');
+
+      setState(() {
+        _isSaving = false;
+        _isSuccess = true;
+      });
+
+      // 成功時にフィールドをリセット
+      _resetFields();
+
+      Future.delayed(Duration(seconds: 2), () {
+        setState(() {
+          _isSuccess = false;
+        });
+      });
+    } catch (e) {
+      print('Error saving StudySession: $e');
+      setState(() {
+        _isSaving = false;
+      });
+      // エラー時にポップアップを表示
+      _showErrorDialog();
+    }
+  }
+
+  void _resetFields() {
+    setState(() {
+      selectedDate = DateTime.now();
+      selectedHour = 0;
+      selectedMinute = 0;
+      selectedBook = -1;
+      memo = '';
+      widget.changeTime(false);
+    });
+  }
+
+  // エラー発生時のダイアログを表示するメソッドを追加
+  void _showErrorDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('エラーが発生しました'),
+          content: Text('データの送信に失敗しました。再度お試しください。'),
+          actions: [
+            TextButton(
+              child: Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<dynamic> _showConfirmTimeChange() async {
@@ -137,7 +196,7 @@ class _RecordState extends State<Record> {
                         const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   ),
                   onPressed: () {
-                    widget.onChangedTime();
+                    widget.changeTime(true);
                     Navigator.of(context).pop();
                   },
                   child: const Text(
@@ -154,12 +213,9 @@ class _RecordState extends State<Record> {
   }
 
   void _showTimePickerModal() async {
-    print("showModal open");
-    print(widget.isTimeChange);
     if (!widget.isTimeChange) {
       await _showConfirmTimeChange();
     }
-    print("confirm result" + widget.isTimeChange.toString());
 
     if (widget.isTimeChange) {
       showModalBottomSheet(
@@ -233,142 +289,10 @@ class _RecordState extends State<Record> {
     );
   }
 
-  void _openBookSelectionPage() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => BookSelectionPage(
-          bookInfos: widget.bookInfos,
-          onBookSelected: (int selectedBookId) {
-            setState(() {
-              selectedBook = selectedBookId;
-            });
-            Navigator.pop(
-                context); // Go back to the previous page after selecting a book
-          },
-        ),
-      ),
-    );
-  }
-
-  void _showBookSelectionModal() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (BuildContext context) {
-        return Container(
-          height: MediaQuery.of(context).size.height * 0.8,
-          decoration: BoxDecoration(
-            color: backGroundColor,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Column(
-            children: [
-              _buildModalHeader(),
-              _buildBookGrid(),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-// モーダル内のヘッダーウィジェット
-  Widget _buildModalHeader() {
-    return Padding(
-      padding: const EdgeInsets.only(top: 3),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Spacer(),
-              const SizedBox(width: 50),
-              Expanded(
-                child: Container(
-                  width: 100,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    color: subTheme,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              ),
-              Spacer(),
-              Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: IconButton(
-                  icon: const Icon(Icons.close, color: subTheme),
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                ),
-              ),
-            ],
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              DropdownButton<String>(
-                value: isSelectedCategory, // 現在の選択を反映
-                items: _buildDropdownItems(),
-                onChanged: (String? value) {
-                  if (value != null) {
-                    setState(() {
-                      isSelectedCategory = value;
-                      print('カテゴリーが変更されました: $isSelectedCategory');
-                    });
-                  }
-                },
-              )
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBookGrid() {
-    return Expanded(
-      child: GridView.builder(
-        padding: const EdgeInsets.all(8),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
-          crossAxisSpacing: 10, // Adjusting spacing between items
-          mainAxisSpacing: 1, // Adjusting vertical spacing between items
-          childAspectRatio: 0.7, // Adjust the aspect ratio for your grid items
-        ),
-        itemCount: widget.bookInfos.length < 7
-            ? widget.bookInfos.length + 1
-            : 8, // 最大8個のBookCardを表示
-        itemBuilder: (BuildContext context, int index) {
-          if (index == 0) {
-            return GestureDetector(
-                onTap: () {
-                  Navigator.pop(context);
-                  setState(() {});
-                },
-                child: _buildAddBookCard());
-          } else {
-            final bookKey = widget.bookInfos.keys.elementAt(index - 1);
-            final book = widget.bookInfos[bookKey]!;
-            return GestureDetector(
-              onTap: () {
-                Navigator.pop(context);
-                setState(() {
-                  selectedBook = bookKey;
-                });
-              },
-              child: BookCard(
-                book: book,
-                studyTime: 0,
-                isDisplayTime: false,
-              ),
-            );
-          }
-        },
-      ),
-    );
+  List<Widget> _buildNumberList(int maxNumber) {
+    return List<Widget>.generate(maxNumber + 1, (index) {
+      return Center(child: Text(index.toString().padLeft(2, '0')));
+    });
   }
 
   Widget _buildAddBookCard() {
@@ -396,10 +320,28 @@ class _RecordState extends State<Record> {
 
   @override
   Widget build(BuildContext context) {
-    print("再描画がトリガーされました");
-    return Padding(
-      padding: const EdgeInsets.only(left: 4, right: 4, top: 10),
-      child: SingleChildScrollView(
+    if (_isSaving || _isSuccess) {
+      // アニメーションのみを表示
+      return SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Container(
+          width: double.infinity,
+          height: MediaQuery.of(context).size.height * 0.6,
+          child: Center(
+            child: Lottie.asset(
+              _isSaving
+                  ? 'assets/animation/loading.json'
+                  : 'assets/animation/success.json',
+              width: 200,
+              height: 200,
+            ),
+          ),
+        ),
+      );
+    } else {
+      // メインコンテンツを表示
+      return SingleChildScrollView(
+        padding: const EdgeInsets.only(left: 4, right: 4, top: 10),
         child: Container(
           width: double.infinity,
           child: Card(
@@ -425,6 +367,8 @@ class _RecordState extends State<Record> {
                         ),
                       ],
                     ),
+                  const SizedBox(height: 15),
+                  // 日付選択
                   Row(
                     children: [
                       Column(
@@ -449,10 +393,26 @@ class _RecordState extends State<Record> {
                         ],
                       ),
                       const SizedBox(width: 10),
-                      DateTimePickerWidget(),
+                      DateTimePickerWidget(
+                        initialDate: selectedDate,
+                        initialTime: TimeOfDay(
+                            hour: selectedHour, minute: selectedMinute),
+                        onDateChanged: (date) {
+                          setState(() {
+                            selectedDate = date;
+                          });
+                        },
+                        onTimeChanged: (time) {
+                          setState(() {
+                            selectedHour = time.hour;
+                            selectedMinute = time.minute;
+                          });
+                        },
+                      ),
                     ],
                   ),
                   const SizedBox(height: 15),
+                  // 勉強時間
                   Row(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
@@ -483,23 +443,24 @@ class _RecordState extends State<Record> {
                             selectedHour * 60 + selectedMinute),
                         style: const TextStyle(fontSize: 18),
                       ),
-                      const SizedBox(width: 20),
+                      const SizedBox(width: 10),
                       ElevatedButton(
                         onPressed: _showTimePickerModal,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white, // 背景色を白に設定
-                          side: BorderSide(color: subTheme), // ボーダーをオレンジに設定
+                          backgroundColor: Colors.white,
+                          side: BorderSide(color: subTheme),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(5), // 角を半径5に設定
+                            borderRadius: BorderRadius.circular(5),
                           ),
                         ),
                         child: const Text(
                           "時間変更",
-                          style: TextStyle(color: subTheme), // テキストの色をオレンジに設定
+                          style: TextStyle(color: subTheme),
                         ),
                       ),
                     ],
                   ),
+                  // 教材選択
                   Row(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
@@ -535,6 +496,7 @@ class _RecordState extends State<Record> {
                     ],
                   ),
                   const SizedBox(height: 15),
+                  // メモ
                   Row(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
@@ -564,14 +526,14 @@ class _RecordState extends State<Record> {
                         color: Colors.grey[300],
                         borderRadius: BorderRadius.circular(12.0),
                       ),
-                      child: const TextField(
+                      child: TextField(
                         maxLines: 2,
                         minLines: 2,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 11.0,
                           color: Colors.black,
                         ),
-                        decoration: InputDecoration(
+                        decoration: const InputDecoration(
                           hintText: 'めも',
                           hintStyle: TextStyle(
                             fontSize: 11.0,
@@ -581,18 +543,25 @@ class _RecordState extends State<Record> {
                           contentPadding: EdgeInsets.symmetric(
                               horizontal: 16.0, vertical: 15.0),
                         ),
+                        onChanged: (value) {
+                          setState(() {
+                            memo = value;
+                          });
+                        },
                       ),
                     ),
                   ),
                   const SizedBox(height: 3),
+                  // 記録ボタン
                   ElevatedButton(
-                    onPressed: () => {},
+                    onPressed: _isSaving ? null : _saveStudySession,
                     child: const Text("記録する"),
                     style: ElevatedButton.styleFrom(
                       minimumSize: const Size(200, 35),
-                      backgroundColor: subTheme,
-                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.white,
+                      foregroundColor: subTheme,
                       shape: RoundedRectangleBorder(
+                        side: BorderSide(color: subTheme),
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
@@ -603,7 +572,7 @@ class _RecordState extends State<Record> {
             ),
           ),
         ),
-      ),
-    );
+      );
+    }
   }
 }
