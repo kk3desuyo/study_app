@@ -1,18 +1,22 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:study_app/models/app/app_setting.dart';
-import 'package:study_app/services/daily_goal_service.dart';
+import 'package:study_app/services/event.dart';
 import 'package:study_app/services/user/app/app_service.dart';
+import 'package:study_app/services/user_daily_achievements.dart';
+import 'package:study_app/services/daily_goal_service.dart';
+
+import 'package:loading_animation_widget/loading_animation_widget.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+import 'package:study_app/models/user.dart';
 import 'package:study_app/theme/color.dart';
 import 'package:study_app/widgets/app_bar.dart';
-import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:study_app/widgets/home/event.dart';
 import 'package:study_app/widgets/home/goal_calender.dart';
 import 'package:study_app/widgets/home/rank_card.dart';
 import 'package:study_app/widgets/home/study_summary_card.dart';
 import 'package:study_app/widgets/home/study_time_display.dart';
 import 'package:study_app/widgets/home/tab_bar.dart';
-import 'package:study_app/models/user.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -24,6 +28,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   bool _isDataLoaded = false;
   List<Map<String, dynamic>> followedUserStudySummary = [];
+  String eventName = "-----";
+  List<DateTime> achievements = [];
 
   @override
   void initState() {
@@ -32,6 +38,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _fetchData() async {
+    setState(() {
+      _isDataLoaded = false; // データ取得開始前にフラグをfalseに設定
+    });
     try {
       DailyGoalService dailyGoalService = DailyGoalService();
       List<Map<String, dynamic>> fetchedGoals =
@@ -39,7 +48,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
       setState(() {
         followedUserStudySummary = fetchedGoals;
-        _isDataLoaded = true;
+        _isDataLoaded = true; // データ取得後にフラグをtrueに設定
       });
     } catch (e) {
       setState(() {
@@ -74,55 +83,44 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _timeLine() {
-    return StreamBuilder<DocumentSnapshot>(
-      stream: AppService().getAppSettingsStream(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(
-            child: LoadingAnimationWidget.staggeredDotsWave(
-              color: primary,
-              size: 80,
+    return RefreshIndicator(
+      onRefresh: _fetchData, // 引っ張って更新時にデータを再取得
+      child: _isDataLoaded
+          ? ListView(
+              children: followedUserStudySummary.map((goal) {
+                // ゼロ除算を防ぐためにチェックを追加
+                int achievementLevel = 0;
+                if (goal['targetStudyTime'] != null &&
+                    goal['targetStudyTime'] != 0) {
+                  achievementLevel =
+                      ((goal['achievedStudyTime'] / goal['targetStudyTime']) *
+                              100)
+                          .toInt();
+                }
+
+                return StudySummaryCard(
+                  dailyGoalId: goal['dailyGoalId'] ?? '',
+                  user: User(
+                    oneWord: goal['user']['oneWord'] ?? '',
+                    id: goal['user']['id'] ?? '',
+                    name: goal['user']['name'] ?? '',
+                    profileImgUrl: goal['user']['profileImgUrl'] ?? '',
+                  ),
+                  studyTime: goal['achievedStudyTime'] ?? 0,
+                  goodNum: goal['goodNum'] ?? 0,
+                  isPushFavorite: goal['isPushFavorite'] ?? false,
+                  commentNum: goal['commentNum'] ?? 0,
+                  achivementLevel: achievementLevel,
+                  oneWord: goal['oneWord'] ?? '',
+                );
+              }).toList(),
+            )
+          : Center(
+              child: LoadingAnimationWidget.staggeredDotsWave(
+                color: primary,
+                size: 80,
+              ),
             ),
-          );
-        }
-
-        if (snapshot.hasError) {
-          return Center(child: Text('エラーが発生しました'));
-        }
-
-        if (snapshot.hasData && snapshot.data!.exists) {
-          AppSettings appSettings = AppSettings.fromJson(
-              snapshot.data!.data() as Map<String, dynamic>);
-          print(appSettings.isStudyTimeVisible);
-
-          // タイムラインのデータに基づいてウィジェットを返す
-          return ListView(
-            children: followedUserStudySummary.map((goal) {
-              print(goal['dailyGoalId' + "aaaaa"]);
-              return StudySummaryCard(
-                dailyGoalId: goal['dailyGoalId'] ?? '',
-                user: User(
-                  id: goal['user']['id'] ?? '',
-                  name: goal['user']['name'] ?? '',
-                  profileImgUrl: goal['user']['profileImgUrl'] ?? '',
-                ),
-                studyTime: goal['achievedStudyTime'] ?? 0,
-                goodNum: goal['goodNum'] ?? 0,
-                isPushFavorite: goal['isPushFavorite'] ?? false,
-                commentNum: goal['commentNum'] ?? 0,
-                achivementLevel:
-                    (goal['targetStudyTime'] / goal['achievedStudyTime'])
-                                .toInt() *
-                            100 ??
-                        0,
-                oneWord: goal['oneWord'] ?? '',
-              );
-            }).toList(),
-          );
-        } else {
-          return Center(child: Text('データがありません'));
-        }
-      },
     );
   }
 
@@ -135,17 +133,48 @@ class _HomeScreenState extends State<HomeScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(child: StudyTimeDisplay(studyTime: 200)),
-              Expanded(child: EventDisplay(daysLeft: 10, eventName: "TOEIC")),
+              StreamBuilder<String>(
+                stream: EventService().getUserEventNameStream(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Center(
+                      child: LoadingAnimationWidget.staggeredDotsWave(
+                        color: primary,
+                        size: 80,
+                      ),
+                    );
+                  }
+                  if (snapshot.hasError) {
+                    return Center(child: Text('エラーが発生しました'));
+                  }
+                  return Expanded(
+                    child: EventDisplay(
+                      daysLeft: 10,
+                      eventName: snapshot.data ?? "----",
+                    ),
+                  );
+                },
+              ),
             ],
           ),
-          GoalCalender(
-            achievedDates: [
-              DateTime.now().subtract(Duration(days: 3)),
-              DateTime.now().subtract(Duration(days: 0)),
-              DateTime.now().subtract(Duration(days: 1)),
-              DateTime.now().subtract(Duration(days: 2)),
-              DateTime.now().subtract(Duration(days: 4)),
-            ],
+          StreamBuilder<List<DateTime>>(
+            stream: UserDailyAchievementsService().getAchievementDatesStream(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(
+                  child: LoadingAnimationWidget.staggeredDotsWave(
+                    color: primary,
+                    size: 80,
+                  ),
+                );
+              }
+              if (snapshot.hasError) {
+                return Center(child: Text('エラーが発生しました'));
+              }
+              return GoalCalender(
+                achievedDates: snapshot.data ?? [],
+              );
+            },
           ),
         ],
       ),

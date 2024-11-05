@@ -21,17 +21,20 @@ class DailyGoalService {
     List<Map<String, dynamic>> followedUserGoals = [];
 
     // 1. フォロー中のユーザーIDを取得
-    List<String> followedUserIds = await userService.getFollowedUserIds();
+    List<String> followedUserIds =
+        await userService.getFollowUserIds(currentUserId);
 
     // 2. フォロー中のユーザーの DailyGoals とユーザー情報を取得
     for (var followingUserId in followedUserIds) {
       // フォロー中のユーザー情報を取得
       User? user = await userService.getUser(followingUserId);
-
+      print("user");
+      print(followingUserId);
+      print(user?.name);
       if (user != null) {
         // 3. フォロー中のユーザーの DailyGoal を取得
         QuerySnapshot dailyGoalsSnapshot = await _firestore
-            .collection('DailyGoals')
+            .collection('dailyGoals')
             .where('userId', isEqualTo: followingUserId)
             .get();
 
@@ -40,6 +43,7 @@ class DailyGoalService {
           Map<String, dynamic> goalData =
               goalDoc.data() as Map<String, dynamic>;
 
+          print(goalData['oneWord']);
           // ドキュメントIDを追加
           goalData['dailyGoalId'] = goalDoc.id;
 

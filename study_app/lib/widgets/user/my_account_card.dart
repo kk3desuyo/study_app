@@ -1,17 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:study_app/main.dart';
 import 'package:study_app/models/book.dart';
+import 'package:study_app/screens/book_shelf_screen.dart';
+import 'package:study_app/screens/followed_and_following.dart';
 import 'package:study_app/screens/other_user_display_book.dart';
-import 'package:study_app/services/user/user_service.dart';
+import 'package:study_app/screens/preview_detail.dart';
+import 'package:study_app/screens/profile_edit.dart';
 import 'package:study_app/theme/color.dart';
+
 import 'package:study_app/models/user.dart';
-import 'package:study_app/widgets/follow_button.dart';
+
+import 'package:study_app/widgets/preview_detail.dart/comment_card.dart';
 import 'package:study_app/widgets/preview_detail.dart/display_books.dart';
+import 'package:study_app/widgets/preview_detail.dart/week_chart.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:study_app/widgets/user/book_shelf.dart';
 import 'package:study_app/widgets/user/goal.dart';
 import 'package:study_app/widgets/user/stacked_graph.dart';
 import 'package:study_app/widgets/user/tab_bar.dart';
 import 'package:study_app/widgets/user/tag.dart';
 
-class OtherUserDisplayCard extends StatefulWidget {
+class MyAccountCard extends StatefulWidget {
   final User user;
   final int studyTime;
   final int commentNum;
@@ -28,9 +37,10 @@ class OtherUserDisplayCard extends StatefulWidget {
   final int weekStudyTime;
   final int todayGoalTime;
   final int weekGoalTime;
-
-  OtherUserDisplayCard({
+  final Function() onChanged;
+  MyAccountCard({
     Key? key,
+    required this.onChanged,
     required this.user,
     required this.studyTimes,
     required this.studyTime,
@@ -50,10 +60,10 @@ class OtherUserDisplayCard extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<StatefulWidget> createState() => _OtherUserDisplayCardState();
+  State<StatefulWidget> createState() => _MyAccountCardState();
 }
 
-class _OtherUserDisplayCardState extends State<OtherUserDisplayCard> {
+class _MyAccountCardState extends State<MyAccountCard> {
   List<Map<String, Color>> colorList = [];
   int _selectedIndex = 0;
 
@@ -107,6 +117,18 @@ class _OtherUserDisplayCardState extends State<OtherUserDisplayCard> {
     setState(() {
       colorList = colorListTmp;
     });
+  }
+
+  void _onEditProfile() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+          builder: (context) => ProfileEditPage(
+                user: widget.user,
+                tags: widget.tags,
+                onChanged: widget.onChanged,
+              )),
+    );
   }
 
   void _onTabSelected(int index) {
@@ -164,7 +186,20 @@ class _OtherUserDisplayCardState extends State<OtherUserDisplayCard> {
                             Spacer(),
                             Expanded(
                               child: InkWell(
-                                onTap: () => {},
+                                onTap: () => {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          FollowedAndFollowing(
+                                        onChanged: widget.onChanged,
+                                        userId: widget.user.id,
+                                        userName: widget.user.name,
+                                        initalSelectedIndex: 0,
+                                      ),
+                                    ),
+                                  )
+                                },
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
@@ -183,7 +218,19 @@ class _OtherUserDisplayCardState extends State<OtherUserDisplayCard> {
                             ),
                             Expanded(
                               child: InkWell(
-                                onTap: () => {},
+                                onTap: () => {
+                                  Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            FollowedAndFollowing(
+                                          onChanged: widget.onChanged,
+                                          userId: widget.user.id,
+                                          userName: widget.user.name,
+                                          initalSelectedIndex: 1,
+                                        ),
+                                      ))
+                                },
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
@@ -225,8 +272,30 @@ class _OtherUserDisplayCardState extends State<OtherUserDisplayCard> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
-                              FollowButton(
-                                followingUserId: widget.user.id,
+                              Flexible(
+                                child: Container(
+                                  height: 35,
+                                  width: 160,
+                                  padding: EdgeInsets.symmetric(horizontal: 15),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(5),
+                                    border: Border.all(color: subTheme),
+                                  ),
+                                  child: InkWell(
+                                    onTap: _onEditProfile,
+                                    child: Center(
+                                      child: Text(
+                                        "プロフィールを編集",
+                                        style: TextStyle(
+                                          color: subTheme,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               ),
                             ],
                           ),
@@ -358,6 +427,17 @@ class _OtherUserDisplayCardState extends State<OtherUserDisplayCard> {
                                           ),
                                         ],
                                       ),
+                                      if (widget.books.length == 0) ...[
+                                        SizedBox(
+                                          height: 50,
+                                        ),
+                                        SizedBox(
+                                          child: Text("教材がありません"),
+                                        ),
+                                        SizedBox(
+                                          height: 50,
+                                        )
+                                      ],
                                       SizedBox(height: 5),
                                       Row(
                                         mainAxisAlignment:

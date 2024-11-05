@@ -56,6 +56,17 @@ class _RecordState extends State<Record> {
     );
   }
 
+  @override
+  void initState() {
+    super.initState();
+    // Initialize selectedHour and selectedMinute with studyTime
+    selectedHour = widget.studyTime ~/ 60;
+    selectedMinute = widget.studyTime % 60;
+    print("再描画");
+    print(selectedHour);
+    print(selectedMinute);
+  }
+
   String formatTimeInJapanese(int totalMinutes) {
     int hours = totalMinutes ~/ 60;
     int minutes = totalMinutes % 60;
@@ -64,7 +75,21 @@ class _RecordState extends State<Record> {
 
   void _saveStudySession() async {
     if (selectedBook == -1) {
-      print('教材が選択されていません');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('教材が選択されていません'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+    if (selectedHour * 60 + selectedMinute == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('勉強時間が0分です'),
+          duration: Duration(seconds: 2),
+        ),
+      );
       return;
     }
 

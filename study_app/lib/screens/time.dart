@@ -57,6 +57,7 @@ class _TimePage extends State<TimePage> {
 
   // studyTimeを更新するためのコールバック関数
   void updateStudyTime(int newStudyTime) {
+    print(newStudyTime);
     setState(() {
       studyTime = newStudyTime;
     });
@@ -81,6 +82,7 @@ class _TimePage extends State<TimePage> {
                 index: selectedTab,
                 children: [
                   Record(
+                    key: ValueKey(studyTime),
                     isTimeChange: isChangeTime,
                     changeTime: chagneTime,
                     bookInfos: {

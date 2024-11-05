@@ -7,6 +7,7 @@ class Comment {
   final DateTime dateTime;
   final String userId;
   final String userName; // Add userName field
+  final DocumentSnapshot? documentSnapshot; // 修正: プロパティ名を統一
 
   // コンストラクター
   Comment({
@@ -16,18 +17,22 @@ class Comment {
     required this.dateTime,
     required this.userId,
     required this.userName, // Add userName to constructor
+    this.documentSnapshot,
   });
 
   // FirestoreのデータからCommentオブジェクトを生成するファクトリメソッド
-  factory Comment.fromFirestore(String id, Map<String, dynamic> data) {
+  factory Comment.fromFirestore(String id, Map<String, dynamic> data,
+      {DocumentSnapshot? documentSnapshot}) {
     return Comment(
       id: id,
       content: data['content'] ?? '',
       dailyGoalId: data['dailyGoalId'] ?? '',
-      dateTime:
-          (data['dateTime'] as Timestamp).toDate(), // TimestampをDateTimeに変換
+      dateTime: data['dateTime'] != null
+          ? (data['dateTime'] as Timestamp).toDate()
+          : DateTime.now(),
       userId: data['userId'] ?? '',
       userName: data['userName'] ?? '', // Add userName to factory method
+      documentSnapshot: documentSnapshot, // 修正
     );
   }
 
@@ -37,7 +42,7 @@ class Comment {
       'content': content,
       'dailyGoalId': dailyGoalId,
       'dateTime': dateTime,
-      'userid': userId,
+      'userId': userId,
       'userName': userName, // Add userName to map
     };
   }

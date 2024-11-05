@@ -35,8 +35,9 @@ class _EventDisplayState extends State<EventDisplay> {
         color: Colors.white,
         child: Padding(
           padding: const EdgeInsets.only(left: 16, right: 16, top: 16),
-          child:
-              widget.isEventSet ? _buildEventContent() : _buildNoEventContent(),
+          child: widget.eventName != ""
+              ? _buildEventContent()
+              : _buildNoEventContent(),
         ),
       ),
     );
@@ -60,11 +61,10 @@ class _EventDisplayState extends State<EventDisplay> {
             ),
           ],
         ),
-        SizedBox(height: 8),
         Text(
           widget.eventName,
           style: GoogleFonts.roboto(
-            fontSize: 15,
+            fontSize: 20,
             fontWeight: FontWeight.w900,
           ),
           overflow: TextOverflow.ellipsis,

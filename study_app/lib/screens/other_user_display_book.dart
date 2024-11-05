@@ -18,7 +18,7 @@ class OtherUserBookShelf extends StatefulWidget {
 }
 
 class _OtherUserBookShelfState extends State<OtherUserBookShelf> {
-  String? selectedCategory; // ドロップダウンで選択されたカテゴリー
+  String? selectedCategory;
 
   void onBookSelected(int bookKey) {
     print(bookKey);

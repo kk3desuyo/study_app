@@ -9,6 +9,7 @@ import 'package:study_app/widgets/preview_detail.dart/app_bar.dart';
 import 'package:study_app/widgets/preview_detail.dart/detail_card.dart';
 import 'package:study_app/models/user.dart'; // Userモデルのインポート
 import 'package:study_app/models/studyMaterial.dart'; // StudyMaterialモデルのインポート
+import 'package:cloud_firestore/cloud_firestore.dart'; // Firestoreのインポート
 
 class PreviewDetailScreen extends StatefulWidget {
   final User user;
@@ -28,14 +29,17 @@ class _PreviewDetailScreenState extends State<PreviewDetailScreen> {
   List<Reply> replays = [];
 
   bool isLoading = true;
+  int goodNum = 0; // goodNumを追加
+  int commentNum = 0; // commentNumを追加
 
   @override
   void initState() {
     super.initState();
     fetchStudyMaterials();
-    print(widget.dailyGoalId + "A");
     fetchComments();
     fetchReplays();
+    fetchGoodNum(); // goodNumを取得
+    // fetchCommentNum(); // コメント数はfetchComments内で取得
   }
 
   void addNewComment({
@@ -86,8 +90,8 @@ class _PreviewDetailScreenState extends State<PreviewDetailScreen> {
           await commentService.getCommentsByDailyGoalId(widget.dailyGoalId);
       setState(() {
         comments = fetchedComments;
+        commentNum = comments.length; // コメント数を更新
       });
-      print(comments[0].userId);
     } catch (e) {
       print('Error fetching comments: $e');
     }
@@ -124,8 +128,26 @@ class _PreviewDetailScreenState extends State<PreviewDetailScreen> {
     }
   }
 
+  Future<void> fetchGoodNum() async {
+    try {
+      // Query the likes collection to find documents with the matching dailyGoalId
+      QuerySnapshot snapshot = await FirebaseFirestore.instance
+          .collection('likes')
+          .where('dailyGoalId', isEqualTo: widget.dailyGoalId)
+          .get();
+
+      // Set the goodNum to the count of documents matching the dailyGoalId
+      setState(() {
+        goodNum = snapshot.docs.length;
+      });
+    } catch (e) {
+      print('Error fetching goodNum: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    print("studyMaterials");
     print(studyMaterials);
     print(comments);
     return Scaffold(
@@ -143,11 +165,11 @@ class _PreviewDetailScreenState extends State<PreviewDetailScreen> {
               user: widget.user,
               studyTime:
                   studyMaterials.fold(0, (sum, item) => sum + item.studyTime),
-              goodNum: 10,
+              goodNum: goodNum,
               isPushFavorite: true,
-              commentNum: 10,
+              commentNum: commentNum,
               achivementLevel: 100,
-              oneWord: "英単語のことなら一級品",
+              oneWord: widget.user.oneWord,
               studyTimes: const [2, 3, 5, 6, 3, 7, 4],
             ),
     );

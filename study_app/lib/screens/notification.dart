@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:study_app/services/user/user_service.dart';
 import 'package:study_app/theme/color.dart';
 import 'package:study_app/widgets/app_bar.dart';
 import 'package:study_app/widgets/notification/notification_item.dart';
@@ -11,42 +12,32 @@ class NotificationPage extends StatefulWidget {
 
 class _NotificationPageState extends State<NotificationPage> {
   int _selectedIndex = 0;
+  List<Map<String, dynamic>> friendNotifications = [];
+  List<Map<String, dynamic>> communityNotifications = [];
+  final UserService _userService = UserService();
 
-  final List<Map<String, dynamic>> friendNotifications = [
-    {
-      'title': 'いいね！',
-      'message': 'あなたの投稿にいいねがありました。',
-      'dateTime': DateTime.now().subtract(Duration(days: 2)),
-      'type': NotificationType.like,
-    },
-    {
-      'title': 'コメント',
-      'message': 'あなたの投稿にコメントがありました。',
-      'dateTime': DateTime.now().subtract(Duration(days: 1)),
-      'type': NotificationType.comment,
-    },
-    {
-      'title': 'フレンドリクエスト',
-      'message': '新しいフレンドリクエストがあります。',
-      'dateTime': DateTime.now().subtract(Duration(hours: 5)),
-      'type': NotificationType.friendRequest,
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    fetchFriendNotifications();
+    fetchCommunityNotifications();
+  }
 
-  final List<Map<String, dynamic>> communityNotifications = [
-    {
-      'title': 'アップデートのお知らせ',
-      'message': 'アプリの新しいバージョンが利用可能です。',
-      'dateTime': DateTime.now().subtract(Duration(hours: 1)),
-      'type': NotificationType.announcement,
-    },
-    {
-      'title': 'イベントのお知らせ',
-      'message': '新しいイベントが追加されました。',
-      'dateTime': DateTime.now().subtract(Duration(days: 3)),
-      'type': NotificationType.announcement,
-    },
-  ];
+  Future<void> fetchFriendNotifications() async {
+    List<Map<String, dynamic>> notifications =
+        await _userService.getFriendNotifications();
+    setState(() {
+      friendNotifications = notifications;
+    });
+  }
+
+  Future<void> fetchCommunityNotifications() async {
+    List<Map<String, dynamic>> notifications =
+        await _userService.getCommunityNotifications();
+    setState(() {
+      communityNotifications = notifications;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -77,6 +68,7 @@ class _NotificationPageState extends State<NotificationPage> {
                   message: notification['message'],
                   dateTime: notification['dateTime'],
                   type: notification['type'],
+                  senderName: notification['senderName'],
                 );
               },
             ),

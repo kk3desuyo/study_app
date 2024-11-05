@@ -4,14 +4,14 @@ import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
 import 'package:study_app/firebase_options.dart';
 import 'package:study_app/screens/auth.dart';
 import 'package:study_app/screens/home.dart';
-
+import 'package:study_app/screens/my_account.dart';
 import 'package:study_app/screens/notification.dart';
-import 'package:study_app/screens/preview_detail.dart';
 import 'package:study_app/screens/time.dart';
 import 'package:study_app/theme/color.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:badges/badges.dart' as custom_badge;
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:study_app/widgets/controller_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -62,7 +62,8 @@ class _HomeState extends State<Home> {
   @override
   void initState() {
     super.initState();
-    _controller = PersistentTabController(initialIndex: 2);
+    // グローバルコントローラーを取得（initialIndexは不要）
+    _controller = getGlobalTabController();
   }
 
   Future<bool> _checkAuth() async {
@@ -75,7 +76,7 @@ class _HomeState extends State<Home> {
     HomeScreen(),
     TimePage(),
     NotificationPage(),
-    HomeScreen()
+    MyAccount()
   ];
 
   @override
@@ -92,7 +93,7 @@ class _HomeState extends State<Home> {
               children: [
                 PersistentTabView(
                   context,
-                  controller: _controller,
+                  controller: _controller, // グローバルコントローラーを使用
                   screens: _pages,
                   items: [
                     PersistentBottomNavBarItem(
@@ -203,7 +204,7 @@ class _HomeState extends State<Home> {
                   left: MediaQuery.of(context).size.width / 2 - 35,
                   child: GestureDetector(
                     onTap: () {
-                      _controller.jumpToTab(2);
+                      jumpToTab(2); // グローバルな jumpToTab 関数を使用
                     },
                     child: Container(
                       width: 70,

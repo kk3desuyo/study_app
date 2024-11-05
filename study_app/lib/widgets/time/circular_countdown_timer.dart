@@ -70,7 +70,7 @@ class _StopwatchIndicatorState extends State<StopwatchIndicator>
         _animationController.stop();
         _loopingCircleController.stop(); // サークルも停止
         widget.changeRunnnigState(false);
-
+        print(elapsedTime.inMinutes);
         // ストップ時に親に時間を通知
         widget.onTimeChange(elapsedTime.inMinutes);
       } else {
@@ -93,57 +93,71 @@ class _StopwatchIndicatorState extends State<StopwatchIndicator>
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              // 5秒でループするサークル
-              SizedBox(
-                height: 280,
-                width: 280,
-                child: AnimatedBuilder(
-                  animation: _loopingCircleController,
-                  builder: (context, child) {
-                    return CircularProgressIndicator(
-                      strokeWidth: 10,
-                      backgroundColor: widget.backgroundColor,
-                      valueColor:
-                          AlwaysStoppedAnimation<Color>(widget.valueColor),
-                      value: _loopingCircleController.value,
-                    );
-                  },
+      padding: const EdgeInsets.only(top: 16, left: 16, right: 16, bottom: 40),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.3),
+              spreadRadius: 2,
+              blurRadius: 5,
+              offset: Offset(0, 3),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(20.0), // Add padding inside the container
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox(
+                  height: 280,
+                  width: 280,
+                  child: AnimatedBuilder(
+                    animation: _loopingCircleController,
+                    builder: (context, child) {
+                      return CircularProgressIndicator(
+                        strokeWidth: 10,
+                        backgroundColor: widget.backgroundColor,
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(widget.valueColor),
+                        value: _loopingCircleController.value,
+                      );
+                    },
+                  ),
                 ),
-              ),
-              // ストップウォッチの中央に表示される時間
-              Center(
-                child: Text(
-                  formatElapsedTime(elapsedTime),
-                  style: widget.timeTextStyle ??
-                      Theme.of(context).textTheme.bodyLarge!.copyWith(
-                          color: Colors.black,
-                          fontSize: 30,
-                          fontWeight: FontWeight.w600),
+                Center(
+                  child: Text(
+                    formatElapsedTime(elapsedTime),
+                    style: widget.timeTextStyle ??
+                        Theme.of(context).textTheme.bodyLarge!.copyWith(
+                            color: Colors.black,
+                            fontSize: 30,
+                            fontWeight: FontWeight.w600),
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 35),
-          ElevatedButton(
-            onPressed: toggleStopwatch,
-            child: Text(widget.getIsRunning() ? "一時停止" : "スタート"),
-            style: ElevatedButton.styleFrom(
-              minimumSize: const Size(200, 35),
-              backgroundColor: widget.getIsRunning() ? Colors.red : Colors.blue,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+              ],
+            ),
+            const SizedBox(height: 35),
+            ElevatedButton(
+              onPressed: toggleStopwatch,
+              child: Text(widget.getIsRunning() ? "一時停止" : "スタート"),
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size(200, 35),
+                backgroundColor:
+                    widget.getIsRunning() ? Colors.red : Colors.blue,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

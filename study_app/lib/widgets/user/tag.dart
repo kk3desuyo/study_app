@@ -67,8 +67,8 @@ class TagWidget extends StatelessWidget {
 
 class Tag {
   final String name;
-  final int id;
+
   final bool isAchievement;
 
-  Tag({required this.name, required this.id, required this.isAchievement});
+  Tag({required this.name, required this.isAchievement});
 }

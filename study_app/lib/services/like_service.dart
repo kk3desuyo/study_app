@@ -45,4 +45,43 @@ class LikeService {
       throw Exception('Failed to check like status');
     }
   }
+
+  Future<bool> toggleLike(
+      String dailyGoalId, String dailyGoalUserId, bool isLiked) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      // ユーザーがログインしていない場合、何もしない
+      return isLiked;
+    }
+    final userId = user.uid;
+
+    try {
+      if (isLiked) {
+        // いいねを追加
+        await FirebaseFirestore.instance.collection('likes').add({
+          'userId': userId,
+          'dailyGoalId': dailyGoalId,
+          'dailyGoalUserId': dailyGoalUserId,
+          'timestamp': FieldValue.serverTimestamp(),
+        });
+      } else {
+        // いいねを削除
+        QuerySnapshot snapshot = await FirebaseFirestore.instance
+            .collection('likes')
+            .where('userId', isEqualTo: userId)
+            .where('dailyGoalId', isEqualTo: dailyGoalId)
+            .get();
+
+        for (var doc in snapshot.docs) {
+          await doc.reference.delete();
+        }
+      }
+
+      // 新しい状態を返す
+      return !isLiked;
+    } catch (error) {
+      print(error);
+      return isLiked;
+    }
+  }
 }

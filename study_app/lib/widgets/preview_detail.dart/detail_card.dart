@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:like_button/like_button.dart';
 import 'package:study_app/models/reply.dart';
 import 'package:study_app/models/studyMaterial.dart';
 import 'package:study_app/screens/other_user_display.dart';
+import 'package:study_app/services/like_service.dart';
+import 'package:study_app/services/user/user_service.dart';
 import 'package:study_app/theme/color.dart';
-import 'package:like_button/like_button.dart';
+
 import 'package:study_app/models/user.dart';
+import 'package:study_app/widgets/controller_manager.dart';
 import 'package:study_app/widgets/home/study_summary_card.dart';
+
 import 'package:study_app/widgets/preview_detail.dart/comment_card.dart';
 import 'package:study_app/widgets/preview_detail.dart/display_books.dart';
 import 'package:study_app/widgets/preview_detail.dart/week_chart.dart';
@@ -51,8 +56,26 @@ class DetailCard extends StatefulWidget {
 }
 
 class _DetailCardState extends State<DetailCard> {
+  Future<bool> onLikeButtonTapped(bool isLiked) async {
+    // 非同期でデータベース処理を行う
+    try {
+      final likeService = LikeService();
+      await likeService.toggleLike(
+        widget.dailyGoalId,
+        widget.user.id,
+        isLiked,
+      );
+    } catch (e) {
+      // エラーハンドリング
+      print('Error toggling like: $e');
+    }
+
+    return isLiked;
+  }
+
   @override
   Widget build(BuildContext context) {
+    print(widget.studyTime);
     print("detail" +
         widget.replays.length
             .toString()); // Print the length of the replays list
@@ -62,14 +85,14 @@ class _DetailCardState extends State<DetailCard> {
           Card(
             color: Colors.white,
             margin:
-                const EdgeInsets.only(left: 10, right: 10, top: 5, bottom: 10),
+                const EdgeInsets.only(left: 5, right: 5, top: 5, bottom: 10),
             elevation: 8,
             shadowColor: Colors.black,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
             ),
             child: Padding(
-              padding: EdgeInsets.only(top: 10, left: 8),
+              padding: EdgeInsets.only(top: 10, left: 1, right: 1),
               child: Column(
                 children: [
                   _buildHeader(context),
@@ -106,20 +129,22 @@ class _DetailCardState extends State<DetailCard> {
       children: [
         _buildProfileImage(context),
         Text(
-          widget.user.name,
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+          widget.user.name.length > 5
+              ? '${widget.user.name.substring(0, 5)}...'
+              : widget.user.name,
+          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
         ),
         Spacer(),
         Text(
           convertMinutesToHoursAndMinutes(widget.studyTime),
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
         ),
         SizedBox(width: 12),
         LikeButton(
-          padding: EdgeInsets.only(right: 20),
-          isLiked: widget.isPushFavorite,
-          likeCount: widget.goodNum,
-        ),
+            padding: EdgeInsets.only(right: 20),
+            isLiked: widget.isPushFavorite,
+            likeCount: widget.goodNum,
+            onTap: onLikeButtonTapped),
       ],
     );
   }
@@ -127,12 +152,21 @@ class _DetailCardState extends State<DetailCard> {
   Widget _buildProfileImage(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => OtherUserDisplay(user: widget.user),
-          ),
-        );
+        String? currentUserId = UserService().getCurrentUserId();
+
+        if (currentUserId == widget.user.id) {
+          Navigator.of(context).popUntil((route) => route.isFirst);
+          // 自分自身のプロフィールの場合はタブを切り替える
+          jumpToTab(4); // タブを「アカウント」に移動
+        } else
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) {
+                return OtherUserDisplay(user: widget.user);
+              },
+            ),
+          );
       },
       child: Padding(
         padding: EdgeInsets.only(left: 10, top: 10, bottom: 3, right: 20),
@@ -170,7 +204,7 @@ class _DetailCardState extends State<DetailCard> {
       ),
       child: Center(
         child: Text(
-          widget.oneWord.isEmpty ? "まだ勉強中かも???" : widget.oneWord,
+          widget.oneWord.isEmpty ? "       " : widget.oneWord,
           textAlign: TextAlign.center,
           softWrap: true,
           style: TextStyle(fontSize: 16),

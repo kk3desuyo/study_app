@@ -8,28 +8,88 @@ class CommentService {
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-// dailyGoalIdに基づいてコメントを取得する関数
-  Future<List<Comment>> getCommentsByDailyGoalId(String dailyGoalId) async {
+  // コメントをdailyGoalIdに基づいて取得する関数（ページネーション対応）
+  Future<List<Comment>> getCommentsByDailyGoalId(
+    String dailyGoalId, {
+    int limit = 10,
+    DocumentSnapshot? lastDocument, // ページネーションのために追加
+  }) async {
     try {
-      QuerySnapshot querySnapshot = await _firestore
+      Query query = _firestore
           .collection('comments')
           .where('dailyGoalId', isEqualTo: dailyGoalId)
-          .get();
+          .orderBy('dateTime', descending: true) // 日付でソート
+          .limit(limit);
 
-      List<Comment> comments = querySnapshot.docs.map((doc) {
+      if (lastDocument != null) {
+        query = query.startAfterDocument(lastDocument);
+      }
+
+      QuerySnapshot querySnapshot = await query.get();
+
+      List<Comment> commentsList = [];
+      Set<String> userIds = {};
+
+      // 最後に取得したドキュメントを保持
+      DocumentSnapshot? lastVisible;
+      if (querySnapshot.docs.isNotEmpty) {
+        lastVisible = querySnapshot.docs.last;
+      }
+
+      // コメントからuserIdを収集
+      for (var doc in querySnapshot.docs) {
         Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-        print("hhhhhhh" + data.toString());
-        return Comment.fromFirestore(doc.id, data);
-      }).toList();
-      print(comments[0].userName + " sss");
-      return comments;
+        String? userId = data['userId'] as String?;
+
+        if (userId == null) {
+          print('Warning: userId is null for document ${doc.id}');
+          continue;
+        }
+
+        userIds.add(userId);
+      }
+
+      // ユーザー情報を一括取得
+      Map<String, String> userIdToNameMap = {};
+
+      if (userIds.isNotEmpty) {
+        List<String> userIdList = userIds.toList();
+        int batchSize = 10;
+        for (int i = 0; i < userIdList.length; i += batchSize) {
+          List<String> batchUserIds =
+              userIdList.skip(i).take(batchSize).toList();
+          QuerySnapshot userSnapshot = await _firestore
+              .collection('users')
+              .where(FieldPath.documentId, whereIn: batchUserIds)
+              .get();
+
+          for (var userDoc in userSnapshot.docs) {
+            String userId = userDoc.id;
+            String userName = userDoc['name'] ?? 'Unknown';
+            userIdToNameMap[userId] = userName;
+          }
+        }
+      }
+
+      // コメントリストを構築
+      for (var doc in querySnapshot.docs) {
+        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+        String userId = data['userId'];
+        String userName = userIdToNameMap[userId] ?? 'Unknown';
+        data['userName'] = userName;
+        Comment comment =
+            Comment.fromFirestore(doc.id, data, documentSnapshot: doc); // 修正
+        commentsList.add(comment);
+      }
+
+      return commentsList;
     } catch (e) {
       print('Error getting comments: $e');
       throw Exception('Failed to get comments');
     }
   }
 
-// dailyGoalIdに関連するすべての返信を取得する関数
+  // dailyGoalIdに関連するすべての返信を取得する関数
   Future<List<Reply>> getRepliesForDailyGoal(String dailyGoalId) async {
     final FirebaseFirestore firestore = FirebaseFirestore.instance;
 
@@ -40,27 +100,54 @@ class CommentService {
         .get();
 
     List<Reply> allReplies = [];
+    Set<String> userIds = {}; // ユニークなuserIdを保持するセット
 
     // 各コメントドキュメントのrepliesサブコレクションから返信を取得
     for (var commentDoc in commentsSnapshot.docs) {
-      // コメントIDを取得
       String commentId = commentDoc.id;
 
-      // repliesサブコレクションを取得
       QuerySnapshot repliesSnapshot =
           await commentDoc.reference.collection('replies').get();
 
-      // 返信ドキュメントをReplyオブジェクトに変換してリストに追加
-      allReplies.addAll(repliesSnapshot.docs.map((replyDoc) {
-        return Reply.fromFirestore(
-            replyDoc.id, replyDoc.data() as Map<String, dynamic>, commentId);
-      }).toList());
+      for (var replyDoc in repliesSnapshot.docs) {
+        Map<String, dynamic> data = replyDoc.data() as Map<String, dynamic>;
+        String userId = data['userId'];
+        userIds.add(userId);
+        allReplies.add(Reply.fromFirestore(replyDoc.id, data, commentId));
+      }
+    }
+
+    // ユーザー情報を一括取得
+    Map<String, String> userIdToNameMap = {};
+
+    if (userIds.isNotEmpty) {
+      List<String> userIdList = userIds.toList();
+      int batchSize = 10;
+      for (int i = 0; i < userIdList.length; i += batchSize) {
+        List<String> batchUserIds = userIdList.skip(i).take(batchSize).toList();
+        QuerySnapshot userSnapshot = await firestore
+            .collection('users')
+            .where(FieldPath.documentId, whereIn: batchUserIds)
+            .get();
+
+        for (var userDoc in userSnapshot.docs) {
+          String userId = userDoc.id;
+          String userName = userDoc['name'] ?? 'Unknown';
+          userIdToNameMap[userId] = userName;
+        }
+      }
+    }
+
+    // 返信リストにuserNameを追加
+    for (var reply in allReplies) {
+      String userId = reply.userId;
+      String userName = userIdToNameMap[userId] ?? 'Unknown';
+      reply.userName = userName;
     }
 
     return allReplies;
   }
 
-  // 指定された dailyGoalId に関連するコメント数を取得する関数
   Future<int> getCommentCountByDailyGoalId(String dailyGoalId) async {
     try {
       // 指定された dailyGoalId に関連するコメントをクエリ
@@ -83,7 +170,6 @@ class CommentService {
         'content': comment.content,
         'dailyGoalId': comment.dailyGoalId,
         'dateTime': comment.dateTime,
-        'userName': comment.userName,
         'userId': comment.userId,
       });
       print('Comment added successfully' + comment.content);
@@ -101,7 +187,6 @@ class CommentService {
       await comments.doc(reply.commentId).collection('replies').add({
         'content': reply.content,
         'dateTime': reply.dateTime,
-        'userName': reply.userName,
         'userId': reply.userId,
       });
       print('Reply added successfully');

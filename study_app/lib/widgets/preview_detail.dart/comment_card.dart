@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:study_app/screens/other_user_display.dart';
 import 'package:study_app/services/comment_service.dart';
@@ -7,8 +8,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:study_app/models/user.dart';
 import 'package:study_app/models/comment.dart';
 import 'package:study_app/models/reply.dart';
-import 'package:flutter/material.dart';
-import 'package:study_app/models/user.dart';
+import 'package:study_app/widgets/app_bar.dart';
+import 'package:study_app/widgets/controller_manager.dart';
 
 class Comments extends StatefulWidget {
   final List<Comment> comments;
@@ -17,12 +18,13 @@ class Comments extends StatefulWidget {
   final Function addNewComment;
   final Function addNewReply;
 
-  Comments(
-      {required this.comments,
-      required this.addNewReply,
-      required this.replies,
-      required this.dailyGoalId,
-      required this.addNewComment});
+  Comments({
+    required this.comments,
+    required this.addNewReply,
+    required this.replies,
+    required this.dailyGoalId,
+    required this.addNewComment,
+  });
 
   @override
   _CommentsState createState() => _CommentsState();
@@ -30,43 +32,14 @@ class Comments extends StatefulWidget {
 
 class _CommentsState extends State<Comments> {
   TextEditingController _commentController = TextEditingController();
-  Comment? _selectedComment; // 選択されたコメントを保持する変数
+  UserService userService = UserService();
+  Map<String, String?> profileImageCache = {};
 
   @override
-  void initState() {
-    super.initState();
-    _initializeShowAllReplies();
+  void dispose() {
+    _commentController.dispose();
+    super.dispose();
   }
-
-  void _initializeShowAllReplies() {
-    for (var comment in widget.comments) {
-      List<Reply> replies = widget.replies
-          .where((reply) => reply.commentId == comment.id)
-          .toList();
-      showAllReplies[comment.id] = replies.length < 3;
-    }
-
-    for (var entry in showAllReplies.entries) {
-      print('Comment ID: ${entry.key}, Show All Replies: ${entry.value}');
-    }
-  }
-
-  String timeAgo(DateTime dateTime) {
-    Duration diff = DateTime.now().difference(dateTime);
-    if (diff.inDays >= 1) {
-      return '${diff.inDays} 日前';
-    } else if (diff.inHours >= 1) {
-      return '${diff.inHours} 時間前';
-    } else if (diff.inMinutes >= 1) {
-      return '${diff.inMinutes} 分前';
-    } else {
-      return 'たった今';
-    }
-  }
-
-  Map<String, bool> showAllReplies = {};
-  Map<String, String?> profileImageCache = {};
-  UserService userService = UserService();
 
   Future<String?> _fetchProfileImage(String userId) async {
     if (profileImageCache.containsKey(userId)) {
@@ -83,386 +56,34 @@ class _CommentsState extends State<Comments> {
     }
   }
 
-  void _onTapCommentModal() {
-    showModalBottomSheet(
-      backgroundColor: Colors.white,
-      isScrollControlled: true,
-      context: context,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(20),
+  void _onTapCommentScreen() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CommentScreen(
+          comments: widget.comments,
+          replies: widget.replies,
+          dailyGoalId: widget.dailyGoalId,
+          addNewComment: widget.addNewComment,
+          addNewReply: widget.addNewReply,
+          userService: userService,
+          profileImageCache: profileImageCache,
         ),
       ),
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setState) {
-            List<Comment> sortedComments = List.from(widget.comments)
-              ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
-
-            double _offsetX = 0.0; // ドラッグのオフセットを管理する変数
-
-            // 文字列を30文字以上で省略する関数
-            String _truncateText(String text) {
-              return text.length > 30 ? '${text.substring(0, 30)}...' : text;
-            }
-
-            return Container(
-              height: MediaQuery.of(context).size.height * 0.8,
-              padding: EdgeInsets.all(15),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 170,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: subTheme,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  SizedBox(height: 10),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      child: Column(
-                        children: sortedComments.map((comment) {
-                          // リプライをフィルタリングして取得
-                          List<Reply> replies = widget.replies
-                              .where((reply) => reply.commentId == comment.id)
-                              .toList();
-
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              GestureDetector(
-                                onHorizontalDragUpdate: (details) {
-                                  // 右から左にドラッグされた場合のみ動かす
-                                  if (details.delta.dx < 0) {
-                                    setState(() {
-                                      _offsetX += details.delta.dx;
-                                    });
-                                  }
-                                },
-                                onHorizontalDragEnd: (details) {
-                                  // ドラッグが終わったら元の位置に戻す
-                                  setState(() {
-                                    _offsetX = 0.0;
-                                    _selectedComment = comment;
-                                  });
-                                },
-                                child: Transform.translate(
-                                  offset: Offset(_offsetX, 0),
-                                  child: FutureBuilder<String?>(
-                                    future: _fetchProfileImage(comment.userId),
-                                    builder: (context, snapshot) {
-                                      return Container(
-                                        margin:
-                                            EdgeInsets.symmetric(vertical: 5),
-                                        padding: EdgeInsets.all(10),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color:
-                                                  Colors.grey.withOpacity(0.3),
-                                              spreadRadius: 1,
-                                              blurRadius: 4,
-                                              offset: Offset(0, 2),
-                                            ),
-                                          ],
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                GestureDetector(
-                                                  onTap: () {
-                                                    Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                        builder: (context) =>
-                                                            OtherUserDisplay(
-                                                          user: User(
-                                                            profileImgUrl:
-                                                                snapshot.data ??
-                                                                    '',
-                                                            name: comment
-                                                                .userName,
-                                                            id: comment.userId,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    );
-                                                  },
-                                                  child: CircleAvatar(
-                                                    radius: 20,
-                                                    backgroundImage: snapshot
-                                                                .hasData &&
-                                                            snapshot.data !=
-                                                                null
-                                                        ? NetworkImage(
-                                                            snapshot.data!)
-                                                        : AssetImage(
-                                                                'assets/images/default_avatar.png')
-                                                            as ImageProvider,
-                                                  ),
-                                                ),
-                                                SizedBox(width: 10),
-                                                Expanded(
-                                                  child: Column(
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .start,
-                                                    children: [
-                                                      Row(
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .spaceBetween,
-                                                        children: [
-                                                          Expanded(
-                                                            child: Text(
-                                                              comment.userName,
-                                                              style: TextStyle(
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-                                                                fontSize: 16,
-                                                              ),
-                                                              overflow:
-                                                                  TextOverflow
-                                                                      .ellipsis,
-                                                            ),
-                                                          ),
-                                                          SizedBox(width: 10),
-                                                          Text(
-                                                            timeAgo(comment
-                                                                .dateTime),
-                                                            style: TextStyle(
-                                                              fontSize: 12,
-                                                              color:
-                                                                  Colors.grey,
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                      SizedBox(height: 5),
-                                                      Text(
-                                                        comment.content,
-                                                        style: TextStyle(
-                                                            fontSize: 14),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            // リプライの表示
-                                            Column(
-                                              children: [
-                                                for (int i = 0;
-                                                    i < replies.length;
-                                                    i++)
-                                                  if (i < 2 ||
-                                                      (showAllReplies[
-                                                              comment.id] ??
-                                                          false))
-                                                    _buildReplyWidget(
-                                                        replies[i]),
-                                                if (replies.length > 2)
-                                                  TextButton(
-                                                    onPressed: () {
-                                                      setState(() {
-                                                        showAllReplies[
-                                                                comment.id] =
-                                                            !(showAllReplies[
-                                                                    comment
-                                                                        .id] ??
-                                                                false);
-                                                      });
-                                                    },
-                                                    child: Text(
-                                                      showAllReplies[
-                                                                  comment.id] ==
-                                                              true
-                                                          ? '隠す'
-                                                          : '全ての返信を表示',
-                                                      style: TextStyle(
-                                                          color: subTheme),
-                                                    ),
-                                                  ),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ),
-                            ],
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                  ),
-                  if (_selectedComment != null)
-                    Container(
-                      padding: EdgeInsets.all(8),
-                      margin: EdgeInsets.only(bottom: 10),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(5),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              '返信先: ${_selectedComment?.userName}\n"${_truncateText(_selectedComment?.content ?? "")}"',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[800],
-                              ),
-                            ),
-                          ),
-                          IconButton(
-                            icon: Icon(Icons.close),
-                            onPressed: () {
-                              setState(() {
-                                _selectedComment = null;
-                              });
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  Padding(
-                    padding: const EdgeInsets.only(
-                        top: 10, bottom: 8, left: 5, right: 5),
-                    child: Container(
-                      height: 35,
-                      padding: EdgeInsets.only(left: 10),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(30.0),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black12,
-                            blurRadius: 4.0,
-                            offset: Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: <Widget>[
-                          Expanded(
-                            child: TextField(
-                              controller: _commentController,
-                              decoration: InputDecoration(
-                                hintText: 'コメントを追加',
-                                border: InputBorder.none,
-                              ),
-                            ),
-                          ),
-                          IconButton(
-                            icon: Icon(Icons.send, color: subTheme),
-                            onPressed: () async {
-                              String content = _commentController.text;
-                              if (content.isEmpty) return;
-                              String userId =
-                                  (await userService.getCurrentUserId()) ?? '';
-                              String userName =
-                                  (await userService.getUserName(userId)) ??
-                                      'Unknown User';
-                              DateTime dateTime = DateTime.now();
-                              if (_selectedComment == null)
-                                widget.addNewComment(
-                                  content: content,
-                                  dailyGoalId: widget.dailyGoalId,
-                                  dateTime: dateTime,
-                                  userName: userName,
-                                  userId: userId,
-                                );
-                              else
-                                widget.addNewReply(
-                                    reply: Reply(
-                                  id: '',
-                                  content: content,
-                                  dateTime: dateTime,
-                                  commentId: _selectedComment?.id ?? '',
-                                  userId: userId,
-                                  userName: userName,
-                                ));
-                              _commentController.clear();
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
     );
   }
 
-// Helper function to build a reply widget
-  Widget _buildReplyWidget(Reply reply) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 40, top: 5, bottom: 5),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            Icons.reply,
-            size: 16,
-            color: Colors.grey,
-          ),
-          SizedBox(width: 5),
-          FutureBuilder<String?>(
-            future: _fetchProfileImage(reply.userId),
-            builder: (context, snapshot) {
-              return CircleAvatar(
-                radius: 10,
-                backgroundImage: snapshot.hasData && snapshot.data != null
-                    ? NetworkImage(snapshot.data!)
-                    : AssetImage('assets/images/default_avatar.png')
-                        as ImageProvider,
-              );
-            },
-          ),
-          SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(width: 5),
-                Text(
-                  reply.userName,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  reply.content,
-                  style: TextStyle(fontSize: 14),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
+  String timeAgo(DateTime dateTime) {
+    Duration diff = DateTime.now().difference(dateTime);
+    if (diff.inDays >= 1) {
+      return '${diff.inDays} 日前';
+    } else if (diff.inHours >= 1) {
+      return '${diff.inHours} 時間前';
+    } else if (diff.inMinutes >= 1) {
+      return '${diff.inMinutes} 分前';
+    } else {
+      return 'たった今';
+    }
   }
 
   @override
@@ -498,7 +119,7 @@ class _CommentsState extends State<Comments> {
               Text(widget.comments.length.toString()),
               Spacer(),
               InkWell(
-                onTap: _onTapCommentModal,
+                onTap: _onTapCommentScreen,
                 borderRadius: BorderRadius.circular(5),
                 child: Container(
                   padding: EdgeInsets.symmetric(vertical: 4, horizontal: 5),
@@ -549,28 +170,26 @@ class _CommentsState extends State<Comments> {
               future: _fetchProfileImage(comment.userId),
               builder: (context, snapshot) {
                 return GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => OtherUserDisplay(
+                  onTap: _onTapCommentScreen, // アイコンと名前以外の部分をタップしたとき
+                  child: Row(
+                    children: [
+                      // アイコンと名前のタップでプロフィール画面に遷移
+
+                      const SizedBox(width: 8),
+                      // コメントのコンテンツ部分
+                      Expanded(
+                        child: CommentCard(
+                          onTapCommentScreen: _onTapCommentScreen,
                           user: User(
-                            profileImgUrl: snapshot.data ?? '',
-                            name: comment.userName,
                             id: comment.userId,
+                            name: comment.userName,
+                            profileImgUrl: snapshot.data ?? '',
                           ),
+                          content: comment.content,
+                          dateTime: comment.dateTime,
                         ),
                       ),
-                    );
-                  },
-                  child: CommentCard(
-                    user: User(
-                      id: comment.userId,
-                      name: comment.userName,
-                      profileImgUrl: snapshot.data ?? '',
-                    ),
-                    content: comment.content,
-                    dateTime: comment.dateTime,
+                    ],
                   ),
                 );
               },
@@ -611,37 +230,36 @@ class _CommentsState extends State<Comments> {
                   ),
                   onPressed: () async {
                     String content = _commentController.text;
-                    print(content);
                     if (content.isEmpty) return;
-                    String userId = (await userService.getCurrentUserId()) ??
-                        ''; // そのままawaitで取得
+                    String userId =
+                        (await userService.getCurrentUserId()) ?? '';
                     String userName = (await userService.getUserName(userId)) ??
-                        'Unknown User'; // 同様にそのままawaitで取得
+                        'Unknown User';
                     DateTime dateTime = DateTime.now();
-                    // toString()は不要
 
-                    if (_selectedComment == null)
-                      widget.addNewComment(
-                        content: content,
-                        dailyGoalId: widget.dailyGoalId,
-                        dateTime: dateTime,
-                        userName: userName,
-                        userId: userId,
+                    widget.addNewComment(
+                      content: content,
+                      dailyGoalId: widget.dailyGoalId,
+                      dateTime: dateTime,
+                      userName: userName,
+                      userId: userId,
+                    );
+
+                    setState(() {
+                      widget.comments.insert(
+                        0,
+                        Comment(
+                          id: '',
+                          content: content,
+                          dateTime: dateTime,
+                          userId: userId,
+                          userName: userName,
+                          dailyGoalId: widget.dailyGoalId,
+                        ),
                       );
-                    else
-                      widget.addNewReply(
-                          reply: Reply(
-                        id: '',
-                        content: content,
-                        dateTime: dateTime,
-                        commentId: _selectedComment?.id ?? '',
-                        userId: userId,
-                        userName: userName,
-                      ));
-                    _commentController.clear();
+                    });
 
                     _commentController.clear();
-                    setState(() {});
                   },
                 ),
               ],
@@ -653,51 +271,431 @@ class _CommentsState extends State<Comments> {
   }
 }
 
-class CommentCard extends StatefulWidget {
+class CommentScreen extends StatefulWidget {
+  final List<Comment> comments;
+  final List<Reply> replies;
+  final String dailyGoalId;
+  final Function addNewComment;
+  final Function addNewReply;
+  final UserService userService;
+  final Map<String, String?> profileImageCache;
+
+  CommentScreen({
+    required this.comments,
+    required this.replies,
+    required this.dailyGoalId,
+    required this.addNewComment,
+    required this.addNewReply,
+    required this.userService,
+    required this.profileImageCache,
+  });
+
+  @override
+  _CommentScreenState createState() => _CommentScreenState();
+}
+
+class _CommentScreenState extends State<CommentScreen> {
+  TextEditingController _commentController = TextEditingController();
+  Comment? _selectedComment;
+  Map<String, bool> showAllReplies = {};
+  double _offsetX = 0.0;
+
+  List<Comment> modalComments = []; // コメントリスト
+  bool isLoadingMore = false; // ロード中フラグ
+  bool hasMoreComments = true; // 追加のコメントがあるかどうか
+  DocumentSnapshot? lastDocument; // 最後に取得したドキュメント
+
+  ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    modalComments = List.from(widget.comments);
+    if (modalComments.isNotEmpty) {
+      lastDocument = modalComments.last.documentSnapshot;
+    }
+    _initializeShowAllReplies();
+    _scrollController.addListener(_onScroll);
+  }
+
+  void _initializeShowAllReplies() {
+    for (var comment in modalComments) {
+      List<Reply> replies = widget.replies
+          .where((reply) => reply.commentId == comment.id)
+          .toList();
+      showAllReplies[comment.id] = replies.length < 3;
+    }
+  }
+
+  @override
+  void dispose() {
+    _commentController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() async {
+    if (_scrollController.position.pixels ==
+            _scrollController.position.maxScrollExtent &&
+        !isLoadingMore &&
+        hasMoreComments) {
+      setState(() {
+        isLoadingMore = true;
+      });
+      await _loadMoreComments();
+      setState(() {
+        isLoadingMore = false;
+      });
+    }
+  }
+
+  Future<void> _loadMoreComments() async {
+    CommentService commentService = CommentService();
+    List<Comment> newComments = await commentService.getCommentsByDailyGoalId(
+      widget.dailyGoalId,
+      limit: 10,
+      lastDocument: lastDocument,
+    );
+
+    if (newComments.isNotEmpty) {
+      setState(() {
+        modalComments.addAll(newComments);
+        lastDocument = newComments.last.documentSnapshot;
+        _initializeShowAllReplies();
+      });
+    } else {
+      setState(() {
+        hasMoreComments = false;
+      });
+    }
+  }
+
+  String timeAgo(DateTime dateTime) {
+    Duration diff = DateTime.now().difference(dateTime);
+    if (diff.inDays >= 1) {
+      return '${diff.inDays} 日前';
+    } else if (diff.inHours >= 1) {
+      return '${diff.inHours} 時間前';
+    } else if (diff.inMinutes >= 1) {
+      return '${diff.inMinutes} 分前';
+    } else {
+      return 'たった今';
+    }
+  }
+
+  Future<String?> _fetchProfileImage(String userId) async {
+    if (widget.profileImageCache.containsKey(userId)) {
+      return widget.profileImageCache[userId];
+    }
+
+    try {
+      String? imageUrl = await widget.userService.getUserProfileImage(userId);
+      widget.profileImageCache[userId] = imageUrl;
+      return imageUrl;
+    } catch (e) {
+      print('Error fetching profile image: $e');
+      return null;
+    }
+  }
+
+  String _truncateText(String text) {
+    return text.length > 30 ? '${text.substring(0, 30)}...' : text;
+  }
+
+  void _toggleShowAllReplies(String commentId) {
+    setState(() {
+      showAllReplies[commentId] = !(showAllReplies[commentId] ?? false);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    List<Reply> modalReplies = List.from(widget.replies);
+
+    return Scaffold(
+      backgroundColor: backGroundColor,
+      appBar: MyAppBar(),
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              controller: _scrollController,
+              child: Column(
+                children: modalComments.map((comment) {
+                  List<Reply> replies = widget.replies
+                      .where((reply) => reply.commentId == comment.id)
+                      .toList();
+
+                  return FutureBuilder<String?>(
+                    future: _fetchProfileImage(comment.userId),
+                    builder: (context, snapshot) {
+                      String profileImageUrl = snapshot.data ?? '';
+                      return CommentItem(
+                        comment: comment,
+                        profileImageUrl: profileImageUrl,
+                        replies: replies,
+                        onSelectComment: (Comment selectedComment) {
+                          setState(() {
+                            _selectedComment = selectedComment;
+                          });
+                        },
+                        showAllReplies: showAllReplies,
+                        toggleShowAllReplies: _toggleShowAllReplies,
+                        fetchProfileImage: _fetchProfileImage,
+                      );
+                    },
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+          if (isLoadingMore)
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: 10),
+              child: CircularProgressIndicator(),
+            ),
+          if (_selectedComment != null)
+            Container(
+              padding: EdgeInsets.all(8),
+              margin: EdgeInsets.only(bottom: 10),
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(5),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      '返信先: ${_selectedComment?.userName}\n"${_truncateText(_selectedComment?.content ?? "")}"',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.close),
+                    onPressed: () {
+                      setState(() {
+                        _selectedComment = null;
+                      });
+                    },
+                  ),
+                ],
+              ),
+            ),
+          Padding(
+            padding:
+                const EdgeInsets.only(top: 10, bottom: 8, left: 5, right: 5),
+            child: Container(
+              height: 50,
+              padding: EdgeInsets.only(left: 10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(30.0),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 4.0,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: <Widget>[
+                  Expanded(
+                    child: TextField(
+                      controller: _commentController,
+                      decoration: InputDecoration(
+                        hintText: 'コメントを追加',
+                        border: InputBorder.none,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.send, color: subTheme),
+                    onPressed: () async {
+                      String content = _commentController.text;
+                      if (content.isEmpty) return;
+                      String userId =
+                          (await widget.userService.getCurrentUserId()) ?? '';
+                      String userName =
+                          (await widget.userService.getUserName(userId)) ??
+                              'Unknown User';
+                      DateTime dateTime = DateTime.now();
+
+                      if (_selectedComment == null) {
+                        widget.addNewComment(
+                          content: content,
+                          dailyGoalId: widget.dailyGoalId,
+                          dateTime: dateTime,
+                          userName: userName,
+                          userId: userId,
+                        );
+
+                        setState(() {
+                          modalComments.insert(
+                            0,
+                            Comment(
+                              id: '', // 適切なIDを設定
+                              content: content,
+                              dateTime: dateTime,
+                              userId: userId,
+                              userName: userName,
+                              dailyGoalId: widget.dailyGoalId,
+                            ),
+                          );
+                        });
+                      } else {
+                        widget.addNewReply(
+                          reply: Reply(
+                            id: '',
+                            content: content,
+                            dateTime: dateTime,
+                            commentId: _selectedComment?.id ?? '',
+                            userId: userId,
+                            userName: userName,
+                          ),
+                        );
+
+                        setState(() {
+                          widget.replies.add(
+                            Reply(
+                              id: '',
+                              content: content,
+                              dateTime: dateTime,
+                              commentId: _selectedComment?.id ?? '',
+                              userId: userId,
+                              userName: userName,
+                            ),
+                          );
+                        });
+                      }
+                      _commentController.clear();
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // リプライウィジェットの構築
+  Widget _buildReplyWidget(Reply reply) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 40, top: 5, bottom: 5),
+      child: FutureBuilder<String?>(
+        future: _fetchProfileImage(reply.userId),
+        builder: (context, snapshot) {
+          String profileImageUrl = snapshot.data ?? '';
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.reply,
+                size: 16,
+                color: Colors.grey,
+              ),
+              SizedBox(width: 5),
+              GestureDetector(
+                onTap: () async {
+                  String? currentUserId =
+                      await UserService().getCurrentUserId();
+                  if (reply.userId == currentUserId) {
+                    Navigator.of(context).popUntil((route) => route.isFirst);
+                    jumpToTab(4); // タブを「アカウント」に移動
+                  } else {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => OtherUserDisplay(
+                          user: User(
+                            id: reply.userId,
+                            name: reply.userName,
+                            profileImgUrl: profileImageUrl,
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+                },
+                child: CircleAvatar(
+                  radius: 10,
+                  backgroundImage: profileImageUrl.isNotEmpty
+                      ? NetworkImage(profileImageUrl)
+                      : AssetImage('assets/images/default_avatar.png')
+                          as ImageProvider,
+                ),
+              ),
+              SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(width: 5),
+                    GestureDetector(
+                      onTap: () async {
+                        String? currentUserId =
+                            await UserService().getCurrentUserId();
+                        if (reply.userId == currentUserId) {
+                          Navigator.of(context)
+                              .popUntil((route) => route.isFirst);
+                          jumpToTab(4);
+                        } else {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => OtherUserDisplay(
+                                user: User(
+                                  id: reply.userId,
+                                  name: reply.userName,
+                                  profileImgUrl: profileImageUrl,
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                      child: Text(
+                        reply.userName,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      reply.content,
+                      style: TextStyle(fontSize: 14),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class CommentCard extends StatelessWidget {
   final User user;
   final String content;
   final DateTime dateTime;
-  final isShowAll;
+  final Function() onTapCommentScreen;
 
   CommentCard({
     required this.user,
     required this.content,
     required this.dateTime,
-    this.isShowAll = true,
+    required this.onTapCommentScreen,
   });
-
-  @override
-  _CommentCardState createState() => _CommentCardState();
-}
-
-class _CommentCardState extends State<CommentCard>
-    with SingleTickerProviderStateMixin {
-  double _offsetX = 0.0;
-  bool _isDragging = false;
-
-  void _onHorizontalDragUpdate(DragUpdateDetails details) {
-    // 右から左にドラッグされた場合のみ動かす
-    if (details.delta.dx < 0) {
-      setState(() {
-        _offsetX += details.delta.dx;
-        _isDragging = true;
-      });
-    }
-  }
-
-  void _onHorizontalDragEnd(DragEndDetails details) {
-    // ドラッグが終わったら元の位置に戻る
-    setState(() {
-      _isDragging = false;
-    });
-
-    // アニメーションで元の位置に戻す
-    Future.delayed(Duration(milliseconds: 100), () {
-      setState(() {
-        _offsetX = 0.0;
-      });
-    });
-  }
 
   String timeAgo(DateTime dateTime) {
     Duration diff = DateTime.now().difference(dateTime);
@@ -715,24 +713,185 @@ class _CommentCardState extends State<CommentCard>
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onHorizontalDragUpdate: _onHorizontalDragUpdate,
-      onHorizontalDragEnd: _onHorizontalDragEnd,
+      onTap: onTapCommentScreen,
+      child: Container(
+        margin: EdgeInsets.symmetric(
+          vertical: 5,
+        ),
+        padding: EdgeInsets.all(5),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(5),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.5),
+              spreadRadius: 1,
+              blurRadius: 3,
+              offset: Offset(0, 1),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                // アイコンをタップするとプロフィール画面に遷移
+                GestureDetector(
+                  onTap: () async {
+                    String? currentUserId = UserService().getCurrentUserId();
+
+                    if (currentUserId == user.id) {
+                      Navigator.of(context).popUntil((route) => route.isFirst);
+                      // 自分自身のプロフィールの場合はタブを切り替える
+                      jumpToTab(4); // タブを「アカウント」に移動
+                    } else {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => OtherUserDisplay(
+                            user: user,
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                  child: CircleAvatar(
+                    radius: 15,
+                    backgroundImage: user.profileImgUrl.isNotEmpty
+                        ? NetworkImage(user.profileImgUrl)
+                        : AssetImage('assets/images/default_avatar.png')
+                            as ImageProvider,
+                  ),
+                ),
+                SizedBox(width: 10),
+                // 名前をタップするとプロフィール画面に遷移
+                GestureDetector(
+                  onTap: () async {
+                    String? currentUserId = UserService().getCurrentUserId();
+
+                    if (currentUserId == user.id) {
+                      Navigator.of(context).popUntil((route) => route.isFirst);
+                      // 自分自身のプロフィールの場合はタブを切り替える
+                      jumpToTab(4); // タブを「アカウント」に移動
+                    } else {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => OtherUserDisplay(
+                            user: user,
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                  child: Text(
+                    user.name,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                Spacer(),
+                Text(
+                  timeAgo(dateTime),
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
+            ),
+            SizedBox(height: 5),
+            Text(
+              content,
+              style: TextStyle(fontSize: 14),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class CommentItem extends StatefulWidget {
+  final Comment comment;
+  final String profileImageUrl;
+  final List<Reply> replies;
+  final Function(Comment) onSelectComment;
+  final Map<String, bool> showAllReplies;
+  final Function(String) toggleShowAllReplies;
+  final Future<String?> Function(String userId) fetchProfileImage;
+
+  CommentItem({
+    required this.comment,
+    required this.profileImageUrl,
+    required this.replies,
+    required this.onSelectComment,
+    required this.showAllReplies,
+    required this.toggleShowAllReplies,
+    required this.fetchProfileImage,
+  });
+
+  @override
+  _CommentItemState createState() => _CommentItemState();
+}
+
+class _CommentItemState extends State<CommentItem> {
+  double _offsetX = 0.0;
+
+  void _handleHorizontalDragUpdate(DragUpdateDetails details) {
+    if (details.delta.dx < 0) {
+      setState(() {
+        _offsetX += details.delta.dx;
+      });
+    }
+  }
+
+  void _handleHorizontalDragEnd(DragEndDetails details) {
+    setState(() {
+      _offsetX = 0.0;
+    });
+    widget.onSelectComment(widget.comment);
+  }
+
+  String timeAgo(DateTime dateTime) {
+    Duration diff = DateTime.now().difference(dateTime);
+    if (diff.inDays >= 1) {
+      return '${diff.inDays} 日前';
+    } else if (diff.inHours >= 1) {
+      return '${diff.inHours} 時間前';
+    } else if (diff.inMinutes >= 1) {
+      return '${diff.inMinutes} 分前';
+    } else {
+      return 'たった今';
+    }
+  }
+
+  String _truncateText(String text) {
+    return text.length > 30 ? '${text.substring(0, 30)}...' : text;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final comment = widget.comment;
+    final replies = widget.replies;
+
+    return GestureDetector(
+      onHorizontalDragUpdate: _handleHorizontalDragUpdate,
+      onHorizontalDragEnd: _handleHorizontalDragEnd,
       child: Transform.translate(
-        offset: Offset(_offsetX, 0), // 水平方向にオフセットを適用
+        offset: Offset(_offsetX, 0),
         child: Container(
-          margin: EdgeInsets.symmetric(
-            vertical: 5,
-          ),
-          padding: EdgeInsets.all(5),
+          margin: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+          padding: EdgeInsets.all(10),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(5),
+            borderRadius: BorderRadius.circular(10),
             boxShadow: [
               BoxShadow(
-                color: Colors.grey.withOpacity(0.5),
+                color: Colors.grey.withOpacity(0.3),
                 spreadRadius: 1,
-                blurRadius: 3,
-                offset: Offset(0, 1),
+                blurRadius: 4,
+                offset: Offset(0, 2),
               ),
             ],
           ),
@@ -740,62 +899,226 @@ class _CommentCardState extends State<CommentCard>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (widget.user.profileImgUrl.isNotEmpty)
-                    CircleAvatar(
-                      radius: 15,
-                      backgroundImage: NetworkImage(widget.user.profileImgUrl),
-                    )
-                  else
-                    Icon(
-                      Icons.account_circle,
-                      size: 20.0,
+                  // プロフィール画像と名前
+                  GestureDetector(
+                    onTap: () async {
+                      String? currentUserId =
+                          await UserService().getCurrentUserId();
+                      if (comment.userId == currentUserId) {
+                        Navigator.of(context)
+                            .popUntil((route) => route.isFirst);
+                        jumpToTab(4); // タブを「アカウント」に移動
+                      } else {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => OtherUserDisplay(
+                              user: User(
+                                profileImgUrl: widget.profileImageUrl,
+                                name: comment.userName,
+                                id: comment.userId,
+                              ),
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                    child: CircleAvatar(
+                      radius: 20,
+                      backgroundImage: widget.profileImageUrl.isNotEmpty
+                          ? NetworkImage(widget.profileImageUrl)
+                          : AssetImage('assets/images/default_avatar.png')
+                              as ImageProvider,
                     ),
-                  SizedBox(width: 10),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.user.name,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
                   ),
-                  Spacer(),
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(top: 2.0),
-                        child: Text(
-                          timeAgo(widget.dateTime),
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // ユーザー名とタイムスタンプ
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () async {
+                                  String? currentUserId =
+                                      await UserService().getCurrentUserId();
+                                  if (comment.userId == currentUserId) {
+                                    Navigator.of(context)
+                                        .popUntil((route) => route.isFirst);
+                                    jumpToTab(4);
+                                  } else {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => OtherUserDisplay(
+                                          user: User(
+                                            profileImgUrl:
+                                                widget.profileImageUrl,
+                                            name: comment.userName,
+                                            id: comment.userId,
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                },
+                                child: Text(
+                                  comment.userName,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: 10),
+                            Text(
+                              timeAgo(comment.dateTime),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
+                        SizedBox(height: 5),
+                        Text(
+                          comment.content,
+                          style: TextStyle(fontSize: 14),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              // リプライの表示
+              Column(
                 children: [
-                  Expanded(
-                    child: Text(
-                      widget.content,
-                      style: TextStyle(fontSize: 14),
-                      textAlign: TextAlign.center,
-                      overflow: TextOverflow.ellipsis,
+                  for (int i = 0; i < replies.length; i++)
+                    if (i < 2 || (widget.showAllReplies[comment.id] ?? false))
+                      _buildReplyWidget(replies[i]),
+                  if (replies.length > 2)
+                    TextButton(
+                      onPressed: () {
+                        widget.toggleShowAllReplies(comment.id);
+                      },
+                      child: Text(
+                        widget.showAllReplies[comment.id] == true
+                            ? '隠す'
+                            : '全ての返信を表示',
+                        style: TextStyle(color: subTheme),
+                      ),
                     ),
-                  ),
                 ],
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  // リプライウィジェットの構築
+  Widget _buildReplyWidget(Reply reply) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 40, top: 5, bottom: 5),
+      child: FutureBuilder<String?>(
+        future: widget.fetchProfileImage(reply.userId),
+        builder: (context, snapshot) {
+          String profileImageUrl = snapshot.data ?? '';
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.reply,
+                size: 16,
+                color: Colors.grey,
+              ),
+              SizedBox(width: 5),
+              GestureDetector(
+                onTap: () async {
+                  String? currentUserId =
+                      await UserService().getCurrentUserId();
+                  if (reply.userId == currentUserId) {
+                    Navigator.of(context).popUntil((route) => route.isFirst);
+                    jumpToTab(4); // タブを「アカウント」に移動
+                  } else {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => OtherUserDisplay(
+                          user: User(
+                            id: reply.userId,
+                            name: reply.userName,
+                            profileImgUrl: profileImageUrl,
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+                },
+                child: CircleAvatar(
+                  radius: 10,
+                  backgroundImage: profileImageUrl.isNotEmpty
+                      ? NetworkImage(profileImageUrl)
+                      : AssetImage('assets/images/default_avatar.png')
+                          as ImageProvider,
+                ),
+              ),
+              SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(width: 5),
+                    GestureDetector(
+                      onTap: () async {
+                        String? currentUserId =
+                            await UserService().getCurrentUserId();
+                        if (reply.userId == currentUserId) {
+                          Navigator.of(context)
+                              .popUntil((route) => route.isFirst);
+                          jumpToTab(4);
+                        } else {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => OtherUserDisplay(
+                                user: User(
+                                  id: reply.userId,
+                                  name: reply.userName,
+                                  profileImgUrl: profileImageUrl,
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                      child: Text(
+                        reply.userName,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      reply.content,
+                      style: TextStyle(fontSize: 14),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

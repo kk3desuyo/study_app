@@ -6,7 +6,7 @@ class Reply {
   final DateTime dateTime;
   final String commentId;
   final String userId;
-  final String userName; // Added userName field
+  String userName; // Added userName field
 
   // コンストラクター
   Reply({

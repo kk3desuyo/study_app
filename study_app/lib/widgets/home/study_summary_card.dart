@@ -1,15 +1,22 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:like_button/like_button.dart';
 import 'package:provider/provider.dart';
 import 'package:study_app/main.dart';
 import 'package:study_app/screens/preview_detail.dart';
 import 'package:study_app/screens/other_user_display.dart';
+import 'package:study_app/services/like_service.dart';
+import 'package:study_app/services/user/user_service.dart';
 import 'package:study_app/theme/color.dart';
+import 'package:study_app/widgets/controller_manager.dart';
+
 import 'package:study_app/widgets/preview_detail.dart/detail_card.dart';
-import 'package:like_button/like_button.dart';
-import 'package:study_app/models/user.dart';
+
+import 'package:study_app/models/user.dart' as customUser;
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class StudySummaryCard extends StatefulWidget {
-  final User user;
+  final customUser.User user;
   final int studyTime;
   final int goodNum;
   final bool isPushFavorite;
@@ -18,7 +25,7 @@ class StudySummaryCard extends StatefulWidget {
   final String oneWord;
   final String dailyGoalId;
 
-  // コンストラクター
+  // コンストラクタ
   const StudySummaryCard({
     Key? key,
     required this.user,
@@ -36,6 +43,14 @@ class StudySummaryCard extends StatefulWidget {
 }
 
 class _StudySummaryCardState extends State<StudySummaryCard> {
+  int likeCountFinally = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    likeCountFinally = widget.goodNum;
+  }
+
   //分(int型)で受け取ってx時間xx分の形式の文字列を返却
   String convertMinutesToHoursAndMinutes(int totalMinutes) {
     int hours = totalMinutes ~/ 60;
@@ -44,11 +59,35 @@ class _StudySummaryCardState extends State<StudySummaryCard> {
     return '${hours}時間${minutes}分';
   }
 
+  Future<bool> onLikeButtonTapped(bool isLiked) async {
+    if (isLiked)
+      likeCountFinally++;
+    else
+      likeCountFinally--;
+
+    // 非同期でデータベース処理を行う
+    try {
+      final likeService = LikeService();
+      await likeService.toggleLike(
+        widget.dailyGoalId,
+        widget.user.id,
+        isLiked,
+      );
+    } catch (e) {
+      // エラーハンドリング
+      print('Error toggling like: $e');
+    }
+
+    return isLiked;
+  }
+
   @override
   Widget build(BuildContext context) {
+    print("userLength");
+    print(widget.user.name.length);
     return InkWell(
       onTap: () {
-        // ここで必要なアクションを実行する（例: 詳細画面に遷移）
+        // 詳細画面に遷移
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -67,15 +106,26 @@ class _StudySummaryCardState extends State<StudySummaryCard> {
                 if (widget.user.profileImgUrl.isNotEmpty)
                   GestureDetector(
                     onTap: () {
-                      // プロフィール画像がタップされたときにOtherUserDisplayへ遷移
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => OtherUserDisplay(
-                            user: widget.user,
+                      String? currentUserId = UserService().getCurrentUserId();
+                      print("currentUserId");
+                      print(currentUserId);
+                      print(widget.user.id);
+                      if (currentUserId == widget.user.id) {
+                        Navigator.of(context)
+                            .popUntil((route) => route.isFirst);
+                        // 自分自身のプロフィールの場合はタブを切り替える
+                        jumpToTab(4); // タブを「アカウント」に移動
+                      } else {
+                        // 他のユーザーのプロフィールの場合は画面に遷移
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => OtherUserDisplay(
+                              user: widget.user,
+                            ),
                           ),
-                        ),
-                      );
+                        );
+                      }
                     },
                     child: Padding(
                       padding: EdgeInsets.only(
@@ -96,15 +146,24 @@ class _StudySummaryCardState extends State<StudySummaryCard> {
                 else
                   GestureDetector(
                     onTap: () {
-                      // アイコンがタップされたときにOtherUserDisplayへ遷移
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => OtherUserDisplay(
-                            user: widget.user,
+                      String? currentUserId = UserService().getCurrentUserId();
+
+                      if (currentUserId == widget.user.id) {
+                        Navigator.of(context)
+                            .popUntil((route) => route.isFirst);
+                        // 自分自身のプロフィールの場合はタブを切り替える
+                        jumpToTab(4); // タブを「アカウント」に移動
+                      } else {
+                        // 他のユーザーのプロフィールの場合は画面に遷移
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => OtherUserDisplay(
+                              user: widget.user,
+                            ),
                           ),
-                        ),
-                      );
+                        );
+                      }
                     },
                     child: Icon(
                       Icons.account_circle,
@@ -112,7 +171,9 @@ class _StudySummaryCardState extends State<StudySummaryCard> {
                     ),
                   ),
                 Text(
-                  widget.user.name,
+                  widget.user.name.length > 5
+                      ? '${widget.user.name.substring(0, 5)}...'
+                      : widget.user.name,
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
                 ),
                 Spacer(),
@@ -138,10 +199,10 @@ class _StudySummaryCardState extends State<StudySummaryCard> {
                   width: 10,
                 ),
                 LikeButton(
-                  padding: EdgeInsets.only(right: 20),
-                  isLiked: widget.isPushFavorite,
-                  likeCount: widget.goodNum,
-                ),
+                    padding: EdgeInsets.only(right: 20),
+                    isLiked: widget.isPushFavorite,
+                    likeCount: widget.goodNum,
+                    onTap: onLikeButtonTapped),
               ],
             )
           ],
@@ -176,7 +237,7 @@ class HitoKotoCard extends StatelessWidget {
       child: Center(
         // Containerの中央に配置
         child: Text(
-          oneWord.isEmpty ? "まだ勉強中かも???" : oneWord,
+          oneWord.isEmpty ? "            " : oneWord,
           textAlign: TextAlign.center, // テキストを中央揃え
           softWrap: true, // テキストが折り返されるように設定
           style: TextStyle(

@@ -1,9 +1,10 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'dart:math'; // 切り上げに必要
 
 class StudyTimeBarChart extends StatefulWidget {
-  final List<Map<String, double>> studyTimes; // Study time per day per subject
+  final List<Map<String, double>> studyTimes; // 各日の科目ごとの学習時間
   final List<Map<String, dynamic>> subjects; // 科目名と色のリスト
 
   StudyTimeBarChart({required this.studyTimes, required this.subjects});
@@ -13,6 +14,29 @@ class StudyTimeBarChart extends StatefulWidget {
 }
 
 class _StudyTimeBarChartState extends State<StudyTimeBarChart> {
+  late double yAxisMax; // Y軸の最大値
+  late double interval; // Y軸のメモリ間隔
+
+  @override
+  void initState() {
+    super.initState();
+    yAxisMax = _calculateYAxisMax(); // 初期化時に最大値を計算
+    interval = yAxisMax / 5; // メモリ間隔を計算
+  }
+
+  // Y軸の最大値を計算する関数
+  double _calculateYAxisMax() {
+    double maxTime = 0;
+    for (var dayData in widget.studyTimes) {
+      double dayTotal = dayData.values.fold(0, (sum, time) => sum + time);
+      if (dayTotal > maxTime) {
+        maxTime = dayTotal;
+      }
+    }
+    // 最大値を5の倍数に切り上げる
+    return (maxTime / 5).ceil() * 5.0;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -24,12 +48,11 @@ class _StudyTimeBarChartState extends State<StudyTimeBarChart> {
             padding: const EdgeInsets.only(top: 16),
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final barsSpace = 0.2 *
-                    constraints.maxWidth /
-                    400; // Adjusted for more even spacing
+                final barsSpace =
+                    0.2 * constraints.maxWidth / 400; // スペースを均等に調整
                 final barsWidth =
                     (constraints.maxWidth / (widget.studyTimes.length * 2))
-                        .clamp(8.0, 40.0); // Adjust the width of the bars
+                        .clamp(8.0, 40.0); // 棒の幅を調整
 
                 return BarChart(
                   BarChartData(
@@ -48,7 +71,7 @@ class _StudyTimeBarChartState extends State<StudyTimeBarChart> {
                         sideTitles: SideTitles(
                           showTitles: true,
                           reservedSize: 40,
-                          interval: 1,
+                          interval: interval, // メモリ間隔を設定
                           getTitlesWidget: (value, meta) {
                             return SideTitleWidget(
                               axisSide: meta.axisSide,
@@ -69,7 +92,7 @@ class _StudyTimeBarChartState extends State<StudyTimeBarChart> {
                     ),
                     gridData: FlGridData(
                       show: true,
-                      horizontalInterval: 1,
+                      horizontalInterval: interval, // メモリ間隔を設定
                       checkToShowHorizontalLine: (value) => true,
                       getDrawingHorizontalLine: (value) => FlLine(
                         color: Colors.grey.withOpacity(0.1),
@@ -80,6 +103,7 @@ class _StudyTimeBarChartState extends State<StudyTimeBarChart> {
                     borderData: FlBorderData(show: false),
                     groupsSpace: barsSpace,
                     barGroups: _getBarGroups(barsWidth, barsSpace),
+                    maxY: yAxisMax, // 計算した最大値を設定
                   ),
                 );
               },
@@ -95,6 +119,7 @@ class _StudyTimeBarChartState extends State<StudyTimeBarChart> {
     );
   }
 
+  // 棒グラフデータを生成する関数
   List<BarChartGroupData> _getBarGroups(double barsWidth, double barsSpace) {
     List<BarChartGroupData> barGroups = [];
 
@@ -103,15 +128,18 @@ class _StudyTimeBarChartState extends State<StudyTimeBarChart> {
       double previousY = 0;
 
       widget.studyTimes[i].forEach((subject, time) {
-        // 科目名と色を取得する
-        final subjectData = widget.subjects.firstWhere(
-          (element) => element['name'] == subject,
-          orElse: () => {'color': Colors.grey},
-        );
+        Color color = Colors.grey; // デフォルト色を設定
+
+        for (var element in widget.subjects) {
+          if (element.keys.first == subject) {
+            color = element.values.first as Color? ??
+                Colors.grey; // 色が存在すれば取得し、nullの場合はデフォルト
+            break; // 一致する要素が見つかったのでループを抜ける
+          }
+        }
 
         stackItems.add(
-          BarChartRodStackItem(
-              previousY, previousY + time, subjectData['color']),
+          BarChartRodStackItem(previousY, previousY + time, color as Color),
         );
         previousY += time;
       });
@@ -122,8 +150,8 @@ class _StudyTimeBarChartState extends State<StudyTimeBarChart> {
           barsSpace: barsSpace,
           barRods: [
             BarChartRodData(
-              toY: previousY, // Total height for the day
-              rodStackItems: stackItems, // Stack subjects' study times
+              toY: previousY, // その日の合計高さ
+              rodStackItems: stackItems, // 科目ごとの学習時間を積み上げ
               borderRadius: BorderRadius.circular(0),
               width: barsWidth,
             ),
@@ -135,6 +163,7 @@ class _StudyTimeBarChartState extends State<StudyTimeBarChart> {
     return barGroups;
   }
 
+  // 下部の日付ラベルを生成する関数
   Widget _bottomTitles(double value, TitleMeta meta) {
     final now = DateTime.now();
     final formatter = DateFormat('MM/dd');
@@ -148,9 +177,8 @@ class _StudyTimeBarChartState extends State<StudyTimeBarChart> {
   }
 }
 
-// 科目とその色の表示
+// 科目名と色の凡例を表示するウィジェット
 class SubjectLegend extends StatelessWidget {
-  // subjectsリストを引数として受け取る
   final List<Map<String, dynamic>> subjects;
 
   SubjectLegend({required this.subjects});
@@ -161,6 +189,9 @@ class SubjectLegend extends StatelessWidget {
       spacing: 8.0, // アイテム間の水平スペース
       runSpacing: 8.0, // アイテム間の垂直スペース（次の行との間隔）
       children: subjects.map((subject) {
+        if (subject.isEmpty) {
+          return Container();
+        }
         return Padding(
           padding: const EdgeInsets.only(left: 14, right: 14, bottom: 5),
           child: Row(
@@ -171,16 +202,17 @@ class SubjectLegend extends StatelessWidget {
                 width: 20,
                 height: 20,
                 decoration: BoxDecoration(
-                  color: subject['color'],
+                  color: subject.values.first as Color? ?? Colors.grey,
                   shape: BoxShape.circle,
                 ),
               ),
               SizedBox(width: 3), // アイコンとテキストの間の隙間
               // 科目名を表示
               Text(
-                subject['name'].length <= 4
-                    ? subject['name']
-                    : '${subject['name'].substring(0, 4)}…',
+                subject.keys.first != null &&
+                        (subject.keys.first as String).length <= 6
+                    ? subject.keys.first
+                    : '${(subject.keys.first as String?)?.substring(0, 6) ?? 'Unknown'}…',
                 style: TextStyle(fontSize: 12),
               ),
             ],

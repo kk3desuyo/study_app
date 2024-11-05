@@ -1,18 +1,110 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:study_app/models/study_session.dart';
+import 'package:study_app/services/book_service.dart';
 
 class StudySessionService {
   final CollectionReference studySessionCollection =
       FirebaseFirestore.instance.collection('studySession');
 
+  final BookService bookService = BookService();
+  final CollectionReference dailyGoalsCollection =
+      FirebaseFirestore.instance.collection('dailyGoals');
+
+  Future<List<Map<String, double>>> fetchStudyTimes(String userId) async {
+    List<Map<String, double>> studyTimes = [];
+    DateTime now = DateTime.now();
+    DateTime sevenDaysAgo = now.subtract(Duration(days: 7));
+
+    // studySessionコレクションから過去7日間のデータを取得
+    QuerySnapshot snapshot = await FirebaseFirestore.instance
+        .collection('studySession')
+        .where('userId', isEqualTo: userId)
+        .where('timeStamp',
+            isGreaterThanOrEqualTo: Timestamp.fromDate(sevenDaysAgo))
+        .get();
+
+    // 過去7日分のデータを日ごとに分類し、リストに格納
+    for (int i = 0; i < 7; i++) {
+      DateTime day = now.subtract(Duration(days: i));
+      Map<String, double> dailyStudyTimes = {};
+
+      for (var doc in snapshot.docs) {
+        DateTime timeStamp = (doc['timeStamp'] as Timestamp).toDate();
+
+        // 同じ日のデータのみ追加
+        if (timeStamp.year == day.year &&
+            timeStamp.month == day.month &&
+            timeStamp.day == day.day) {
+          String bookId = doc['bookId'];
+          double studyTime =
+              (doc['studyTime'] as int).toDouble() / 60; // 分を時間に変換
+
+          // bookIdからbookNameを取得
+          String? bookName = await bookService.fetchBookName(bookId);
+          if (bookName != null) {
+            dailyStudyTimes[bookName] =
+                (dailyStudyTimes[bookName] ?? 0) + studyTime;
+          }
+        }
+      }
+      studyTimes.add(dailyStudyTimes);
+    }
+
+    return studyTimes.reversed.toList(); // 6日前から当日順に並べ替え
+  }
+
   // StudySessionを追加する関数
+  // StudySessionを追加し、DailyGoalのachievedStudyTimeを更新または作成する関数
   Future<void> addStudySession(StudySession session) async {
     try {
-      await studySessionCollection.add(session.toFirestore());
-      print('StudySession added successfully');
+      await FirebaseFirestore.instance.runTransaction((transaction) async {
+        // studySessionコレクションに新しいセッションを追加
+        DocumentReference studySessionRef = studySessionCollection.doc();
+        transaction.set(studySessionRef, session.toFirestore());
+
+        // 今日の日付を文字列で取得
+        String todayDate =
+            "${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}";
+
+        // userIdと今日の日付をもとにdailyGoalドキュメントを検索
+        QuerySnapshot dailyGoalSnapshot = await dailyGoalsCollection
+            .where('userId', isEqualTo: session.userId)
+            .where('targetDay', isEqualTo: todayDate)
+            .get();
+
+        if (dailyGoalSnapshot.docs.isNotEmpty) {
+          print("存在します");
+          // 既存のDailyGoalが存在する場合
+          DocumentReference dailyGoalRef =
+              dailyGoalSnapshot.docs.first.reference;
+          int currentAchievedStudyTime =
+              dailyGoalSnapshot.docs.first['achievedStudyTime'];
+          int newAchievedStudyTime =
+              currentAchievedStudyTime + session.studyTime;
+          print(currentAchievedStudyTime);
+          print(newAchievedStudyTime);
+          // achievedStudyTimeを更新
+          transaction.update(dailyGoalRef, {
+            'achievedStudyTime': newAchievedStudyTime,
+          });
+        } else {
+          print("存在しません");
+          // DailyGoalが存在しない場合、新しいドキュメントを作成
+          DocumentReference newDailyGoalRef = dailyGoalsCollection.doc();
+          transaction.set(newDailyGoalRef, {
+            'achievedStudyTime': session.studyTime,
+            'oneWord': '',
+            'targetDay': todayDate,
+            'targetStudyTime': 0,
+            'userId': session.userId,
+          });
+        }
+      });
+
+      print('StudySession added successfully and DailyGoal updated');
     } catch (e) {
-      print('Error adding StudySession: $e');
-      throw Exception('Failed to add StudySession');
+      print('Error adding StudySession or updating DailyGoal: $e');
+      throw Exception('Failed to add StudySession or update DailyGoal');
     }
   }
 
@@ -51,19 +143,19 @@ class StudySessionService {
     }
   }
 
-  // StudySessionを更新する関数
-  Future<void> updateStudySession(
-      String studySessionId, StudySession session) async {
-    try {
-      await studySessionCollection
-          .doc(studySessionId)
-          .update(session.toFirestore());
-      print('StudySession updated successfully');
-    } catch (e) {
-      print('Error updating StudySession: $e');
-      throw Exception('Failed to update StudySession');
-    }
-  }
+  // // StudySessionを更新する関数
+  // Future<void> updateStudySession(
+  //     String studySessionId, StudySession session) async {
+  //   try {
+  //     await studySessionCollection
+  //         .doc(studySessionId)
+  //         .update(session.toFirestore());
+  //     print('StudySession updated successfully');
+  //   } catch (e) {
+  //     print('Error updating StudySession: $e');
+  //     throw Exception('Failed to update StudySession');
+  //   }
+  // }
 
   // StudySessionを削除する関数
   Future<void> deleteStudySession(String studySessionId) async {

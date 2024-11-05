@@ -37,6 +37,13 @@ class DisplayBooks extends StatelessWidget {
             ),
           ],
         ),
+        if (studyMaterials.length == 0)
+          SizedBox(
+            height: 130,
+            child: Center(
+              child: Text("教材がありません。"),
+            ),
+          ),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           controller: _scrollController,
