@@ -46,8 +46,8 @@ class LikeService {
     }
   }
 
-  Future<bool> toggleLike(
-      String dailyGoalId, String dailyGoalUserId, bool isLiked) async {
+  Future<bool> toggleLike(String dailyGoalId, String dailyGoalUserId,
+      bool isLiked, String dailyGoalUserName) async {
     final user = _auth.currentUser;
     if (user == null) {
       // ユーザーがログインしていない場合、何もしない
@@ -63,6 +63,21 @@ class LikeService {
           'dailyGoalId': dailyGoalId,
           'dailyGoalUserId': dailyGoalUserId,
           'timestamp': FieldValue.serverTimestamp(),
+        });
+
+        // 通知を追加 (dailyGoalUserId のユーザーに通知)
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(dailyGoalUserId)
+            .collection('notifications')
+            .add({
+          'type': 'like',
+          'title': 'いいね',
+          'dailyGoalId': dailyGoalId,
+          'message': '$dailyGoalUserName さんがあなたの目標にいいねしました。',
+          'senderName': dailyGoalUserName,
+          'timestamp': FieldValue.serverTimestamp(),
+          'senderId': userId,
         });
       } else {
         // いいねを削除

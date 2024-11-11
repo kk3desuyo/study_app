@@ -16,9 +16,11 @@ import 'package:study_app/widgets/preview_detail.dart/week_chart.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:study_app/widgets/user/book_shelf.dart';
 import 'package:study_app/widgets/user/goal.dart';
+import 'package:study_app/widgets/user/icon.dart';
 import 'package:study_app/widgets/user/stacked_graph.dart';
 import 'package:study_app/widgets/user/tab_bar.dart';
 import 'package:study_app/widgets/user/tag.dart';
+import 'package:study_app/widgets/user/user_study_summary_card.dart';
 
 class MyAccountCard extends StatefulWidget {
   final User user;
@@ -69,6 +71,9 @@ class _MyAccountCardState extends State<MyAccountCard> {
 
   @override
   void initState() {
+    print("user");
+    print(widget.user.id);
+
     super.initState();
     setColorList();
   }
@@ -157,32 +162,12 @@ class _MyAccountCardState extends State<MyAccountCard> {
                       children: [
                         Row(
                           children: [
-                            if (widget.user.profileImgUrl.isNotEmpty)
-                              Padding(
-                                padding: EdgeInsets.only(
-                                    left: 10, bottom: 3, right: 20),
-                                child: Container(
-                                  width: 42.0,
-                                  height: 42.0,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(21.0),
-                                    image: DecorationImage(
-                                      image: NetworkImage(
-                                          widget.user.profileImgUrl),
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                                ),
-                              )
-                            else
-                              Padding(
-                                padding: EdgeInsets.only(
-                                    left: 4, bottom: 3, right: 3),
-                                child: Icon(
-                                  Icons.account_circle,
-                                  size: 50.0,
-                                ),
-                              ),
+                            UserIcon(
+                              profileImgUrl: widget.user.profileImgUrl,
+                              onTap: () {
+                                // Define the action when the icon is tapped
+                              },
+                            ),
                             Spacer(),
                             Expanded(
                               child: InkWell(
@@ -457,6 +442,12 @@ class _MyAccountCardState extends State<MyAccountCard> {
                               ),
                             ),
                           ),
+                        ] else ...[
+                          Column(
+                            children: [
+                              UserStudySummaryCard(userId: widget.user.id)
+                            ],
+                          )
                         ]
                       ],
                     )),

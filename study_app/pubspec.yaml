@@ -28,6 +28,7 @@ dependencies:
   cloud_firestore: ^5.4.4
   firebase_auth: ^5.3.1
   lottie: ^2.0.0
+  google_sign_in: ^5.4.3
 
 dev_dependencies:
   flutter_test:
@@ -41,3 +42,4 @@ flutter:
     - assets/images/default_avatar.png
     - assets/animation/loading.json
     - assets/animation/success.json
+    - assets/images/google_logo.png

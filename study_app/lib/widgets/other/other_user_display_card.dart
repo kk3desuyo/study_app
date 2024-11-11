@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:study_app/models/book.dart';
+import 'package:study_app/screens/followed_and_following.dart';
 import 'package:study_app/screens/other_user_display_book.dart';
 import 'package:study_app/services/user/user_service.dart';
 import 'package:study_app/theme/color.dart';
@@ -10,6 +11,7 @@ import 'package:study_app/widgets/user/goal.dart';
 import 'package:study_app/widgets/user/stacked_graph.dart';
 import 'package:study_app/widgets/user/tab_bar.dart';
 import 'package:study_app/widgets/user/tag.dart';
+import 'package:study_app/widgets/user/user_study_summary_card.dart';
 
 class OtherUserDisplayCard extends StatefulWidget {
   final User user;
@@ -28,9 +30,10 @@ class OtherUserDisplayCard extends StatefulWidget {
   final int weekStudyTime;
   final int todayGoalTime;
   final int weekGoalTime;
-
+  final Function() onChanged;
   OtherUserDisplayCard({
     Key? key,
+    required this.onChanged,
     required this.user,
     required this.studyTimes,
     required this.studyTime,
@@ -123,6 +126,8 @@ class _OtherUserDisplayCardState extends State<OtherUserDisplayCard> {
       print(book.category);
       print(book.title);
     }
+    print("tags");
+    print(widget.user.id);
     return SingleChildScrollView(
       child: Stack(
         children: [
@@ -164,7 +169,20 @@ class _OtherUserDisplayCardState extends State<OtherUserDisplayCard> {
                             Spacer(),
                             Expanded(
                               child: InkWell(
-                                onTap: () => {},
+                                onTap: () => {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          FollowedAndFollowing(
+                                        userId: widget.user.id,
+                                        userName: widget.user.name,
+                                        initalSelectedIndex: 0,
+                                        onChanged: widget.onChanged,
+                                      ),
+                                    ),
+                                  )
+                                },
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
@@ -183,7 +201,20 @@ class _OtherUserDisplayCardState extends State<OtherUserDisplayCard> {
                             ),
                             Expanded(
                               child: InkWell(
-                                onTap: () => {},
+                                onTap: () => {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          FollowedAndFollowing(
+                                        userId: widget.user.id,
+                                        userName: widget.user.name,
+                                        initalSelectedIndex: 1,
+                                        onChanged: widget.onChanged,
+                                      ),
+                                    ),
+                                  )
+                                },
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
@@ -376,6 +407,12 @@ class _OtherUserDisplayCardState extends State<OtherUserDisplayCard> {
                                 ),
                               ),
                             ),
+                          ),
+                        ] else ...[
+                          Column(
+                            children: [
+                              UserStudySummaryCard(userId: widget.user.id)
+                            ],
                           ),
                         ]
                       ],

@@ -101,7 +101,7 @@ class _BookCardState extends State<BookCard> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (widget.book.imageUrl.isNotEmpty)
+                if (widget.book.imgUrl.isNotEmpty)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -112,7 +112,7 @@ class _BookCardState extends State<BookCard> {
                           borderRadius: BorderRadius.circular(5.0),
                         ),
                         child: Image.network(
-                          widget.book.imageUrl,
+                          widget.book.imgUrl,
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) {
                             return Icon(

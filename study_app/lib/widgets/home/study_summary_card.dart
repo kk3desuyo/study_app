@@ -72,6 +72,7 @@ class _StudySummaryCardState extends State<StudySummaryCard> {
         widget.dailyGoalId,
         widget.user.id,
         isLiked,
+        widget.user.name,
       );
     } catch (e) {
       // エラーハンドリング
@@ -116,6 +117,9 @@ class _StudySummaryCardState extends State<StudySummaryCard> {
                         // 自分自身のプロフィールの場合はタブを切り替える
                         jumpToTab(4); // タブを「アカウント」に移動
                       } else {
+                        print("otherUser");
+                        print(widget.user.id);
+                        print(widget.user.isPublic);
                         // 他のユーザーのプロフィールの場合は画面に遷移
                         Navigator.push(
                           context,

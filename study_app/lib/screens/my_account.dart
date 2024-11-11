@@ -105,7 +105,7 @@ class _MyAccountState extends State<MyAccount> {
         return Book(
           id: bookDetail['bookId'],
           title: bookDetail['title'],
-          imageUrl: bookDetail['imgUrl'],
+          imgUrl: bookDetail['imgUrl'],
           category: bookDetail['categoryName'],
           lastUsedDate: DateTime.now(),
         );

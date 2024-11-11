@@ -1,29 +1,32 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class Book {
   final String id;
-  final String imageUrl;
+  final String imgUrl;
   final String title;
   final String category;
-  final DateTime lastUsedDate; // Add lastUsedDate field
+  final DateTime lastUsedDate; // lastUsedDateフィールドを追加
 
   // コンストラクター
   Book({
     required this.id,
-    required this.imageUrl,
+    required this.imgUrl,
     required this.title,
     required this.category,
-    required this.lastUsedDate, // Add lastUsedDate to constructor
+    required this.lastUsedDate, // コンストラクターにlastUsedDateを追加
   });
 
   // FirestoreのデータからBookオブジェクトを生成するファクトリメソッド
   factory Book.fromFirestore(Map<String, dynamic> data) {
     return Book(
-      id: data['id'] ?? '',
-      imageUrl: data['imageUrl'] ?? '',
+      id: data['bookId'] ?? '',
+      imgUrl: data['imgUrl'] ?? '',
       title: data['title'] ?? '',
       category: data['category'] ?? '',
-      lastUsedDate: (data['lastUsedDate'] != null)
-          ? DateTime.parse(data['lastUsedDate'])
-          : DateTime.now(), // Add lastUsedDate to factory method
+      lastUsedDate: data['lastUsedDate'] is Timestamp
+          ? (data['lastUsedDate'] as Timestamp).toDate()
+          : DateTime.parse(
+              data['lastUsedDate'] ?? DateTime.now().toIso8601String()),
     );
   }
 
@@ -31,11 +34,10 @@ class Book {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'imageUrl': imageUrl,
+      'imgUrl': imgUrl,
       'title': title,
       'category': category,
-      'lastUsedDate':
-          lastUsedDate.toIso8601String(), // Add lastUsedDate to toMap method
+      'lastUsedDate': lastUsedDate.toIso8601String(), // lastUsedDateをtoMapに追加
     };
   }
 

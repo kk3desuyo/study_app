@@ -20,12 +20,19 @@ class _StudyTimeBarChartState extends State<StudyTimeBarChart> {
   @override
   void initState() {
     super.initState();
-    yAxisMax = _calculateYAxisMax(); // 初期化時に最大値を計算
-    interval = yAxisMax / 5; // メモリ間隔を計算
+    _calculateYAxisValues();
   }
 
-  // Y軸の最大値を計算する関数
-  double _calculateYAxisMax() {
+  @override
+  void didUpdateWidget(covariant StudyTimeBarChart oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.studyTimes != widget.studyTimes) {
+      _calculateYAxisValues();
+    }
+  }
+
+  // Y軸の最大値とメモリ間隔を計算する関数
+  void _calculateYAxisValues() {
     double maxTime = 0;
     for (var dayData in widget.studyTimes) {
       double dayTotal = dayData.values.fold(0, (sum, time) => sum + time);
@@ -33,8 +40,10 @@ class _StudyTimeBarChartState extends State<StudyTimeBarChart> {
         maxTime = dayTotal;
       }
     }
-    // 最大値を5の倍数に切り上げる
-    return (maxTime / 5).ceil() * 5.0;
+    // 最大値を5の倍数に切り上げる。もし最大値が0なら、デフォルトで5に設定
+    yAxisMax = max((maxTime / 5).ceil() * 5.0, 5.0);
+    interval = yAxisMax / 5;
+    setState(() {}); // 状態を更新
   }
 
   @override
@@ -132,14 +141,13 @@ class _StudyTimeBarChartState extends State<StudyTimeBarChart> {
 
         for (var element in widget.subjects) {
           if (element.keys.first == subject) {
-            color = element.values.first as Color? ??
-                Colors.grey; // 色が存在すれば取得し、nullの場合はデフォルト
+            color = element.values.first as Color? ?? Colors.grey;
             break; // 一致する要素が見つかったのでループを抜ける
           }
         }
 
         stackItems.add(
-          BarChartRodStackItem(previousY, previousY + time, color as Color),
+          BarChartRodStackItem(previousY, previousY + time, color),
         );
         previousY += time;
       });
@@ -152,7 +160,7 @@ class _StudyTimeBarChartState extends State<StudyTimeBarChart> {
             BarChartRodData(
               toY: previousY, // その日の合計高さ
               rodStackItems: stackItems, // 科目ごとの学習時間を積み上げ
-              borderRadius: BorderRadius.circular(0),
+              borderRadius: BorderRadius.zero,
               width: barsWidth,
             ),
           ],
@@ -167,7 +175,10 @@ class _StudyTimeBarChartState extends State<StudyTimeBarChart> {
   Widget _bottomTitles(double value, TitleMeta meta) {
     final now = DateTime.now();
     final formatter = DateFormat('MM/dd');
-    final date = now.subtract(Duration(days: 6 - value.toInt()));
+
+    // valueは0からstudyTimes.length - 1までの値
+    int dayOffset = widget.studyTimes.length - 1 - value.toInt();
+    final date = now.subtract(Duration(days: dayOffset));
     final formattedDate = formatter.format(date);
 
     return SideTitleWidget(

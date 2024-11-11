@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:study_app/models/book.dart';
+import 'package:study_app/services/book_service.dart';
 import 'package:study_app/theme/color.dart';
 import 'package:study_app/widgets/app_bar.dart';
 import 'package:study_app/widgets/preview_detail.dart/display_books.dart';
@@ -56,9 +57,18 @@ class _BookSelectionPageState extends State<BookSelectionPage> {
                 children: [
                   Expanded(
                     child: GestureDetector(
-                      onTap: () {
-                        // ボタンがタップされた時の処理をここに書く
-                        print("教材を追加するボタンが押されました");
+                      onTap: () async {
+                        String userId =
+                            "BWulFDj7onc8HSyN2Zclv7vgv2H3"; // 対象のユーザーID
+                        String bookId = "VQV1veohWImDbXS6W7yH"; // 追加する本のID
+
+                        try {
+                          BookService bookService = BookService();
+                          await bookService.addBookToUser(
+                              userId, bookId, DateTime.now());
+                        } catch (e) {
+                          print("Error adding example book ID: $e");
+                        }
                       },
                       child: Container(
                         padding:
@@ -67,7 +77,7 @@ class _BookSelectionPageState extends State<BookSelectionPage> {
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(5),
                           border: Border.all(
-                            color: primary,
+                            color: subTheme,
                           ),
                         ),
                         child: Row(
@@ -78,7 +88,7 @@ class _BookSelectionPageState extends State<BookSelectionPage> {
                               '教材を追加する',
                               style: TextStyle(
                                 fontSize: 15,
-                                color: primary,
+                                color: subTheme,
                                 fontWeight: FontWeight.w900,
                                 fontFamily: "KiwiMaru-Regular",
                               ),
@@ -86,7 +96,7 @@ class _BookSelectionPageState extends State<BookSelectionPage> {
                             SizedBox(width: 5), // テキストとアイコンの間にスペースを追加
                             Icon(
                               Icons.add,
-                              color: primary,
+                              color: subTheme,
                             ),
                           ],
                         ),
@@ -149,7 +159,7 @@ class _BookSelectionPageState extends State<BookSelectionPage> {
                         padding:
                             EdgeInsets.symmetric(vertical: 2, horizontal: 13),
                         decoration: BoxDecoration(
-                          color: primary,
+                          color: subTheme,
                           borderRadius: BorderRadius.circular(15),
                         ),
                         child: Text(
@@ -201,7 +211,7 @@ class _BookSelectionPageState extends State<BookSelectionPage> {
                 Container(
                   padding: EdgeInsets.symmetric(vertical: 2, horizontal: 13),
                   decoration: BoxDecoration(
-                    color: primary,
+                    color: subTheme,
                     borderRadius: BorderRadius.circular(15),
                   ),
                   child: Text(

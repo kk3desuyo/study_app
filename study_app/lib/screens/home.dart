@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:study_app/models/app/app_setting.dart';
+import 'package:study_app/screens/account_register.dart';
 import 'package:study_app/services/event.dart';
 import 'package:study_app/services/user/app/app_service.dart';
+import 'package:study_app/services/user/user_service.dart';
 import 'package:study_app/services/user_daily_achievements.dart';
 import 'package:study_app/services/daily_goal_service.dart';
 
@@ -63,7 +65,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        appBar: const MyAppBar(),
+        appBar: MyAppBar(),
         backgroundColor: backGroundColor,
         body: Column(
           children: [
@@ -88,7 +90,6 @@ class _HomeScreenState extends State<HomeScreen> {
       child: _isDataLoaded
           ? ListView(
               children: followedUserStudySummary.map((goal) {
-                // ゼロ除算を防ぐためにチェックを追加
                 int achievementLevel = 0;
                 if (goal['targetStudyTime'] != null &&
                     goal['targetStudyTime'] != 0) {
@@ -101,6 +102,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 return StudySummaryCard(
                   dailyGoalId: goal['dailyGoalId'] ?? '',
                   user: User(
+                    isPublic: goal['user']['isPublic'] ?? false,
                     oneWord: goal['user']['oneWord'] ?? '',
                     id: goal['user']['id'] ?? '',
                     name: goal['user']['name'] ?? '',

@@ -22,7 +22,7 @@ class DailyGoalService {
 
     // 1. フォロー中のユーザーIDを取得
     List<String> followedUserIds =
-        await userService.getFollowUserIds(currentUserId);
+        await userService.getFollowingUserIds(currentUserId);
 
     // 2. フォロー中のユーザーの DailyGoals とユーザー情報を取得
     for (var followingUserId in followedUserIds) {
@@ -61,6 +61,7 @@ class DailyGoalService {
 
           // ユーザー情報を追加
           goalData['user'] = {
+            'isPublic': user.isPublic,
             'id': user.id,
             'name': user.name,
             'profileImgUrl': user.profileImgUrl,

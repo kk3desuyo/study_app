@@ -10,11 +10,8 @@ import 'package:study_app/theme/color.dart';
 import 'package:study_app/models/user.dart';
 import 'package:study_app/widgets/controller_manager.dart';
 import 'package:study_app/widgets/home/study_summary_card.dart';
-
 import 'package:study_app/widgets/preview_detail.dart/comment_card.dart';
 import 'package:study_app/widgets/preview_detail.dart/display_books.dart';
-import 'package:study_app/widgets/preview_detail.dart/week_chart.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:study_app/models/comment.dart'; // Import the Comment model
 
 class DetailCard extends StatefulWidget {
@@ -64,6 +61,7 @@ class _DetailCardState extends State<DetailCard> {
         widget.dailyGoalId,
         widget.user.id,
         isLiked,
+        widget.user.name,
       );
     } catch (e) {
       // エラーハンドリング
@@ -108,6 +106,7 @@ class _DetailCardState extends State<DetailCard> {
                   Padding(
                     padding: const EdgeInsets.only(left: 4, right: 4, top: 4),
                     child: Comments(
+                      currentUserId: UserService().getCurrentUserId()!,
                       addNewReply: widget.addNewReply,
                       addNewComment: widget.addNewComment,
                       dailyGoalId: widget.dailyGoalId,

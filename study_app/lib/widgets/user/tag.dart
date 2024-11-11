@@ -56,7 +56,9 @@ class TagWidget extends StatelessWidget {
         SizedBox(
           width: 5,
         ),
-        Text(tag.name),
+        Text(
+          tag.name.length > 9 ? '${tag.name.substring(0, 9)}...' : tag.name,
+        ),
         SizedBox(
           width: 15,
         ),

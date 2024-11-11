@@ -14,7 +14,7 @@ class StudyMaterial {
     // FirestoreからのデータをBookオブジェクトに変換
     Book book = Book(
       id: data['id'] ?? '',
-      imageUrl: data['imageUrl'] ?? '',
+      imgUrl: data['imgUrl'] ?? '',
       title: data['title'] ?? '',
       category: data['category'] ?? '', // Add category here
       lastUsedDate: data['lastUsedDate'] != null
@@ -32,7 +32,7 @@ class StudyMaterial {
   Map<String, dynamic> toMap() {
     return {
       'id': book.id,
-      'imageUrl': book.imageUrl,
+      'imgUrl': book.imgUrl,
       'title': book.title,
       'category': book.category, // Add category here
       'studyTime': studyTime,

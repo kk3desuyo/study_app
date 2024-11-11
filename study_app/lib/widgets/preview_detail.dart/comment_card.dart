@@ -17,6 +17,7 @@ class Comments extends StatefulWidget {
   final String dailyGoalId;
   final Function addNewComment;
   final Function addNewReply;
+  final String currentUserId;
 
   Comments({
     required this.comments,
@@ -24,6 +25,7 @@ class Comments extends StatefulWidget {
     required this.replies,
     required this.dailyGoalId,
     required this.addNewComment,
+    required this.currentUserId,
   });
 
   @override
@@ -47,9 +49,9 @@ class _CommentsState extends State<Comments> {
     }
 
     try {
-      String? imageUrl = await userService.getUserProfileImage(userId);
-      profileImageCache[userId] = imageUrl;
-      return imageUrl;
+      String? imgUrl = await userService.getUserProfileImage(userId);
+      profileImageCache[userId] = imgUrl;
+      return imgUrl;
     } catch (e) {
       print('Error fetching profile image: $e');
       return null;
@@ -61,6 +63,7 @@ class _CommentsState extends State<Comments> {
       context,
       MaterialPageRoute(
         builder: (context) => CommentScreen(
+          onDeleteComment: onDeleteComment,
           comments: widget.comments,
           replies: widget.replies,
           dailyGoalId: widget.dailyGoalId,
@@ -71,6 +74,12 @@ class _CommentsState extends State<Comments> {
         ),
       ),
     );
+  }
+
+  void onDeleteComment(String commentId) {
+    setState(() {
+      widget.comments.removeWhere((comment) => comment.id == commentId);
+    });
   }
 
   String timeAgo(DateTime dateTime) {
@@ -179,6 +188,9 @@ class _CommentsState extends State<Comments> {
                       // コメントのコンテンツ部分
                       Expanded(
                         child: CommentCard(
+                          currentUserId: widget.currentUserId,
+                          onDeleteComment: onDeleteComment,
+                          commentId: comment.id,
                           onTapCommentScreen: _onTapCommentScreen,
                           user: User(
                             id: comment.userId,
@@ -239,10 +251,6 @@ class _CommentsState extends State<Comments> {
 
                     widget.addNewComment(
                       content: content,
-                      dailyGoalId: widget.dailyGoalId,
-                      dateTime: dateTime,
-                      userName: userName,
-                      userId: userId,
                     );
 
                     setState(() {
@@ -279,6 +287,7 @@ class CommentScreen extends StatefulWidget {
   final Function addNewReply;
   final UserService userService;
   final Map<String, String?> profileImageCache;
+  final Function(String) onDeleteComment;
 
   CommentScreen({
     required this.comments,
@@ -288,6 +297,7 @@ class CommentScreen extends StatefulWidget {
     required this.addNewReply,
     required this.userService,
     required this.profileImageCache,
+    required this.onDeleteComment,
   });
 
   @override
@@ -325,6 +335,13 @@ class _CommentScreenState extends State<CommentScreen> {
           .toList();
       showAllReplies[comment.id] = replies.length < 3;
     }
+  }
+
+  void onDeleteComment(String commentId) {
+    widget.onDeleteComment(commentId);
+    setState(() {
+      modalComments.removeWhere((comment) => comment.id == commentId);
+    });
   }
 
   @override
@@ -389,9 +406,9 @@ class _CommentScreenState extends State<CommentScreen> {
     }
 
     try {
-      String? imageUrl = await widget.userService.getUserProfileImage(userId);
-      widget.profileImageCache[userId] = imageUrl;
-      return imageUrl;
+      String? imgUrl = await widget.userService.getUserProfileImage(userId);
+      widget.profileImageCache[userId] = imgUrl;
+      return imgUrl;
     } catch (e) {
       print('Error fetching profile image: $e');
       return null;
@@ -431,6 +448,7 @@ class _CommentScreenState extends State<CommentScreen> {
                     builder: (context, snapshot) {
                       String profileImageUrl = snapshot.data ?? '';
                       return CommentItem(
+                        onDeleteComment: onDeleteComment,
                         comment: comment,
                         profileImageUrl: profileImageUrl,
                         replies: replies,
@@ -528,10 +546,6 @@ class _CommentScreenState extends State<CommentScreen> {
                       if (_selectedComment == null) {
                         widget.addNewComment(
                           content: content,
-                          dailyGoalId: widget.dailyGoalId,
-                          dateTime: dateTime,
-                          userName: userName,
-                          userId: userId,
                         );
 
                         setState(() {
@@ -689,12 +703,17 @@ class CommentCard extends StatelessWidget {
   final String content;
   final DateTime dateTime;
   final Function() onTapCommentScreen;
-
+  final String commentId;
+  final Function(String) onDeleteComment;
+  final String currentUserId;
   CommentCard({
+    required this.commentId,
     required this.user,
     required this.content,
     required this.dateTime,
     required this.onTapCommentScreen,
+    required this.onDeleteComment,
+    required this.currentUserId,
   });
 
   String timeAgo(DateTime dateTime) {
@@ -715,95 +734,143 @@ class CommentCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTapCommentScreen,
       child: Container(
-        margin: EdgeInsets.symmetric(
-          vertical: 5,
-        ),
-        padding: EdgeInsets.all(5),
+        margin: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+        padding: EdgeInsets.all(10),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(5),
+          borderRadius: BorderRadius.circular(10),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.5),
+              color: Colors.grey.withOpacity(0.3),
               spreadRadius: 1,
-              blurRadius: 3,
-              offset: Offset(0, 1),
+              blurRadius: 4,
+              offset: Offset(0, 2),
             ),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Stack(
           children: [
-            Row(
+            // メインのコメント内容
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // アイコンをタップするとプロフィール画面に遷移
-                GestureDetector(
-                  onTap: () async {
-                    String? currentUserId = UserService().getCurrentUserId();
-
-                    if (currentUserId == user.id) {
-                      Navigator.of(context).popUntil((route) => route.isFirst);
-                      // 自分自身のプロフィールの場合はタブを切り替える
-                      jumpToTab(4); // タブを「アカウント」に移動
-                    } else {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => OtherUserDisplay(
-                            user: user,
-                          ),
-                        ),
-                      );
-                    }
-                  },
-                  child: CircleAvatar(
-                    radius: 15,
-                    backgroundImage: user.profileImgUrl.isNotEmpty
-                        ? NetworkImage(user.profileImgUrl)
-                        : AssetImage('assets/images/default_avatar.png')
-                            as ImageProvider,
-                  ),
-                ),
-                SizedBox(width: 10),
-                // 名前をタップするとプロフィール画面に遷移
-                GestureDetector(
-                  onTap: () async {
-                    String? currentUserId = UserService().getCurrentUserId();
-
-                    if (currentUserId == user.id) {
-                      Navigator.of(context).popUntil((route) => route.isFirst);
-                      // 自分自身のプロフィールの場合はタブを切り替える
-                      jumpToTab(4); // タブを「アカウント」に移動
-                    } else {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => OtherUserDisplay(
-                            user: user,
-                          ),
-                        ),
-                      );
-                    }
-                  },
-                  child: Text(
-                    user.name,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                Row(
+                  children: [
+                    // プロフィール画像をタップするとプロフィール画面に遷移
+                    GestureDetector(
+                      onTap: () async {
+                        String? currentUserId =
+                            await UserService().getCurrentUserId();
+                        if (currentUserId == user.id) {
+                          Navigator.of(context)
+                              .popUntil((route) => route.isFirst);
+                          jumpToTab(4); // タブを「アカウント」に移動
+                        } else {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => OtherUserDisplay(
+                                user: user,
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                      child: CircleAvatar(
+                        radius: 15,
+                        backgroundImage: user.profileImgUrl.isNotEmpty
+                            ? NetworkImage(user.profileImgUrl)
+                            : AssetImage('assets/images/default_avatar.png')
+                                as ImageProvider,
+                      ),
                     ),
-                  ),
+                    SizedBox(width: 10),
+                    // 名前をタップするとプロフィール画面に遷移
+                    GestureDetector(
+                      onTap: () async {
+                        String? currentUserId =
+                            await UserService().getCurrentUserId();
+                        if (currentUserId == user.id) {
+                          Navigator.of(context)
+                              .popUntil((route) => route.isFirst);
+                          jumpToTab(4); // タブを「アカウント」に移動
+                        } else {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => OtherUserDisplay(
+                                user: user,
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                      child: Text(
+                        user.name.length > 9
+                            ? '${user.name.substring(0, 9)}...'
+                            : user.name,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                    Spacer(),
+                    Text(
+                      timeAgo(dateTime),
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ],
                 ),
-                Spacer(),
+                SizedBox(height: 5),
                 Text(
-                  timeAgo(dateTime),
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                  content,
+                  style: TextStyle(fontSize: 14),
                 ),
               ],
             ),
-            SizedBox(height: 5),
-            Text(
-              content,
-              style: TextStyle(fontSize: 14),
+            // 右下に配置するメニューアイコン
+            Positioned(
+              bottom: -10,
+              right: -10,
+              child: PopupMenuButton<String>(
+                icon: Transform.rotate(
+                  angle: 90 * 3.1415927 / 180,
+                  child: Icon(Icons.more_horiz, color: Colors.grey),
+                ),
+                onSelected: (String choice) async {
+                  if (choice == 'ブロックする') {
+                    try {
+                      UserService userService = UserService();
+                      userService.blockUser(user.id);
+                      print('ユーザーをブロックしました: ${user.name}');
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('ユーザーのブロックに失敗しました: $e'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    }
+                    print('ユーザーをブロックしました: ${user.name}');
+                  } else if (choice == 'コメントを消去') {
+                    CommentService commentService = CommentService();
+                    commentService.deleteComment(commentId);
+                    onDeleteComment(commentId);
+                  }
+                },
+                itemBuilder: (BuildContext context) => [
+                  if (user.id != currentUserId)
+                    PopupMenuItem<String>(
+                      value: 'ブロックする',
+                      child: Text('ブロックする'),
+                    ),
+                  PopupMenuItem<String>(
+                    value: 'コメントを消去',
+                    child: Text('コメントを消去'),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -820,7 +887,7 @@ class CommentItem extends StatefulWidget {
   final Map<String, bool> showAllReplies;
   final Function(String) toggleShowAllReplies;
   final Future<String?> Function(String userId) fetchProfileImage;
-
+  final Function(String) onDeleteComment;
   CommentItem({
     required this.comment,
     required this.profileImageUrl,
@@ -829,6 +896,7 @@ class CommentItem extends StatefulWidget {
     required this.showAllReplies,
     required this.toggleShowAllReplies,
     required this.fetchProfileImage,
+    required this.onDeleteComment,
   });
 
   @override
@@ -895,127 +963,162 @@ class _CommentItemState extends State<CommentItem> {
               ),
             ],
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Stack(
             children: [
-              Row(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // プロフィール画像と名前
-                  GestureDetector(
-                    onTap: () async {
-                      String? currentUserId =
-                          await UserService().getCurrentUserId();
-                      if (comment.userId == currentUserId) {
-                        Navigator.of(context)
-                            .popUntil((route) => route.isFirst);
-                        jumpToTab(4); // タブを「アカウント」に移動
-                      } else {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => OtherUserDisplay(
-                              user: User(
-                                profileImgUrl: widget.profileImageUrl,
-                                name: comment.userName,
-                                id: comment.userId,
-                              ),
-                            ),
-                          ),
-                        );
-                      }
-                    },
-                    child: CircleAvatar(
-                      radius: 20,
-                      backgroundImage: widget.profileImageUrl.isNotEmpty
-                          ? NetworkImage(widget.profileImageUrl)
-                          : AssetImage('assets/images/default_avatar.png')
-                              as ImageProvider,
-                    ),
-                  ),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // ユーザー名とタイムスタンプ
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: () async {
-                                  String? currentUserId =
-                                      await UserService().getCurrentUserId();
-                                  if (comment.userId == currentUserId) {
-                                    Navigator.of(context)
-                                        .popUntil((route) => route.isFirst);
-                                    jumpToTab(4);
-                                  } else {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => OtherUserDisplay(
-                                          user: User(
-                                            profileImgUrl:
-                                                widget.profileImageUrl,
-                                            name: comment.userName,
-                                            id: comment.userId,
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                },
-                                child: Text(
-                                  comment.userName,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      GestureDetector(
+                        onTap: () async {
+                          String? currentUserId =
+                              await UserService().getCurrentUserId();
+                          if (comment.userId == currentUserId) {
+                            Navigator.of(context)
+                                .popUntil((route) => route.isFirst);
+                            jumpToTab(4);
+                          } else {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => OtherUserDisplay(
+                                  user: User(
+                                    profileImgUrl: widget.profileImageUrl,
+                                    name: comment.userName,
+                                    id: comment.userId,
                                   ),
-                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
+                            );
+                          }
+                        },
+                        child: CircleAvatar(
+                          radius: 20,
+                          backgroundImage: widget.profileImageUrl.isNotEmpty
+                              ? NetworkImage(widget.profileImageUrl)
+                              : AssetImage('assets/images/default_avatar.png')
+                                  as ImageProvider,
+                        ),
+                      ),
+                      SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () async {
+                                      String? currentUserId =
+                                          await UserService()
+                                              .getCurrentUserId();
+                                      if (comment.userId == currentUserId) {
+                                        Navigator.of(context)
+                                            .popUntil((route) => route.isFirst);
+                                        jumpToTab(4);
+                                      } else {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                OtherUserDisplay(
+                                              user: User(
+                                                profileImgUrl:
+                                                    widget.profileImageUrl,
+                                                name: comment.userName,
+                                                id: comment.userId,
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    },
+                                    child: Text(
+                                      comment.userName,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(width: 10),
+                                Text(
+                                  timeAgo(comment.dateTime),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ],
                             ),
-                            SizedBox(width: 10),
+                            SizedBox(height: 5),
                             Text(
-                              timeAgo(comment.dateTime),
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
-                              ),
+                              comment.content,
+                              style: TextStyle(fontSize: 14),
                             ),
                           ],
                         ),
-                        SizedBox(height: 5),
-                        Text(
-                          comment.content,
-                          style: TextStyle(fontSize: 14),
+                      ),
+                    ],
+                  ),
+                  Column(
+                    children: [
+                      for (int i = 0; i < replies.length; i++)
+                        if (i < 2 ||
+                            (widget.showAllReplies[comment.id] ?? false))
+                          _buildReplyWidget(replies[i]),
+                      if (replies.length > 2)
+                        TextButton(
+                          onPressed: () {
+                            widget.toggleShowAllReplies(comment.id);
+                          },
+                          child: Text(
+                            widget.showAllReplies[comment.id] == true
+                                ? '隠す'
+                                : '全ての返信を表示',
+                            style: TextStyle(color: subTheme),
+                          ),
                         ),
-                      ],
-                    ),
+                    ],
                   ),
                 ],
               ),
-              // リプライの表示
-              Column(
-                children: [
-                  for (int i = 0; i < replies.length; i++)
-                    if (i < 2 || (widget.showAllReplies[comment.id] ?? false))
-                      _buildReplyWidget(replies[i]),
-                  if (replies.length > 2)
-                    TextButton(
-                      onPressed: () {
-                        widget.toggleShowAllReplies(comment.id);
-                      },
-                      child: Text(
-                        widget.showAllReplies[comment.id] == true
-                            ? '隠す'
-                            : '全ての返信を表示',
-                        style: TextStyle(color: subTheme),
-                      ),
+              Positioned(
+                bottom: -10,
+                right: -10,
+                child: PopupMenuButton<String>(
+                  icon: Transform.rotate(
+                    angle: 90 * 3.1415927 / 180,
+                    child: Icon(Icons.more_horiz, color: Colors.grey),
+                  ),
+                  onSelected: (String choice) async {
+                    if (choice == 'ブロックする') {
+                      UserService userService = UserService();
+                      userService.blockUser(comment.userId);
+                    } else if (choice == 'コメントを消去') {
+                      CommentService commentService = CommentService();
+                      commentService.deleteComment(comment.id);
+                      widget.onDeleteComment(comment.id);
+                      print('コメントを消去しました' + comment.id);
+                    }
+                  },
+                  itemBuilder: (BuildContext context) => [
+                    PopupMenuItem<String>(
+                      value: 'ブロックする',
+                      child: Text('ブロックする'),
                     ),
-                ],
+                    PopupMenuItem<String>(
+                      value: 'コメントを消去',
+                      child: Text('コメントを消去'),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -1024,7 +1127,6 @@ class _CommentItemState extends State<CommentItem> {
     );
   }
 
-  // リプライウィジェットの構築
   Widget _buildReplyWidget(Reply reply) {
     return Padding(
       padding: const EdgeInsets.only(left: 40, top: 5, bottom: 5),
@@ -1047,7 +1149,7 @@ class _CommentItemState extends State<CommentItem> {
                       await UserService().getCurrentUserId();
                   if (reply.userId == currentUserId) {
                     Navigator.of(context).popUntil((route) => route.isFirst);
-                    jumpToTab(4); // タブを「アカウント」に移動
+                    jumpToTab(4);
                   } else {
                     Navigator.push(
                       context,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:study_app/screens/friend_manage.dart';
+import 'package:study_app/screens/setting.dart';
 import 'package:study_app/theme/color.dart';
 
 class MyAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -39,7 +40,12 @@ class MyAppBar extends StatelessWidget implements PreferredSizeWidget {
         Padding(
           padding: EdgeInsets.only(right: 15),
           child: IconButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => SettingsScreen()),
+                );
+              },
               icon: const Icon(Icons.settings, size: 30, color: primary)),
         )
       ],

@@ -2,7 +2,7 @@
   "project_info": {
     "project_number": "1087316148781",
     "project_id": "study-app-6a883",
-    "storage_bucket": "study-app-6a883.appspot.com"
+    "storage_bucket": "study-app-6a883.firebasestorage.app"
   },
   "client": [
     {
@@ -12,7 +12,12 @@
           "package_name": "com.example.study_app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1087316148781-np0tlpobuifr6gs4i444ceiq9r0n6jhe.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDL_N_p24J-dbvVFcl3XpRaE6enDr7GGc8"
@@ -20,7 +25,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1087316148781-np0tlpobuifr6gs4i444ceiq9r0n6jhe.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1087316148781-5um5u2tl92v1harrupted8ocmca32bh8.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "studyApp20041002"
+              }
+            }
+          ]
         }
       }
     }

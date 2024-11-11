@@ -147,7 +147,7 @@ class _BookShelfCardState extends State<BookShelfCard> {
           Expanded(
             child: FadeInImage.assetNetwork(
               placeholder: 'assets/images/book_placeholder.png',
-              image: book.imageUrl,
+              image: book.imgUrl,
               fit: BoxFit.cover,
               imageErrorBuilder: (context, error, stackTrace) {
                 return Image.asset(

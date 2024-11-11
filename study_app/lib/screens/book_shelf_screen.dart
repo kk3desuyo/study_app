@@ -23,28 +23,28 @@ class _BookShelfState extends State<BookShelf> {
               lastUsedDate: DateTime.now(),
               title: "aaa",
               id: "0",
-              imageUrl:
+              imgUrl:
                   "http://t3.gstatic.com/licensed-image?q=tbn:ANd9GcTiDykdw3K7dEito1ZrEIVJkxq1P7R06m5sTim49JhDE2eyT6bfXKjazXDuqPSyGokfYaUmLCYaER-Hc-PVnt0",
               category: "理科"),
           Book(
               lastUsedDate: DateTime.now(),
               title: "aaa",
               id: "1",
-              imageUrl:
+              imgUrl:
                   "http://t3.gstatic.com/licensed-image?q=tbn:ANd9GcTiDykdw3K7dEito1ZrEIVJkxq1P7R06m5sTim49JhDE2eyT6bfXKjazXDuqPSyGokfYaUmLCYaER-Hc-PVnt0",
               category: "国語"),
           Book(
               lastUsedDate: DateTime.now(),
               title: "aaa",
               id: "2",
-              imageUrl:
+              imgUrl:
                   "http://t3.gstatic.com/licensed-image?q=tbn:ANd9GcTiDykdw3K7dEito1ZrEIVJkxq1P7R06m5sTim49JhDE2eyT6bfXKjazXDuqPSyGokfYaUmLCYaER-Hc-PVnt0",
               category: "数学"),
           Book(
               lastUsedDate: DateTime.now(),
               title: "aaa",
               id: "3",
-              imageUrl:
+              imgUrl:
                   "http://t3.gstatic.com/licensed-image?q=tbn:ANd9GcTiDykdw3K7dEito1ZrEIVJkxq1P7R06m5sTim49JhDE2eyT6bfXKjazXDuqPSyGokfYaUmLCYaER-Hc-PVnt0",
               category: "理科"),
         ],

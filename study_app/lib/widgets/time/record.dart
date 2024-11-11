@@ -59,6 +59,7 @@ class _RecordState extends State<Record> {
   @override
   void initState() {
     super.initState();
+
     // Initialize selectedHour and selectedMinute with studyTime
     selectedHour = widget.studyTime ~/ 60;
     selectedMinute = widget.studyTime % 60;

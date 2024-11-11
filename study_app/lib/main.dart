@@ -6,6 +6,9 @@ import 'package:study_app/screens/auth.dart';
 import 'package:study_app/screens/home.dart';
 import 'package:study_app/screens/my_account.dart';
 import 'package:study_app/screens/notification.dart';
+import 'package:study_app/screens/account_register.dart'; // Import the AccountRegister screen
+import 'package:study_app/services/user/user_service.dart';
+
 import 'package:study_app/screens/time.dart';
 import 'package:study_app/theme/color.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -18,6 +21,7 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  print("Firebase has been initialized.");
   runApp(const MyApp());
 }
 
@@ -62,13 +66,27 @@ class _HomeState extends State<Home> {
   @override
   void initState() {
     super.initState();
-    // グローバルコントローラーを取得（initialIndexは不要）
     _controller = getGlobalTabController();
+    _controller.jumpToTab(0);
   }
 
   Future<bool> _checkAuth() async {
     User? user = FirebaseAuth.instance.currentUser;
-    return user != null;
+    if (user != null) {
+      await _checkRegistrationStatus();
+      return true;
+    }
+    return false;
+  }
+
+  Future<void> _checkRegistrationStatus() async {
+    bool isRegistered = await UserService().checkRegistrationStatus();
+    if (!isRegistered) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => AccountRegister()),
+      );
+    }
   }
 
   var _pages = <Widget>[
@@ -93,7 +111,7 @@ class _HomeState extends State<Home> {
               children: [
                 PersistentTabView(
                   context,
-                  controller: _controller, // グローバルコントローラーを使用
+                  controller: _controller,
                   screens: _pages,
                   items: [
                     PersistentBottomNavBarItem(
@@ -142,6 +160,9 @@ class _HomeState extends State<Home> {
                     ),
                     PersistentBottomNavBarItem(
                       icon: SizedBox.shrink(),
+                      activeColorPrimary: Colors.transparent,
+                      inactiveColorPrimary: Colors.transparent,
+                      iconSize: 0.0,
                     ),
                     PersistentBottomNavBarItem(
                       icon: custom_badge.Badge(
@@ -200,11 +221,11 @@ class _HomeState extends State<Home> {
                   backgroundColor: Colors.white,
                 ),
                 Positioned(
-                  bottom: kBottomNavigationBarHeight - 10,
+                  bottom: kBottomNavigationBarHeight - 30,
                   left: MediaQuery.of(context).size.width / 2 - 35,
                   child: GestureDetector(
                     onTap: () {
-                      jumpToTab(2); // グローバルな jumpToTab 関数を使用
+                      _controller.jumpToTab(2);
                     },
                     child: Container(
                       width: 70,
@@ -222,7 +243,7 @@ class _HomeState extends State<Home> {
                       ),
                       child: Icon(
                         Icons.access_time,
-                        size: 55.0,
+                        size: 60.0,
                         color: Colors.white,
                       ),
                     ),
@@ -232,7 +253,7 @@ class _HomeState extends State<Home> {
             ),
           );
         } else {
-          return AuthScreen(); // Replace with your actual auth screen
+          return AuthScreen();
         }
       },
     );

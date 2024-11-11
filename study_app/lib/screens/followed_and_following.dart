@@ -3,6 +3,7 @@ import 'package:study_app/screens/other_user_display.dart';
 import 'package:study_app/services/user/user_service.dart';
 import 'package:study_app/models/user.dart';
 import 'package:study_app/theme/color.dart';
+import 'package:study_app/widgets/controller_manager.dart';
 import 'package:study_app/widgets/follow_button.dart';
 
 class FollowedAndFollowing extends StatefulWidget {
@@ -47,8 +48,12 @@ class _FollowedAndFollowingState extends State<FollowedAndFollowing>
 
   Future<void> _fetchData() async {
     try {
-      final following = await _userService.getFollowingUsers(widget.userId);
-      final follow = await _userService.getFollowUsers(widget.userId);
+      final following =
+          await _userService.getFollowingUsersDetails(widget.userId);
+      final follow = await _userService.getFollowUsersList(widget.userId);
+      print("following");
+      print(following.length);
+      print(follow.length);
       setState(() {
         followingUsers = following;
         this.follow = follow;
@@ -97,8 +102,8 @@ class _FollowedAndFollowingState extends State<FollowedAndFollowing>
           : TabBarView(
               controller: _tabController,
               children: [
-                _buildUserList(follow),
                 _buildUserList(followingUsers),
+                _buildUserList(follow),
               ],
             ),
     );
@@ -119,12 +124,21 @@ class _FollowedAndFollowingState extends State<FollowedAndFollowing>
         return ListTile(
           leading: InkWell(
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => OtherUserDisplay(user: user),
-                ),
-              );
+              String? currentUserId = UserService().getCurrentUserId();
+
+              if (currentUserId == user.id) {
+                Navigator.of(context).popUntil((route) => route.isFirst);
+                // 自分自身のプロフィールの場合はタブを切り替える
+                jumpToTab(4); // タブを「アカウント」に移動
+              } else
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) {
+                      return OtherUserDisplay(user: user);
+                    },
+                  ),
+                );
             },
             child: CircleAvatar(
               backgroundImage: user.profileImgUrl.isNotEmpty

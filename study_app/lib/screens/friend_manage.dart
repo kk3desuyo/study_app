@@ -24,7 +24,7 @@ class _FriendSerchState extends State<FriendSerch> {
   bool isLoading = false;
   bool hasMoreData = true;
   static const int pageSize = 10;
-
+  bool tmp = false;
   @override
   void initState() {
     super.initState();
@@ -42,6 +42,12 @@ class _FriendSerchState extends State<FriendSerch> {
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onChanged() {
+    setState(() {
+      tmp = !tmp;
+    });
   }
 
   void _onScroll() {
@@ -87,6 +93,7 @@ class _FriendSerchState extends State<FriendSerch> {
       for (var doc in querySnapshot.docs) {
         if (doc.id != currentUserId) {
           searchResults.add({
+            "isPublic": doc['isPublic'] ?? false,
             "name": doc['name'] ?? 'Unknown',
             "userId": doc.id,
             "profileImgUrl": doc['profileImgUrl'] ?? '',
@@ -119,6 +126,7 @@ class _FriendSerchState extends State<FriendSerch> {
 
   void _navigateToOtherUserDisplay(Map<String, dynamic> userData) {
     final user = User(
+      isPublic: userData['isPublic'],
       profileImgUrl: userData['profileImgUrl'],
       name: userData['name'],
       id: userData['userId'],
@@ -204,7 +212,6 @@ class _FriendSerchState extends State<FriendSerch> {
                         ? Center(child: CircularProgressIndicator())
                         : SizedBox.shrink();
                   }
-
                   final user = searchResults[index];
                   return ListTile(
                     leading: GestureDetector(
@@ -233,6 +240,7 @@ class _FriendSerchState extends State<FriendSerch> {
                     ),
                     trailing: FollowButton(
                       followingUserId: user['userId'],
+                      onChanged: _onChanged,
                     ),
                   );
                 },

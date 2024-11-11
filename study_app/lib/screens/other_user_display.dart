@@ -7,6 +7,7 @@ import 'package:study_app/services/user/user_service.dart';
 import 'package:study_app/theme/color.dart';
 import 'package:study_app/widgets/controller_manager.dart';
 import 'package:study_app/widgets/other/other_user_display_card.dart';
+import 'package:study_app/widgets/other/other_user_private_display_card.dart';
 import 'package:study_app/widgets/user/app_bar.dart';
 import 'package:study_app/widgets/user/tag.dart';
 import 'package:study_app/models/user.dart';
@@ -32,6 +33,7 @@ class _OtherUserDisplayState extends State<OtherUserDisplay> {
   int followersNum = 0;
   bool isFollow = false;
   List<Tag> tags = []; // タグ情報を格納するリスト
+  bool isUserFollowing = false;
 
   @override
   void initState() {
@@ -40,14 +42,45 @@ class _OtherUserDisplayState extends State<OtherUserDisplay> {
     fetchData();
   }
 
-  // FirestoreからstudyTimesとbooks、目標時間・学習時間を取得する非同期関数
+  void _onChanged() {
+    setState(() {
+      isLoading = true;
+    });
+    fetchData();
+  }
+
+  // Firestoreからデータを取得する非同期関数
   Future<void> fetchData() async {
-    StudySessionService studySessionService = StudySessionService();
-    BookService bookService = BookService();
-    GoalService goalService = GoalService(); // GoalServiceをインスタンス化
+    setState(() {
+      isLoading = true;
+    });
+
     UserService userService = UserService(); // UserServiceをインスタンス化
 
     try {
+      // フォロー数とフォロワー数を取得
+      int followersCount = await userService.getFollowersCount(widget.user.id);
+      int followingCount = await userService.getFollowingCount(widget.user.id);
+
+      // 現在のユーザーがこのユーザーをフォローしているか確認
+      isUserFollowing = await userService.isUserFollowing(widget.user.id);
+
+      // 非公開ユーザーの場合　かつ　現在のユーザーがフォローしていないここで処理を終了
+      if (!widget.user.isPublic && isUserFollowing == false) {
+        setState(() {
+          followNum = followingCount;
+          followersNum = followersCount;
+          isFollow = isUserFollowing;
+          isLoading = false;
+        });
+        return;
+      }
+
+      // 以下は公開ユーザーの場合のみ取得
+      StudySessionService studySessionService = StudySessionService();
+      BookService bookService = BookService();
+      GoalService goalService = GoalService(); // GoalServiceをインスタンス化
+
       // ユーザーIDに基づいて学習時間を取得
       List<Map<String, double>> times =
           await studySessionService.fetchStudyTimes(widget.user.id);
@@ -60,7 +93,7 @@ class _OtherUserDisplayState extends State<OtherUserDisplay> {
         return Book(
             id: bookDetail['bookId'],
             title: bookDetail['title'],
-            imageUrl: bookDetail['imgUrl'],
+            imgUrl: bookDetail['imgUrl'],
             category: bookDetail['categoryName'],
             lastUsedDate: DateTime.now());
       }).toList();
@@ -70,13 +103,6 @@ class _OtherUserDisplayState extends State<OtherUserDisplay> {
       var weeklyGoalTime = await goalService.fetchWeeklyGoal(widget.user.id);
       var weeklySummary =
           await goalService.fetchUserWeeklySummary(widget.user.id);
-
-      // フォロー数とフォロワー数を取得
-      int followersCount = await userService.getFollowersCount(widget.user.id);
-      int followingCount = await userService.getFollowingCount(widget.user.id);
-
-      // 現在のユーザーがこのユーザーをフォローしているか確認
-      bool isFollowing = await userService.isFollowing(widget.user.id);
 
       // タグ情報を取得
       List<Map<String, dynamic>> userTags =
@@ -97,13 +123,12 @@ class _OtherUserDisplayState extends State<OtherUserDisplay> {
         weekStudyTime = weeklySummary ?? 0;
         followNum = followingCount; // フォロー数を格納
         followersNum = followersCount; // フォロワー数を格納
-        isFollow = isFollowing; // フォロー状態を格納
+        isFollow = isUserFollowing; // フォロー状態を格納
         tags = fetchedTags; // タグ情報を格納
         isLoading = false;
       });
     } catch (e) {
-      print(
-          "Error fetching study times, books, goal data, follow data, or tags: $e");
+      print("データの取得中にエラーが発生しました: $e");
       setState(() {
         isLoading = false;
       });
@@ -119,24 +144,31 @@ class _OtherUserDisplayState extends State<OtherUserDisplay> {
       ),
       body: isLoading
           ? Center(child: CircularProgressIndicator())
-          : OtherUserDisplayCard(
-              todayGoalTime: todayGoalTime,
-              weekGoalTime: weekGoalTime,
-              weekStudyTime: weekStudyTime,
-              todayStudyTime: todayStudyTime,
-              books: books,
-              weeklyStudyTimes: studyTimes ?? [],
-              user: widget.user,
-              followNum: followNum,
-              followersNum: followersNum,
-              isFollow: isFollow,
-              studyTime: 370,
-              commentNum: 10,
-              achivementLevel: 100,
-              oneWord: "英単語",
-              studyTimes: [],
-              tags: tags, // 取得したタグ情報を渡す
-            ),
+          : widget.user.isPublic || isUserFollowing
+              ? OtherUserDisplayCard(
+                  onChanged: _onChanged,
+                  todayGoalTime: todayGoalTime,
+                  weekGoalTime: weekGoalTime,
+                  weekStudyTime: weekStudyTime,
+                  todayStudyTime: todayStudyTime,
+                  books: books,
+                  weeklyStudyTimes: studyTimes ?? [],
+                  user: widget.user,
+                  followNum: followNum,
+                  followersNum: followersNum,
+                  isFollow: isFollow,
+                  studyTime: 370,
+                  commentNum: 10,
+                  achivementLevel: 100,
+                  oneWord: widget.user.oneWord ?? "英単語",
+                  studyTimes: [],
+                  tags: tags,
+                )
+              : OtherUserPrivateDisplayCard(
+                  user: widget.user,
+                  followNum: followNum,
+                  followersNum: followersNum,
+                ),
     );
   }
 }
