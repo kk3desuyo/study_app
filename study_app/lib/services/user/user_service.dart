@@ -699,6 +699,10 @@ class UserService {
           .where('timeStamp', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
           .get();
 
+      print("aaaaaaaa");
+      print(querySnapshot.docs.length);
+      print(querySnapshot.docs[0].data());
+
       // クエリ結果をリストに変換し、StudyMaterialオブジェクトを生成
       List<StudyMaterial> studyMaterialsList = querySnapshot.docs.map((doc) {
         Map<String, dynamic> data = doc.data() as Map<String, dynamic>;

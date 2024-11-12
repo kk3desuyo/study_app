@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
 import 'package:study_app/screens/friend_manage.dart';
 import 'package:study_app/screens/setting.dart';
 import 'package:study_app/theme/color.dart';
@@ -41,9 +42,12 @@ class MyAppBar extends StatelessWidget implements PreferredSizeWidget {
           padding: EdgeInsets.only(right: 15),
           child: IconButton(
               onPressed: () {
-                Navigator.push(
+                PersistentNavBarNavigator.pushNewScreen(
                   context,
-                  MaterialPageRoute(builder: (context) => SettingsScreen()),
+                  screen: SettingsScreen(), // 遷移先の画面
+                  withNavBar: false, // ナビゲーションバーを非表示にする
+                  pageTransitionAnimation:
+                      PageTransitionAnimation.cupertino, // アニメーションの種類
                 );
               },
               icon: const Icon(Icons.settings, size: 30, color: primary)),

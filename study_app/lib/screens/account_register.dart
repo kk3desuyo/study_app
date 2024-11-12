@@ -1,5 +1,6 @@
+// account_register.dart
 import 'package:flutter/material.dart';
-import 'package:study_app/screens/home.dart';
+import 'package:study_app/main.dart';
 import 'package:study_app/services/user/user_service.dart';
 import 'package:study_app/widgets/user/tag.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Firestoreパッケージをインポート
@@ -315,12 +316,10 @@ class _AccountRegisterState extends State<AccountRegister> {
                                 isPublic: isPublic,
                               );
 
-                              // Navigate back to the main Home widget to retain the tabs
                               Navigator.pushAndRemoveUntil(
                                 context,
-                                MaterialPageRoute(
-                                    builder: (context) => HomeScreen()),
-                                (route) => false,
+                                MaterialPageRoute(builder: (context) => Home()),
+                                (Route<dynamic> route) => false,
                               );
                             },
                             child: Text(

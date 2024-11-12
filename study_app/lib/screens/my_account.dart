@@ -35,6 +35,7 @@ class _MyAccountState extends State<MyAccount> {
   int followersNum = 0;
   bool isFollow = false;
   List<Tag> tags = [];
+  List<StudySession> studySessions = [];
 
   @override
   void initState() {

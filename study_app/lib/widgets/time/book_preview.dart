@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:study_app/models/book.dart';
 import 'package:study_app/services/book_service.dart';
+import 'package:study_app/services/user/user_service.dart';
 import 'package:study_app/theme/color.dart';
 import 'package:study_app/widgets/app_bar.dart';
 import 'package:study_app/widgets/preview_detail.dart/display_books.dart';
@@ -58,8 +59,8 @@ class _BookSelectionPageState extends State<BookSelectionPage> {
                   Expanded(
                     child: GestureDetector(
                       onTap: () async {
-                        String userId =
-                            "BWulFDj7onc8HSyN2Zclv7vgv2H3"; // 対象のユーザーID
+                        String userId = (await UserService()
+                            .getCurrentUserId())!; // 対象のユーザーID
                         String bookId = "VQV1veohWImDbXS6W7yH"; // 追加する本のID
 
                         try {

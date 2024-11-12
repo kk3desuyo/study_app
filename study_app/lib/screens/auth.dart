@@ -1,13 +1,16 @@
+// auth.dart
 import 'dart:math';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:study_app/main.dart';
 import 'package:study_app/screens/account_register.dart';
 import 'package:study_app/services/user/user_service.dart';
 import 'package:study_app/theme/color.dart'; // 色のテーマ
-import 'package:study_app/screens/home.dart'; // Home ウィジェットへの正しいパスを指定
+import 'package:study_app/screens/home.dart';
+import 'package:study_app/widgets/controller_manager.dart'; // Home ウィジェットへの正しいパスを指定
 
 class AuthScreen extends StatefulWidget {
   @override
@@ -61,10 +64,14 @@ class _AuthScreenState extends State<AuthScreen>
         return;
       }
 
-      // 認証されている場合はホーム画面に遷移
-      Navigator.pushReplacement(
+      // 認証状態が変化し、Homeウィジェットが再ビルドされる
+      setState(() {
+        _errorMessageLogin = '';
+      });
+      Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => HomeScreen()),
+        MaterialPageRoute(builder: (context) => Home()),
+        (Route<dynamic> route) => false,
       );
     } on FirebaseAuthException catch (e) {
       setState(() {
@@ -203,8 +210,6 @@ class _AuthScreenState extends State<AuthScreen>
   }
 
   // メール認証確認モーダルを表示する関数
-
-// メール認証確認モーダルを表示する関数
   void _showEmailVerificationModal() {
     showModalBottomSheet(
       context: context,
@@ -238,11 +243,7 @@ class _AuthScreenState extends State<AuthScreen>
                         UserService userService = UserService();
                         await userService.addUser();
                         Navigator.pop(context); // モーダルを閉じる
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => AccountRegister()),
-                        );
+                        // 認証状態が変化し、Homeウィジェットが再ビルドされる
                       } else {
                         print("メール認証が完了していません");
                         setState(() {
@@ -328,17 +329,40 @@ class _AuthScreenState extends State<AuthScreen>
       UserCredential userCredential =
           await _auth.signInWithCredential(credential);
 
-      // データベースにユーザー情報を保存
-      if (userCredential.user != null) {
-        UserService userService = UserService();
-        await userService.addUser();
+      // ユーザーが新規か既存かを判定
+      if (userCredential.additionalUserInfo?.isNewUser ?? false) {
+        // データベースにユーザー情報を保存
+        if (userCredential.user != null) {
+          UserService userService = UserService();
+          await userService.addUser();
+        }
+        // 新規ユーザーの場合、追加の登録画面に遷移
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => AccountRegister()),
+        );
+      } else {
+        print("既存ユーザーです");
+        final _controller = getGlobalTabController();
+        _controller.jumpToTab(0); // タブを0番目に変更
+
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => Home()),
+          (Route<dynamic> route) => false,
+        );
+        // 既存ユーザーの場合、ホーム画面に戻る
+        setState(() {
+          _errorMessageLogin = '';
+          _errorMessageRegister = '';
+        });
       }
 
-      // 認証完了後にホーム画面に遷移
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => AccountRegister()),
-      );
+      // 認証状態が変化し、Homeウィジェットが再ビルドされる
+      setState(() {
+        _errorMessageLogin = '';
+        _errorMessageRegister = '';
+      });
     } on FirebaseAuthException catch (e) {
       setState(() {
         _errorMessageLogin = e.message ?? 'ログインに失敗しました';
@@ -370,332 +394,310 @@ class _AuthScreenState extends State<AuthScreen>
 
     return Scaffold(
       backgroundColor: backGroundColor,
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: ImageFiltered(
-              imageFilter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-              child: Container(
-                color: backGroundColor.withOpacity(0.9),
-              ),
+      body: Stack(children: [
+        Positioned.fill(
+          child: ImageFiltered(
+            imageFilter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              color: backGroundColor.withOpacity(0.9),
             ),
           ),
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: DefaultTabController(
-              length: 2,
-              child: Container(
-                width: double.infinity,
-                padding: EdgeInsets.zero,
-                child: Card(
-                  margin: EdgeInsets.zero, // Card の余白をなくす
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(20),
-                      topRight: Radius.circular(20),
+        ),
+        Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: DefaultTabController(
+            length: 2,
+            child: Container(
+              width: double.infinity,
+              padding: EdgeInsets.zero,
+              child: Card(
+                margin: EdgeInsets.zero, // Card の余白をなくす
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                  ),
+                ),
+                color: Colors.white,
+                elevation: 4,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TabBar(
+                      dividerColor: Colors.transparent,
+                      tabs: [
+                        Tab(text: 'ログイン'),
+                        Tab(text: '新規登録'),
+                      ],
+                      labelColor: Colors.black,
+                      indicatorColor: subTheme,
                     ),
-                  ),
-                  color: Colors.white,
-                  elevation: 4,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TabBar(
-                        dividerColor: Colors.transparent,
-                        tabs: [
-                          Tab(text: 'ログイン'),
-                          Tab(text: '新規登録'),
+                    SizedBox(
+                      height: screenHeight * 0.65, // 画面高さの65%に設定
+                      child: TabBarView(
+                        children: [
+                          // ログインタブ
+                          SingleChildScrollView(
+                            child: Padding(
+                              padding: const EdgeInsets.all(24.0),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  SizedBox(height: 20),
+                                  TextField(
+                                    controller: _emailControllerLogin,
+                                    decoration: InputDecoration(
+                                      labelText: 'メールアドレス',
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                    keyboardType: TextInputType.emailAddress,
+                                  ),
+                                  SizedBox(height: 15),
+                                  TextField(
+                                    controller: _passwordControllerLogin,
+                                    decoration: InputDecoration(
+                                      labelText: 'パスワード',
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      suffixIcon: IconButton(
+                                        icon: Icon(
+                                          _isLoginPasswordVisible
+                                              ? Icons.visibility
+                                              : Icons.visibility_off,
+                                        ),
+                                        onPressed: () {
+                                          setState(() {
+                                            _isLoginPasswordVisible =
+                                                !_isLoginPasswordVisible;
+                                          });
+                                        },
+                                      ),
+                                    ),
+                                    obscureText: !_isLoginPasswordVisible,
+                                  ),
+                                  SizedBox(height: 20),
+                                  ElevatedButton(
+                                    onPressed: _signIn,
+                                    child: Text(
+                                      'ログイン',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: subTheme,
+                                      minimumSize: Size(double.infinity, 50),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(height: 20),
+                                  Text("または"),
+                                  SizedBox(height: 10),
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      ElevatedButton.icon(
+                                        icon: Image.asset(
+                                          'assets/images/google_logo.png',
+                                          height: 20.0,
+                                        ),
+                                        label: Text('Google'),
+                                        onPressed: _signInWithGoogle,
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.white,
+                                          minimumSize: Size(130, 40),
+                                          side: BorderSide(
+                                              color: Colors.grey.shade300),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                          ),
+                                          elevation: 1,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  if (_errorMessageLogin.isNotEmpty)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 20.0),
+                                      child: Text(
+                                        _errorMessageLogin,
+                                        style: TextStyle(color: Colors.red),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          // 新規登録タブ
+                          SingleChildScrollView(
+                            child: Padding(
+                              padding: const EdgeInsets.all(24.0),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  SizedBox(height: 20),
+                                  TextField(
+                                    controller: _emailControllerRegister,
+                                    decoration: InputDecoration(
+                                      labelText: 'メールアドレス',
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                    keyboardType: TextInputType.emailAddress,
+                                  ),
+                                  SizedBox(height: 15),
+                                  TextField(
+                                    controller: _passwordControllerRegister,
+                                    decoration: InputDecoration(
+                                      labelText: 'パスワード',
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      suffixIcon: IconButton(
+                                        icon: Icon(
+                                          _isRegisterPasswordVisible
+                                              ? Icons.visibility
+                                              : Icons.visibility_off,
+                                        ),
+                                        onPressed: () {
+                                          setState(() {
+                                            _isRegisterPasswordVisible =
+                                                !_isRegisterPasswordVisible;
+                                          });
+                                        },
+                                      ),
+                                    ),
+                                    obscureText: !_isRegisterPasswordVisible,
+                                    onChanged: (value) {
+                                      _evaluatePasswordStrength(value);
+                                    },
+                                  ),
+                                  // パスワード強度インジケーター
+                                  if (_passwordStrength.isNotEmpty)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 8.0),
+                                      child: Row(
+                                        children: [
+                                          Text(
+                                            'パスワード強度: ',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          Text(
+                                            _passwordStrength,
+                                            style: TextStyle(
+                                              color: _passwordStrengthColor,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  SizedBox(height: 15),
+                                  TextField(
+                                    controller:
+                                        _confirmPasswordControllerRegister,
+                                    decoration: InputDecoration(
+                                      labelText: 'パスワード再入力',
+                                      border: OutlineInputBorder(
+                                        borderSide: BorderSide(color: subTheme),
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderSide: BorderSide(color: subTheme),
+                                      ),
+                                      errorText: _isPasswordMatching
+                                          ? null
+                                          : 'パスワードが一致しません',
+                                    ),
+                                    obscureText:
+                                        !_isRegisterConfirmPasswordVisible,
+                                    onChanged: (value) {
+                                      setState(() {
+                                        _isPasswordMatching = value ==
+                                            _passwordControllerRegister.text;
+                                      });
+                                    },
+                                  ),
+                                  SizedBox(height: 20),
+                                  ElevatedButton(
+                                    onPressed: _register, // 常に有効化
+                                    child: Text(
+                                      '新規登録',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: subTheme,
+                                      minimumSize: Size(double.infinity, 50),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(height: 20),
+                                  Text("または"),
+                                  SizedBox(height: 10),
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      ElevatedButton.icon(
+                                        icon: Image.asset(
+                                          'assets/images/google_logo.png',
+                                          height: 20.0,
+                                        ),
+                                        label: Text('Google'),
+                                        onPressed: _signInWithGoogle,
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.white,
+                                          minimumSize: Size(130, 40),
+                                          side: BorderSide(
+                                              color: Colors.grey.shade300),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                          ),
+                                          elevation: 1,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  if (_errorMessageRegister.isNotEmpty)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 20.0),
+                                      child: Text(
+                                        _errorMessageRegister,
+                                        style: TextStyle(color: Colors.red),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
                         ],
-                        labelColor: Colors.black,
-                        indicatorColor: subTheme,
                       ),
-                      SizedBox(
-                        height: screenHeight * 0.65, // 画面高さの65%に設定
-                        child: TabBarView(
-                          children: [
-                            // ログインタブ
-                            SingleChildScrollView(
-                              child: Padding(
-                                padding: const EdgeInsets.all(24.0),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    SizedBox(height: 20),
-                                    TextField(
-                                      controller: _emailControllerLogin,
-                                      decoration: InputDecoration(
-                                        labelText: 'メールアドレス',
-                                        border: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                        ),
-                                      ),
-                                      keyboardType: TextInputType.emailAddress,
-                                    ),
-                                    SizedBox(height: 15),
-                                    TextField(
-                                      controller: _passwordControllerLogin,
-                                      decoration: InputDecoration(
-                                        labelText: 'パスワード',
-                                        border: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                        ),
-                                        suffixIcon: IconButton(
-                                          icon: Icon(
-                                            _isLoginPasswordVisible
-                                                ? Icons.visibility
-                                                : Icons.visibility_off,
-                                          ),
-                                          onPressed: () {
-                                            setState(() {
-                                              _isLoginPasswordVisible =
-                                                  !_isLoginPasswordVisible;
-                                            });
-                                          },
-                                        ),
-                                      ),
-                                      obscureText: !_isLoginPasswordVisible,
-                                    ),
-                                    SizedBox(height: 20),
-                                    ElevatedButton(
-                                      onPressed: _signIn,
-                                      child: Text(
-                                        'ログイン',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: subTheme,
-                                        minimumSize: Size(double.infinity, 50),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(height: 20),
-                                    Text("または"),
-                                    SizedBox(height: 10),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceEvenly,
-                                      children: [
-                                        ElevatedButton.icon(
-                                          icon: Image.asset(
-                                            'assets/images/google_logo.png',
-                                            height: 20.0,
-                                          ),
-                                          label: Text('Google'),
-                                          onPressed: _signInWithGoogle,
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.white,
-                                            minimumSize: Size(130, 40),
-                                            side: BorderSide(
-                                                color: Colors.grey.shade300),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                            ),
-                                            elevation: 1,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    if (_errorMessageLogin.isNotEmpty)
-                                      Padding(
-                                        padding:
-                                            const EdgeInsets.only(top: 20.0),
-                                        child: Text(
-                                          _errorMessageLogin,
-                                          style: TextStyle(color: Colors.red),
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            // 新規登録タブ
-                            SingleChildScrollView(
-                              child: Padding(
-                                padding: const EdgeInsets.all(24.0),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    SizedBox(height: 20),
-                                    TextField(
-                                      controller: _emailControllerRegister,
-                                      decoration: InputDecoration(
-                                        labelText: 'メールアドレス',
-                                        border: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                        ),
-                                      ),
-                                      keyboardType: TextInputType.emailAddress,
-                                    ),
-                                    SizedBox(height: 15),
-                                    TextField(
-                                      controller: _passwordControllerRegister,
-                                      decoration: InputDecoration(
-                                        labelText: 'パスワード',
-                                        border: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                        ),
-                                        suffixIcon: IconButton(
-                                          icon: Icon(
-                                            _isRegisterPasswordVisible
-                                                ? Icons.visibility
-                                                : Icons.visibility_off,
-                                          ),
-                                          onPressed: () {
-                                            setState(() {
-                                              _isRegisterPasswordVisible =
-                                                  !_isRegisterPasswordVisible;
-                                            });
-                                          },
-                                        ),
-                                      ),
-                                      obscureText: !_isRegisterPasswordVisible,
-                                      onChanged: (value) {
-                                        _evaluatePasswordStrength(value);
-                                      },
-                                    ),
-                                    // パスワード強度インジケーター
-                                    if (_passwordStrength.isNotEmpty)
-                                      Padding(
-                                        padding:
-                                            const EdgeInsets.only(top: 8.0),
-                                        child: Row(
-                                          children: [
-                                            Text(
-                                              'パスワード強度: ',
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                            Text(
-                                              _passwordStrength,
-                                              style: TextStyle(
-                                                color: _passwordStrengthColor,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    SizedBox(height: 15),
-                                    TextField(
-                                      controller:
-                                          _confirmPasswordControllerRegister,
-                                      decoration: InputDecoration(
-                                        labelText: 'パスワード再入力',
-                                        border: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                        ),
-                                        suffixIcon: IconButton(
-                                          icon: Icon(
-                                            _isRegisterConfirmPasswordVisible
-                                                ? Icons.visibility
-                                                : Icons.visibility_off,
-                                          ),
-                                          onPressed: () {
-                                            setState(() {
-                                              _isRegisterConfirmPasswordVisible =
-                                                  !_isRegisterConfirmPasswordVisible;
-                                            });
-                                          },
-                                        ),
-                                        errorText: _isPasswordMatching
-                                            ? null
-                                            : 'パスワードが一致しません',
-                                      ),
-                                      obscureText:
-                                          !_isRegisterConfirmPasswordVisible,
-                                      onChanged: (value) {
-                                        setState(() {
-                                          _isPasswordMatching = value ==
-                                              _passwordControllerRegister.text;
-                                        });
-                                      },
-                                    ),
-                                    SizedBox(height: 20),
-                                    ElevatedButton(
-                                      onPressed: _register, // 常に有効化
-                                      child: Text(
-                                        '新規登録',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: subTheme,
-                                        minimumSize: Size(double.infinity, 50),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(height: 20),
-                                    Text("または"),
-                                    SizedBox(height: 10),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceEvenly,
-                                      children: [
-                                        ElevatedButton.icon(
-                                          icon: Image.asset(
-                                            'assets/images/google_logo.png',
-                                            height: 20.0,
-                                          ),
-                                          label: Text('Google'),
-                                          onPressed: _signInWithGoogle,
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.white,
-                                            minimumSize: Size(130, 40),
-                                            side: BorderSide(
-                                                color: Colors.grey.shade300),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                            ),
-                                            elevation: 1,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    if (_errorMessageRegister.isNotEmpty)
-                                      Padding(
-                                        padding:
-                                            const EdgeInsets.only(top: 20.0),
-                                        child: Text(
-                                          _errorMessageRegister,
-                                          style: TextStyle(color: Colors.red),
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
-          )
-        ],
-      ),
+          ),
+        ),
+      ]),
     );
   }
 }

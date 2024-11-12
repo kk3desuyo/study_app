@@ -9,6 +9,25 @@ class StudySessionService {
   final BookService bookService = BookService();
   final CollectionReference dailyGoalsCollection =
       FirebaseFirestore.instance.collection('dailyGoals');
+  Future<List<StudySession>> fetchLast7DaysStudySessions(String userId) async {
+    final DateTime now = DateTime.now();
+    final DateTime sevenDaysAgo = now.subtract(Duration(days: 7));
+
+    // 指定した userId の studySession を取得
+    final QuerySnapshot studySessionSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('studySession')
+        .where('timeStamp',
+            isGreaterThanOrEqualTo: Timestamp.fromDate(sevenDaysAgo))
+        .orderBy('timeStamp', descending: true)
+        .get();
+
+    // 取得した studySession ドキュメントをリストに変換
+    return studySessionSnapshot.docs
+        .map((doc) => StudySession.fromFirestore(doc))
+        .toList();
+  }
 
   Future<List<Map<String, double>>> fetchStudyTimes(String userId) async {
     List<Map<String, double>> studyTimes = [];

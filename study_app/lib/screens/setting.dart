@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
 import 'package:study_app/screens/accoun_setting.dart';
 
 import 'package:study_app/screens/auth.dart';
@@ -17,6 +18,7 @@ class SettingsScreen extends StatelessWidget {
         MaterialPageRoute(builder: (context) => AuthScreen()),
         (Route<dynamic> route) => false,
       );
+
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('ログアウトしました')),
@@ -44,10 +46,15 @@ class SettingsScreen extends StatelessWidget {
 
         // 再認証成功後にアカウント削除
         await user.delete();
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => AuthScreen()),
-          (Route<dynamic> route) => false,
+
+        PersistentNavBarNavigator.pushNewScreen(
+          context,
+          screen: AuthScreen(), // 遷移先の画面
+          withNavBar: false, // ナビゲーションバーを非表示にする
+          pageTransitionAnimation:
+              PageTransitionAnimation.cupertino, // アニメーションの種類
         );
+
         WidgetsBinding.instance.addPostFrameCallback((_) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('アカウントが消去されました')),

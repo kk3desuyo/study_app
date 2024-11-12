@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:study_app/main.dart';
 import 'package:study_app/models/book.dart';
+import 'package:study_app/models/study_session.dart';
 import 'package:study_app/screens/book_shelf_screen.dart';
 import 'package:study_app/screens/followed_and_following.dart';
 import 'package:study_app/screens/other_user_display_book.dart';
@@ -40,6 +41,7 @@ class MyAccountCard extends StatefulWidget {
   final int todayGoalTime;
   final int weekGoalTime;
   final Function() onChanged;
+  final List<StudySession> studySessions;
   MyAccountCard({
     Key? key,
     required this.onChanged,
@@ -59,6 +61,7 @@ class MyAccountCard extends StatefulWidget {
     required this.weekStudyTime,
     required this.todayGoalTime,
     required this.weekGoalTime,
+    required this.studySessions,
   }) : super(key: key);
 
   @override
