@@ -21,7 +21,8 @@ class _BookShelfCardState extends State<BookShelfCard> {
   @override
   void initState() {
     super.initState();
-
+    print("BookShelfCard: books length: ${widget.books.length}");
+    print(widget.books[0].category);
     // booksからcategorySetを生成
     categorySet = widget.books.map((book) => book.category).toSet();
   }

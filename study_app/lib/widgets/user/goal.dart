@@ -61,12 +61,13 @@ class GoalCard extends StatelessWidget {
                       ),
                     ),
                     SizedBox(height: 10),
-                    // 今日、今週のタイトルを横幅に合わせて配置
+                    // タイトル行を修正
                     Row(
                       children: [
-                        Spacer(flex: 3), // 左側のスペース
+                        SizedBox(
+                          width: 70, // ラベルの幅に合わせる
+                        ),
                         Expanded(
-                          flex: 3,
                           child: Text(
                             '今日',
                             textAlign: TextAlign.center,
@@ -77,7 +78,6 @@ class GoalCard extends StatelessWidget {
                           ),
                         ),
                         Expanded(
-                          flex: 3,
                           child: Text(
                             '今週',
                             textAlign: TextAlign.center,
@@ -87,11 +87,10 @@ class GoalCard extends StatelessWidget {
                             ),
                           ),
                         ),
-                        Spacer(flex: 2), // 右側のスペース
                       ],
                     ),
                     SizedBox(height: 10),
-                    // 目標時間と学習時間を表示（今日と今週の行を並べる）
+                    // 目標時間と学習時間を表示
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -111,16 +110,26 @@ class GoalCard extends StatelessWidget {
                       ],
                     ),
                     SizedBox(height: 20),
-                    // 達成率の円グラフ
+                    // 達成率の円グラフを修正
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        _buildCircularProgress(todayGoalTime == 0
-                            ? 0
-                            : todayStudyTime / todayGoalTime),
-                        _buildCircularProgress(weekGoalTime == 0
-                            ? 0
-                            : weekStudyTime / weekGoalTime),
+                        SizedBox(
+                          width: 70, // ラベルの幅に合わせる
+                        ),
+                        Expanded(
+                          child: _buildCircularProgress(
+                            todayGoalTime == 0
+                                ? 0
+                                : todayStudyTime / todayGoalTime,
+                          ),
+                        ),
+                        Expanded(
+                          child: _buildCircularProgress(
+                            weekGoalTime == 0
+                                ? 0
+                                : weekStudyTime / weekGoalTime,
+                          ),
+                        ),
                       ],
                     ),
                   ],
@@ -133,7 +142,7 @@ class GoalCard extends StatelessWidget {
     );
   }
 
-  // 目標時間と学習時間の行を作成する
+  // 目標時間と学習時間の行を修正
   Widget _buildTimeRow(
       String label, String todayTime, String weekTime, Color color) {
     return Container(
@@ -154,18 +163,14 @@ class GoalCard extends StatelessWidget {
               ),
             ),
           ),
-
-          SizedBox(
-            width: 60,
+          Expanded(
             child: Text(
               todayTime,
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 16),
             ),
           ),
-          Spacer(flex: 1), // todayTimeとweekTimeの間のスペースを広くする
-          SizedBox(
-            width: 60,
+          Expanded(
             child: Text(
               weekTime,
               textAlign: TextAlign.center,
@@ -177,7 +182,7 @@ class GoalCard extends StatelessWidget {
     );
   }
 
-  // 達成率の円グラフを作成する
+  // 達成率の円グラフを修正
   Widget _buildCircularProgress(double progress) {
     return Stack(
       alignment: Alignment.center,
@@ -186,7 +191,7 @@ class GoalCard extends StatelessWidget {
           height: 70,
           width: 70,
           child: CircularProgressIndicator(
-            value: progress,
+            value: progress.clamp(0.0, 1.0),
             backgroundColor: Colors.grey[300],
             valueColor: AlwaysStoppedAnimation<Color>(subTheme),
             strokeWidth: 8,
@@ -203,7 +208,7 @@ class GoalCard extends StatelessWidget {
     );
   }
 
-  // 時間をhh:mm形式に変換するヘルパー関数
+  // 時間を hh:mm 形式に変換するヘルパー関数
   String _formatTime(int minutes) {
     final int hours = minutes ~/ 60;
     final int remainingMinutes = minutes % 60;

@@ -516,6 +516,7 @@ class _RecordState extends State<Record> {
                                     book: widget.bookInfos[selectedBook]!,
                                     studyTime: 300,
                                     isDisplayTime: false,
+                                    isTapDisabled: true,
                                   )
                                 : _buildAddBookCard(),
                       ),

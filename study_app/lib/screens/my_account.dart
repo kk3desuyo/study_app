@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:study_app/models/book.dart';
+import 'package:study_app/models/study_card.dart';
+import 'package:study_app/models/user.dart';
+import 'package:study_app/widgets/preview_detail.dart/display_books.dart';
+import 'package:study_app/theme/color.dart';
 import 'package:study_app/services/book_service.dart';
 import 'package:study_app/services/study_session.dart';
 import 'package:study_app/services/goal_service.dart';
 import 'package:study_app/services/user/user_service.dart';
-import 'package:study_app/theme/color.dart';
-import 'package:study_app/widgets/other/other_user_display_card.dart';
-import 'package:study_app/widgets/user/app_bar.dart';
 import 'package:study_app/widgets/user/my_account_card.dart';
+import 'package:study_app/widgets/user/app_bar.dart';
 import 'package:study_app/widgets/user/tag.dart';
-import 'package:study_app/models/user.dart';
-import 'package:study_app/models/study_session.dart';
 
 class MyAccount extends StatefulWidget {
   MyAccount({Key? key}) : super(key: key);
@@ -21,11 +21,8 @@ class MyAccount extends StatefulWidget {
 
 class _MyAccountState extends State<MyAccount> {
   User? user;
-  final ScrollController _scrollController = ScrollController();
-
-  List<Map<String, double>>? studyTimes;
   bool isLoading = true;
-  bool isFetchingMore = false;
+  List<StudyCardData> _studyCardDataList = [];
   List<Book> books = [];
   int todayGoalTime = 0;
   int weekGoalTime = 0;
@@ -35,27 +32,12 @@ class _MyAccountState extends State<MyAccount> {
   int followersNum = 0;
   bool isFollow = false;
   List<Tag> tags = [];
-  List<StudySession> studySessions = [];
+  List<Map<String, double>>? studyTimes;
 
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(_onScroll);
     fetchUserData();
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  void _onScroll() {
-    if (_scrollController.position.pixels <= 0) {
-      if (!isFetchingMore) {
-        fetchData();
-      }
-    }
   }
 
   Future<void> fetchUserData() async {
@@ -69,7 +51,8 @@ class _MyAccountState extends State<MyAccount> {
         setState(() {
           user = fetchedUser;
         });
-        fetchData();
+        await fetchData();
+        await fetchStudySessions();
       } else {
         print('ユーザー情報の取得に失敗しました');
         setState(() {
@@ -85,11 +68,7 @@ class _MyAccountState extends State<MyAccount> {
   }
 
   Future<void> fetchData() async {
-    if (user == null || isFetchingMore) return;
-
-    setState(() {
-      isFetchingMore = true;
-    });
+    if (user == null) return;
 
     StudySessionService studySessionService = StudySessionService();
     BookService bookService = BookService();
@@ -99,7 +78,6 @@ class _MyAccountState extends State<MyAccount> {
     try {
       List<Map<String, double>> times =
           await studySessionService.fetchStudyTimes(user!.id);
-
       List<Map<String, dynamic>> bookDetails =
           await bookService.fetchUserBookDetails(user!.id);
       List<Book> fetchedBooks = bookDetails.map((bookDetail) {
@@ -107,7 +85,7 @@ class _MyAccountState extends State<MyAccount> {
           id: bookDetail['bookId'],
           title: bookDetail['title'],
           imgUrl: bookDetail['imgUrl'],
-          category: bookDetail['categoryName'],
+          category: bookDetail['category'],
           lastUsedDate: DateTime.now(),
         );
       }).toList();
@@ -140,15 +118,39 @@ class _MyAccountState extends State<MyAccount> {
         isFollow = false;
         tags = fetchedTags;
         isLoading = false;
-        isFetchingMore = false;
       });
     } catch (e) {
       print("Error fetching data: $e");
       setState(() {
         isLoading = false;
-        isFetchingMore = false;
       });
     }
+  }
+
+  Future<void> fetchStudySessions() async {
+    try {
+      List<StudyCardData> studyCardDataList =
+          await StudySessionService().fetchLast7DaysStudySessions(user!.id);
+      setState(() {
+        _studyCardDataList = studyCardDataList;
+        isLoading = false;
+      });
+    } catch (e) {
+      print('Error fetching study sessions: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _onRefresh() async {
+    setState(() {
+      isLoading = true;
+    });
+    await fetchUserData();
+    setState(() {
+      isLoading = false;
+    });
   }
 
   void _onChanged() {
@@ -167,16 +169,12 @@ class _MyAccountState extends State<MyAccount> {
       ),
       body: isLoading
           ? Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              controller: _scrollController,
-              child: Column(
+          : RefreshIndicator(
+              onRefresh: _onRefresh,
+              child: ListView(
                 children: [
-                  if (isFetchingMore)
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: CircularProgressIndicator(), // ローディングインジケーター
-                    ),
                   MyAccountCard(
+                    studySessions: _studyCardDataList,
                     onChanged: _onChanged,
                     todayGoalTime: todayGoalTime,
                     weekGoalTime: weekGoalTime,
@@ -192,7 +190,6 @@ class _MyAccountState extends State<MyAccount> {
                     commentNum: 10,
                     achivementLevel: 100,
                     oneWord: user?.oneWord ?? '',
-                    studyTimes: [],
                     tags: tags,
                   ),
                 ],

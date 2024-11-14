@@ -94,7 +94,7 @@ class _OtherUserDisplayState extends State<OtherUserDisplay> {
             id: bookDetail['bookId'],
             title: bookDetail['title'],
             imgUrl: bookDetail['imgUrl'],
-            category: bookDetail['categoryName'],
+            category: bookDetail['category'],
             lastUsedDate: DateTime.now());
       }).toList();
 

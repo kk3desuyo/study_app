@@ -3,7 +3,9 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
 import 'package:study_app/firebase_options.dart';
+import 'package:study_app/models/book.dart';
 import 'package:study_app/screens/auth.dart';
+import 'package:study_app/screens/book.dart';
 import 'package:study_app/screens/home.dart';
 import 'package:study_app/screens/my_account.dart';
 import 'package:study_app/screens/notification.dart';
@@ -86,7 +88,15 @@ class _HomeState extends State<Home> {
   }
 
   var _pages = <Widget>[
-    HomeScreen(),
+    BookScreen(
+      book: Book(
+          title: 'Dummy Book',
+          id: "dummy",
+          imgUrl:
+              "https://cdn-ak.f.st-hatena.com/images/fotolife/M/MouseComputer/20240731/20240731110005.jpg",
+          category: "数学",
+          lastUsedDate: DateTime.now()),
+    ),
     HomeScreen(), // ランキング画面を追加
     TimePage(),
     NotificationPage(),

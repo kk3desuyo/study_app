@@ -175,7 +175,7 @@ class _FriendSerchState extends State<FriendSerch> {
                 controller: _controller,
                 focusNode: _focusNode,
                 decoration: InputDecoration(
-                  hintText: 'ユーザー名、ユーザーIDで検索',
+                  hintText: 'ユーザー名で検索',
                   prefixIcon: Icon(Icons.search, color: subTheme),
                   suffixIcon: IconButton(
                     icon: Icon(Icons.clear, color: subTheme),

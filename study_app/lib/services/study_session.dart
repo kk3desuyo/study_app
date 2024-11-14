@@ -1,32 +1,77 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:study_app/models/book.dart';
+import 'package:study_app/models/study_card.dart';
 import 'package:study_app/models/study_session.dart';
+import 'package:study_app/models/user.dart';
 import 'package:study_app/services/book_service.dart';
+import 'package:study_app/services/user/user_service.dart';
 
 class StudySessionService {
-  final CollectionReference studySessionCollection =
-      FirebaseFirestore.instance.collection('studySession');
+  // userIdを受け取り、そのユーザーのstudySessionサブコレクションにアクセスする
+  CollectionReference getStudySessionCollection(String userId) {
+    return FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('studySession');
+  }
 
   final BookService bookService = BookService();
   final CollectionReference dailyGoalsCollection =
       FirebaseFirestore.instance.collection('dailyGoals');
-  Future<List<StudySession>> fetchLast7DaysStudySessions(String userId) async {
+
+  Future<List<StudyCardData>> fetchLast7DaysStudySessions(String userId) async {
     final DateTime now = DateTime.now();
     final DateTime sevenDaysAgo = now.subtract(Duration(days: 7));
 
-    // 指定した userId の studySession を取得
-    final QuerySnapshot studySessionSnapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(userId)
-        .collection('studySession')
-        .where('timeStamp',
-            isGreaterThanOrEqualTo: Timestamp.fromDate(sevenDaysAgo))
-        .orderBy('timeStamp', descending: true)
-        .get();
+    // Fetch study sessions for the last 7 days
+    final QuerySnapshot studySessionSnapshot =
+        await getStudySessionCollection(userId)
+            .where('timeStamp',
+                isGreaterThanOrEqualTo: Timestamp.fromDate(sevenDaysAgo))
+            .orderBy('timeStamp', descending: true)
+            .get();
 
-    // 取得した studySession ドキュメントをリストに変換
-    return studySessionSnapshot.docs
+    List<StudySession> studySessions = studySessionSnapshot.docs
         .map((doc) => StudySession.fromFirestore(doc))
         .toList();
+
+    // Fetch the user data once since userId is the same
+    UserService userService = UserService();
+    User? user = await userService.getUser(userId);
+
+    if (user == null) {
+      throw Exception('User not found');
+    }
+
+    // Collect unique bookIds to minimize database reads
+    Set<String> bookIds =
+        studySessions.map((session) => session.bookId).toSet();
+
+    // Fetch all books in a single query
+    BookService bookService = BookService();
+    List<Book> books = await bookService.getBooksByIds(bookIds.toList());
+
+    // Create a map for quick lookup
+    Map<String, Book> bookMap = {for (var book in books) book.id: book};
+
+    // Build the list of StudyCardData
+    List<StudyCardData> studyCardDataList = studySessions.map((session) {
+      Book? book = bookMap[session.bookId];
+      if (book == null) {
+        throw Exception('Book not found for bookId: ${session.bookId}');
+      }
+
+      return StudyCardData(
+        timeStamp: session.timeStamp,
+        id: session.id,
+        user: user,
+        studyTime: session.studyTime,
+        book: book,
+        memo: session.memo,
+      );
+    }).toList();
+
+    return studyCardDataList;
   }
 
   Future<List<Map<String, double>>> fetchStudyTimes(String userId) async {
@@ -34,10 +79,11 @@ class StudySessionService {
     DateTime now = DateTime.now();
     DateTime sevenDaysAgo = now.subtract(Duration(days: 7));
 
-    // studySessionコレクションから過去7日間のデータを取得
+    // 指定された userId の studySession サブコレクションから過去7日間のデータを取得
     QuerySnapshot snapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
         .collection('studySession')
-        .where('userId', isEqualTo: userId)
         .where('timeStamp',
             isGreaterThanOrEqualTo: Timestamp.fromDate(sevenDaysAgo))
         .get();
@@ -72,13 +118,13 @@ class StudySessionService {
     return studyTimes.reversed.toList(); // 6日前から当日順に並べ替え
   }
 
-  // StudySessionを追加する関数
   // StudySessionを追加し、DailyGoalのachievedStudyTimeを更新または作成する関数
   Future<void> addStudySession(StudySession session) async {
     try {
       await FirebaseFirestore.instance.runTransaction((transaction) async {
-        // studySessionコレクションに新しいセッションを追加
-        DocumentReference studySessionRef = studySessionCollection.doc();
+        // userIdに基づいてstudySessionサブコレクションに新しいセッションを追加
+        DocumentReference studySessionRef =
+            getStudySessionCollection(session.userId).doc();
         transaction.set(studySessionRef, session.toFirestore());
 
         // 今日の日付を文字列で取得
@@ -86,7 +132,8 @@ class StudySessionService {
             "${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}";
 
         // userIdと今日の日付をもとにdailyGoalドキュメントを検索
-        QuerySnapshot dailyGoalSnapshot = await dailyGoalsCollection
+        QuerySnapshot dailyGoalSnapshot = await FirebaseFirestore.instance
+            .collection('dailyGoals')
             .where('userId', isEqualTo: session.userId)
             .where('targetDay', isEqualTo: todayDate)
             .get();
@@ -109,13 +156,13 @@ class StudySessionService {
         } else {
           print("存在しません");
           // DailyGoalが存在しない場合、新しいドキュメントを作成
-          DocumentReference newDailyGoalRef = dailyGoalsCollection.doc();
+          DocumentReference newDailyGoalRef =
+              FirebaseFirestore.instance.collection('dailyGoals').doc();
           transaction.set(newDailyGoalRef, {
             'achievedStudyTime': session.studyTime,
             'oneWord': '',
             'targetDay': todayDate,
             'targetStudyTime': 0,
-            'userId': session.userId,
           });
         }
       });
@@ -131,7 +178,7 @@ class StudySessionService {
   Future<List<StudySession>> getStudySessionsByUserId(String userId) async {
     try {
       QuerySnapshot querySnapshot =
-          await studySessionCollection.where('userId', isEqualTo: userId).get();
+          await getStudySessionCollection(userId).get();
 
       List<StudySession> sessions = querySnapshot.docs.map((doc) {
         return StudySession.fromFirestore(doc);
@@ -145,10 +192,11 @@ class StudySessionService {
   }
 
   // studySessionIdに基づいて特定のStudySessionを取得する関数
-  Future<StudySession?> getStudySessionById(String studySessionId) async {
+  Future<StudySession?> getStudySessionById(
+      String userId, String studySessionId) async {
     try {
       DocumentSnapshot doc =
-          await studySessionCollection.doc(studySessionId).get();
+          await getStudySessionCollection(userId).doc(studySessionId).get();
 
       if (doc.exists) {
         return StudySession.fromFirestore(doc);
@@ -162,24 +210,24 @@ class StudySessionService {
     }
   }
 
-  // // StudySessionを更新する関数
-  // Future<void> updateStudySession(
-  //     String studySessionId, StudySession session) async {
-  //   try {
-  //     await studySessionCollection
-  //         .doc(studySessionId)
-  //         .update(session.toFirestore());
-  //     print('StudySession updated successfully');
-  //   } catch (e) {
-  //     print('Error updating StudySession: $e');
-  //     throw Exception('Failed to update StudySession');
-  //   }
-  // }
+  // StudySessionを更新する関数
+  Future<void> updateStudySession(
+      String userId, String studySessionId, StudySession session) async {
+    try {
+      await getStudySessionCollection(userId)
+          .doc(studySessionId)
+          .update(session.toFirestore());
+      print('StudySession updated successfully');
+    } catch (e) {
+      print('Error updating StudySession: $e');
+      throw Exception('Failed to update StudySession');
+    }
+  }
 
   // StudySessionを削除する関数
-  Future<void> deleteStudySession(String studySessionId) async {
+  Future<void> deleteStudySession(String userId, String studySessionId) async {
     try {
-      await studySessionCollection.doc(studySessionId).delete();
+      await getStudySessionCollection(userId).doc(studySessionId).delete();
       print('StudySession deleted successfully');
     } catch (e) {
       print('Error deleting StudySession: $e');

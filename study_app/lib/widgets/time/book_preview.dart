@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:study_app/models/book.dart';
+import 'package:study_app/screens/serch_book.dart';
 import 'package:study_app/services/book_service.dart';
 import 'package:study_app/services/user/user_service.dart';
 import 'package:study_app/theme/color.dart';
@@ -26,6 +27,8 @@ class _BookSelectionPageState extends State<BookSelectionPage> {
 
   @override
   Widget build(BuildContext context) {
+    print(widget.bookInfos[0]?.category);
+    print("OtherUserBookShelf: books length: ${widget.bookInfos.length}");
     // 全ての本のカテゴリーリストを作成（重複削除）
     List<String> bookCategories =
         widget.bookInfos.values.map((book) => book.category).toSet().toList();
@@ -59,6 +62,10 @@ class _BookSelectionPageState extends State<BookSelectionPage> {
                   Expanded(
                     child: GestureDetector(
                       onTap: () async {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => SearchBook()),
+                        );
                         String userId = (await UserService()
                             .getCurrentUserId())!; // 対象のユーザーID
                         String bookId = "VQV1veohWImDbXS6W7yH"; // 追加する本のID
@@ -66,7 +73,7 @@ class _BookSelectionPageState extends State<BookSelectionPage> {
                         try {
                           BookService bookService = BookService();
                           await bookService.addBookToUser(
-                              userId, bookId, DateTime.now());
+                              userId, bookId, DateTime.now(), "理科");
                         } catch (e) {
                           print("Error adding example book ID: $e");
                         }

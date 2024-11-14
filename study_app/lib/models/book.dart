@@ -6,28 +6,30 @@ class Book {
   final String title;
   final String category;
   final DateTime lastUsedDate; // lastUsedDateフィールドを追加
-
+  int? userNum;
   // コンストラクター
-  Book({
-    required this.id,
-    required this.imgUrl,
-    required this.title,
-    required this.category,
-    required this.lastUsedDate, // コンストラクターにlastUsedDateを追加
-  });
+  Book(
+      {required this.id,
+      required this.imgUrl,
+      required this.title,
+      required this.category,
+      required this.lastUsedDate,
+      this.userNum = 0 // コンストラクターにlastUsedDateを追加
+      });
 
   // FirestoreのデータからBookオブジェクトを生成するファクトリメソッド
   factory Book.fromFirestore(Map<String, dynamic> data) {
     return Book(
-      id: data['bookId'] ?? '',
-      imgUrl: data['imgUrl'] ?? '',
-      title: data['title'] ?? '',
-      category: data['category'] ?? '',
-      lastUsedDate: data['lastUsedDate'] is Timestamp
-          ? (data['lastUsedDate'] as Timestamp).toDate()
-          : DateTime.parse(
-              data['lastUsedDate'] ?? DateTime.now().toIso8601String()),
-    );
+        id: data['bookId'] ?? '',
+        imgUrl: data['imgUrl'] ?? '',
+        title: data['title'] ?? '',
+        category: data['category'] ?? '',
+        lastUsedDate: data['lastUsedDate'] is Timestamp
+            ? (data['lastUsedDate'] as Timestamp).toDate()
+            : DateTime.parse(
+                data['lastUsedDate'] ?? DateTime.now().toIso8601String()),
+        userNum: data['userNum'] ?? 0 // ファクトリメソッドにlastUsedDateを追加
+        );
   }
 
   // BookオブジェクトをMap形式に変換するメソッド
@@ -38,6 +40,7 @@ class Book {
       'title': title,
       'category': category,
       'lastUsedDate': lastUsedDate.toIso8601String(), // lastUsedDateをtoMapに追加
+      'userNum': userNum // toMapにlastUsedDateを追加
     };
   }
 

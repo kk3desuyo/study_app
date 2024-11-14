@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:study_app/models/studyMaterial.dart';
+import 'package:study_app/screens/book.dart';
 import 'package:study_app/theme/color.dart';
 import 'package:study_app/models/book.dart'; // Bookモデルをインポート
 
@@ -70,6 +71,7 @@ class BookCard extends StatefulWidget {
   final int studyTime;
   final bool isDisplayTime;
   final bool isDisplayName;
+  final bool isTapDisabled;
 
   const BookCard({
     Key? key,
@@ -77,6 +79,7 @@ class BookCard extends StatefulWidget {
     required this.studyTime,
     this.isDisplayTime = true,
     this.isDisplayName = true,
+    this.isTapDisabled = false,
   }) : super(key: key);
 
   @override
@@ -94,58 +97,62 @@ class _BookCardState extends State<BookCard> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Card(
-          color: Colors.white,
-          child: Padding(
-            padding: const EdgeInsets.all(6.0),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.transparent,
+            shadowColor: Colors.transparent,
+            padding: EdgeInsets.zero,
+          ),
+          onPressed: () {
+            if (widget.isTapDisabled) return;
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => BookScreen(book: widget.book)));
+          },
+          child: Card(
+            color: Colors.white,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center, // ここを修正
               children: [
                 if (widget.book.imgUrl.isNotEmpty)
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        width: 78.0,
-                        height: 110.0,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(5.0),
-                        ),
-                        child: Image.network(
-                          widget.book.imgUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Icon(
-                              Icons.menu_book,
-                              size: 65,
-                            );
-                          },
-                        ),
-                      )
-                    ],
+                  Padding(
+                    padding:
+                        EdgeInsets.only(left: 7, right: 7, top: 7, bottom: 1),
+                    child: Container(
+                      width: 85.0,
+                      height: 110.0,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(5.0),
+                      ),
+                      child: Image.network(
+                        widget.book.imgUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Image.asset(
+                            'assets/images/default_book_img.jpg',
+                            fit: BoxFit.cover,
+                          );
+                        },
+                      ),
+                    ),
                   )
                 else
-                  const Icon(
-                    Icons.menu_book,
-                    size: 70,
+                  Image.asset(
+                    'assets/images/default_book_img.jpg',
+                    fit: BoxFit.cover,
                   ),
                 if (widget.isDisplayName) ...[
-                  const SizedBox(height: 5),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        widget.book.title.length > 9
-                            ? '${widget.book.title.substring(0, 9)}...'
-                            : widget.book.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
+                  Text(
+                    widget.book.title.length > 9
+                        ? '${widget.book.title.substring(0, 9)}...'
+                        : widget.book.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ]
               ],

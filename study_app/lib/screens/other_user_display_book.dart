@@ -26,7 +26,10 @@ class _OtherUserBookShelfState extends State<OtherUserBookShelf> {
 
   @override
   Widget build(BuildContext context) {
-    // 全ての本のカテゴリーリストを作成（重複削除）
+    // print("OtherUserBookShelf: books length: ${widget.bookInfos.length}");
+    // print(widget.bookInfos[0]?.category);
+
+    // 全ての本のカテゴリーリストを作成 （重複削除）
     List<String> bookCategories =
         widget.bookInfos.values.map((book) => book.category).toSet().toList();
     bookCategories.insert(0, '全てのカテゴリー'); // 「全てのカテゴリー」を最初に追加して全て表示できるようにする
