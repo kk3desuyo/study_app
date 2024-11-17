@@ -168,6 +168,83 @@ class _RecordState extends State<Record> {
     );
   }
 
+  Future<dynamic> _showConfirmReset() async {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          content: SizedBox(
+            width: 250, // 幅を小さく調整
+            height: 80, // 高さを小さく調整
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.warning, color: Colors.red, size: 30), // アイコンのサイズを調整
+                const SizedBox(height: 20), // 間隔を少し小さく
+                const Text(
+                  '勉強記録をリセットしますか?',
+                  style: TextStyle(fontSize: 14), // フォントサイズを調整
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                TextButton(
+                  style: TextButton.styleFrom(
+                    backgroundColor: Colors.grey[200],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18.0),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 6, vertical: 6), // ボタンのパディングを調整
+                  ),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(color: Colors.black),
+                  ),
+                ),
+                const SizedBox(width: 8), // ボタン間の間隔を調整
+                TextButton(
+                  style: TextButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18.0),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 6), // ボタンのパディングを調整
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      selectedDate = DateTime.now();
+                      selectedHour = 0;
+                      selectedMinute = 0;
+                      selectedBook = -1;
+                      memo = '';
+                      widget.changeTime(false);
+                    });
+                    Navigator.of(context).pop(); // ダイアログを閉じる
+                  },
+                  child: const Text(
+                    'OK',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<dynamic> _showConfirmTimeChange() async {
     return showDialog(
       context: context,
@@ -180,7 +257,7 @@ class _RecordState extends State<Record> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.warning, color: subTheme),
+                Icon(Icons.warning, color: Colors.red),
                 const SizedBox(height: 10),
                 const Text(
                   '時間を変更すると、記録した勉強時間はランキングには反映されません。時間の変更を行いますか?',
@@ -370,36 +447,186 @@ class _RecordState extends State<Record> {
         padding: const EdgeInsets.only(left: 4, right: 4, top: 10),
         child: Container(
           width: double.infinity,
-          child: Card(
-            color: Colors.white,
-            elevation: 4,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  if (widget.isTimeChange)
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        Text(
-                          "今回の勉強時間はランキングに反映されません。",
-                          style: TextStyle(
-                              color: Colors.red,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13),
+          child: Column(
+            children: [
+              if (widget.isTimeChange) ...[
+                ElevatedButton(
+                  onPressed: () async {
+                    _showConfirmReset();
+                  },
+                  child: const Text("勉強記録をリセット"),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: Size(MediaQuery.of(context).size.width, 50),
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.red,
+                    shape: RoundedRectangleBorder(
+                      side: BorderSide(color: Colors.red),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  height: 5,
+                )
+              ],
+              Card(
+                color: Colors.white,
+                elevation: 4,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      if (widget.isTimeChange) ...[
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            Text(
+                              "今回の勉強時間はランキングに反映されません。",
+                              style: TextStyle(
+                                  color: Colors.red,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13),
+                            ),
+                          ],
                         ),
                       ],
-                    ),
-                  const SizedBox(height: 15),
-                  // 日付選択
-                  Row(
-                    children: [
-                      Column(
+                      const SizedBox(height: 15),
+                      // 日付選択
+                      Row(
                         children: [
-                          const SizedBox(height: 5),
+                          Column(
+                            children: [
+                              const SizedBox(height: 5),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 2, horizontal: 25),
+                                decoration: BoxDecoration(
+                                  color: subTheme,
+                                  borderRadius: BorderRadius.circular(15),
+                                ),
+                                child: const Text(
+                                  '日付',
+                                  style: TextStyle(
+                                      fontSize: 15,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w900,
+                                      fontFamily: "KiwiMaru-Regular"),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(width: 10),
+                          DateTimePickerWidget(
+                            initialDate: selectedDate,
+                            initialTime: TimeOfDay(
+                                hour: selectedHour, minute: selectedMinute),
+                            onDateChanged: (date) {
+                              setState(() {
+                                selectedDate = date;
+                              });
+                            },
+                            onTimeChanged: (time) {
+                              setState(() {
+                                selectedHour = time.hour;
+                                selectedMinute = time.minute;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 15),
+                      // 勉強時間
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Column(
+                            children: [
+                              const SizedBox(height: 5),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 2, horizontal: 10),
+                                decoration: BoxDecoration(
+                                  color: subTheme,
+                                  borderRadius: BorderRadius.circular(15),
+                                ),
+                                child: const Text(
+                                  '勉強時間',
+                                  style: TextStyle(
+                                      fontSize: 15,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w900,
+                                      fontFamily: "KiwiMaru-Regular"),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(width: 15),
+                          Text(
+                            formatTimeInJapanese(
+                                selectedHour * 60 + selectedMinute),
+                            style: const TextStyle(fontSize: 18),
+                          ),
+                          const SizedBox(width: 10),
+                          ElevatedButton(
+                            onPressed: _showTimePickerModal,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              side: BorderSide(color: subTheme),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(5),
+                              ),
+                            ),
+                            child: const Text(
+                              "時間変更",
+                              style: TextStyle(color: subTheme),
+                            ),
+                          ),
+                        ],
+                      ),
+                      // 教材選択
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 1, horizontal: 25),
+                            decoration: BoxDecoration(
+                              color: subTheme,
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                            child: const Text(
+                              '教材',
+                              style: TextStyle(
+                                  fontSize: 15,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w900,
+                                  fontFamily: "KiwiMaru-Regular"),
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          GestureDetector(
+                            onTap: _openBookSelectionPage,
+                            child: selectedBook == -1
+                                ? _buildAddBookCard()
+                                : widget.bookInfos.containsKey(selectedBook)
+                                    ? BookCard(
+                                        book: widget.bookInfos[selectedBook]!,
+                                        studyTime: 300,
+                                        isDisplayTime: false,
+                                        isTapDisabled: true,
+                                      )
+                                    : _buildAddBookCard(),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 15),
+                      // メモ
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
                           Container(
                             padding: const EdgeInsets.symmetric(
                                 vertical: 2, horizontal: 25),
@@ -408,7 +635,7 @@ class _RecordState extends State<Record> {
                               borderRadius: BorderRadius.circular(15),
                             ),
                             child: const Text(
-                              '日付',
+                              'メモ',
                               style: TextStyle(
                                   fontSize: 15,
                                   color: Colors.white,
@@ -418,185 +645,60 @@ class _RecordState extends State<Record> {
                           ),
                         ],
                       ),
-                      const SizedBox(width: 10),
-                      DateTimePickerWidget(
-                        initialDate: selectedDate,
-                        initialTime: TimeOfDay(
-                            hour: selectedHour, minute: selectedMinute),
-                        onDateChanged: (date) {
-                          setState(() {
-                            selectedDate = date;
-                          });
-                        },
-                        onTimeChanged: (time) {
-                          setState(() {
-                            selectedHour = time.hour;
-                            selectedMinute = time.minute;
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 15),
-                  // 勉強時間
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Column(
-                        children: [
-                          const SizedBox(height: 5),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 2, horizontal: 10),
-                            decoration: BoxDecoration(
-                              color: subTheme,
-                              borderRadius: BorderRadius.circular(15),
-                            ),
-                            child: const Text(
-                              '勉強時間',
-                              style: TextStyle(
-                                  fontSize: 15,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w900,
-                                  fontFamily: "KiwiMaru-Regular"),
-                            ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4, left: 2),
+                        child: Container(
+                          height: 150,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[300],
+                            borderRadius: BorderRadius.circular(12.0),
                           ),
-                        ],
+                          child: TextField(
+                            maxLines: 2,
+                            minLines: 2,
+                            style: const TextStyle(
+                              fontSize: 11.0,
+                              color: Colors.black,
+                            ),
+                            decoration: const InputDecoration(
+                              hintText: 'めも',
+                              hintStyle: TextStyle(
+                                fontSize: 11.0,
+                                color: Colors.grey,
+                              ),
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 16.0, vertical: 15.0),
+                            ),
+                            onChanged: (value) {
+                              setState(() {
+                                memo = value;
+                              });
+                            },
+                          ),
+                        ),
                       ),
-                      const SizedBox(width: 15),
-                      Text(
-                        formatTimeInJapanese(
-                            selectedHour * 60 + selectedMinute),
-                        style: const TextStyle(fontSize: 18),
-                      ),
-                      const SizedBox(width: 10),
+                      const SizedBox(height: 3),
+                      // 記録ボタン
                       ElevatedButton(
-                        onPressed: _showTimePickerModal,
+                        onPressed: _isSaving ? null : _saveStudySession,
+                        child: const Text("記録する"),
                         style: ElevatedButton.styleFrom(
+                          minimumSize: const Size(200, 35),
                           backgroundColor: Colors.white,
-                          side: BorderSide(color: subTheme),
+                          foregroundColor: subTheme,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(5),
+                            side: BorderSide(color: subTheme),
+                            borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                        child: const Text(
-                          "時間変更",
-                          style: TextStyle(color: subTheme),
-                        ),
                       ),
+                      const SizedBox(height: 5),
                     ],
                   ),
-                  // 教材選択
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 1, horizontal: 25),
-                        decoration: BoxDecoration(
-                          color: subTheme,
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        child: const Text(
-                          '教材',
-                          style: TextStyle(
-                              fontSize: 15,
-                              color: Colors.white,
-                              fontWeight: FontWeight.w900,
-                              fontFamily: "KiwiMaru-Regular"),
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      GestureDetector(
-                        onTap: _openBookSelectionPage,
-                        child: selectedBook == -1
-                            ? _buildAddBookCard()
-                            : widget.bookInfos.containsKey(selectedBook)
-                                ? BookCard(
-                                    book: widget.bookInfos[selectedBook]!,
-                                    studyTime: 300,
-                                    isDisplayTime: false,
-                                    isTapDisabled: true,
-                                  )
-                                : _buildAddBookCard(),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 15),
-                  // メモ
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 2, horizontal: 25),
-                        decoration: BoxDecoration(
-                          color: subTheme,
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        child: const Text(
-                          'メモ',
-                          style: TextStyle(
-                              fontSize: 15,
-                              color: Colors.white,
-                              fontWeight: FontWeight.w900,
-                              fontFamily: "KiwiMaru-Regular"),
-                        ),
-                      ),
-                    ],
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4, left: 2),
-                    child: Container(
-                      height: 150,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(12.0),
-                      ),
-                      child: TextField(
-                        maxLines: 2,
-                        minLines: 2,
-                        style: const TextStyle(
-                          fontSize: 11.0,
-                          color: Colors.black,
-                        ),
-                        decoration: const InputDecoration(
-                          hintText: 'めも',
-                          hintStyle: TextStyle(
-                            fontSize: 11.0,
-                            color: Colors.grey,
-                          ),
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(
-                              horizontal: 16.0, vertical: 15.0),
-                        ),
-                        onChanged: (value) {
-                          setState(() {
-                            memo = value;
-                          });
-                        },
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  // 記録ボタン
-                  ElevatedButton(
-                    onPressed: _isSaving ? null : _saveStudySession,
-                    child: const Text("記録する"),
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: const Size(200, 35),
-                      backgroundColor: Colors.white,
-                      foregroundColor: subTheme,
-                      shape: RoundedRectangleBorder(
-                        side: BorderSide(color: subTheme),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
         ),
       );

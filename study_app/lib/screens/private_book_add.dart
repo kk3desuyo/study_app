@@ -1,13 +1,16 @@
-// Import necessary packages
+import 'dart:convert';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:study_app/services/book_service.dart';
+import 'package:study_app/services/user/user_service.dart';
 import 'package:study_app/theme/color.dart';
 import 'package:study_app/widgets/home/tab_bar.dart';
+import 'package:http/http.dart' as http;
 
 // Custom Tab Indicator Class
 class CustomTabIndicator extends Decoration {
@@ -50,9 +53,10 @@ class _CustomBookEntryScreenState extends State<CustomBookEntryScreen>
   File? _selectedImage;
   final _titleController = TextEditingController();
   final _newCategoryController = TextEditingController();
-  List<Map<String, dynamic>> categories = [];
+  List<Map<String, String>> categories = [];
   String? selectedCategoryId;
   bool isLoading = true;
+  bool isSaving = false; // 保存処理中かどうかのフラグ
   final ImagePicker _picker = ImagePicker();
   late TabController _tabController;
 
@@ -60,8 +64,7 @@ class _CustomBookEntryScreenState extends State<CustomBookEntryScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _loadCachedImage(); // Load cached image on start
-    fetchCategories(); // Fetch categories from Firestore
+    fetchCategories(); // Firestoreからカテゴリーを取得
   }
 
   Future<void> fetchCategories() async {
@@ -82,6 +85,22 @@ class _CustomBookEntryScreenState extends State<CustomBookEntryScreen>
               'category': doc['category'] as String,
             };
           }).toList();
+          print("カテゴリーなし前");
+          // カテゴリーなしを追加
+          categories.insert(0, {
+            'categoryId': 'no_category',
+            'category': 'カテゴリーなし',
+          });
+          print("カテゴリーなし亜t");
+          for (var category in categories) {
+            print(
+                'Category ID: ${category['categoryId']}, Category: ${category['category']}');
+          }
+          setState(() {
+            // デフォルトでカテゴリーなしを選択
+            selectedCategoryId = 'no_category';
+          });
+
           isLoading = false;
         });
       } catch (e) {
@@ -98,30 +117,14 @@ class _CustomBookEntryScreenState extends State<CustomBookEntryScreen>
     }
   }
 
-  // Load cached image if any
-  Future<void> _loadCachedImage() async {
-    final directory = await getApplicationDocumentsDirectory();
-    final path = directory.path;
-    final file = File('$path/cached_image.png');
-    if (await file.exists()) {
-      setState(() {
-        _selectedImage = file;
-      });
-    }
-  }
-
-  // Pick image from gallery
+  // ギャラリーから画像を選択
   Future<void> _pickImage() async {
     final XFile? pickedFile =
         await _picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
     if (pickedFile != null) {
-      // Save the picked image to cache
-      final directory = await getApplicationDocumentsDirectory();
-      final path = directory.path;
-      final File newImage =
-          await File(pickedFile.path).copy('$path/cached_image.png');
+      // 選択した画像ファイルを取得
       setState(() {
-        _selectedImage = newImage;
+        _selectedImage = File(pickedFile.path);
       });
     }
   }
@@ -136,334 +139,453 @@ class _CustomBookEntryScreenState extends State<CustomBookEntryScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: backGroundColor,
-      appBar: AppBar(
-        title: Text("教材情報を入力"),
-      ),
-      body: isLoading
-          ? Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(5.0),
-              child: Card(
-                margin: const EdgeInsets.all(5),
-                color: Colors.white,
-                child: Padding(
-                  padding: const EdgeInsets.all(15.0),
-                  child: Column(
-                    children: [
-                      Center(
-                        child: GestureDetector(
-                          onTap: _pickImage,
-                          child: Container(
-                            width: 120,
-                            height: 120,
-                            decoration: BoxDecoration(
-                              image: DecorationImage(
-                                image: _selectedImage != null
-                                    ? FileImage(_selectedImage!)
-                                    : AssetImage(
-                                            'assets/images/default_book_img.jpg')
-                                        as ImageProvider,
-                                fit: BoxFit.cover,
-                              ),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: _selectedImage == null
-                                ? Icon(Icons.add_a_photo,
-                                    size: 30, color: Colors.white)
-                                : null,
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 20),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 2, horizontal: 25),
-                            decoration: BoxDecoration(
-                              color: subTheme,
-                              borderRadius: BorderRadius.circular(15),
-                            ),
-                            child: const Text(
-                              'タイトル',
-                              style: TextStyle(
-                                  fontSize: 15,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w900,
-                                  fontFamily: "KiwiMaru-Regular"),
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 10),
-                      TextField(
-                        controller: _titleController,
-                        decoration: InputDecoration(
-                          hintText: "教材のタイトルを入力してください",
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          filled: true,
-                          fillColor: Colors.white,
-                        ),
-                      ),
-                      SizedBox(height: 20),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.9,
-                        margin:
-                            EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: subTheme,
-                          borderRadius: BorderRadius.circular(50),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Colors.black26,
-                              blurRadius: 8,
-                              offset: Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: TabBar(
-                          controller: _tabController,
-                          indicator: CustomTabIndicator(),
-                          indicatorSize: TabBarIndicatorSize.label,
-                          labelColor: Colors.white,
-                          unselectedLabelColor: Colors.white70,
-                          tabs: const [
-                            Tab(
-                              child: Text(
-                                '既存のカテゴリー',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 13,
+    return WillPopScope(
+      // 戻るボタンの制御
+      onWillPop: () async => !isSaving, // isSavingがfalseの場合のみ戻れる
+      child: Scaffold(
+        backgroundColor: backGroundColor,
+        appBar: AppBar(
+          title: Text("教材情報を入力"),
+          automaticallyImplyLeading: !isSaving, // 保存中は戻るボタンを非表示
+        ),
+        body: isLoading
+            ? Center(child: CircularProgressIndicator())
+            : Padding(
+                padding: const EdgeInsets.all(5.0),
+                child: Card(
+                  margin: const EdgeInsets.all(5),
+                  color: Colors.white,
+                  child: Padding(
+                    padding: const EdgeInsets.all(15.0),
+                    child: Column(
+                      children: [
+                        Center(
+                          child: GestureDetector(
+                            onTap: _pickImage,
+                            child: Container(
+                              width: 120,
+                              height: 120,
+                              decoration: BoxDecoration(
+                                image: DecorationImage(
+                                  image: _selectedImage != null
+                                      ? FileImage(_selectedImage!)
+                                      : AssetImage(
+                                              'assets/images/default_book_img.jpg')
+                                          as ImageProvider,
+                                  fit: BoxFit.cover,
                                 ),
+                                borderRadius: BorderRadius.circular(10),
                               ),
+                              child: _selectedImage == null
+                                  ? Icon(Icons.add_a_photo,
+                                      size: 30, color: Colors.white)
+                                  : null,
                             ),
-                            Tab(
-                              child: Text(
-                                'カテゴリーを追加',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
-                      ),
-                      SizedBox(
-                        height: 100,
-                        child: TabBarView(
-                          controller: _tabController,
+                        SizedBox(height: 20),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
                           children: [
-                            SingleChildScrollView(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  DropdownButtonFormField<String>(
-                                    value: selectedCategoryId,
-                                    hint: Text(
-                                      'カテゴリーを選択',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        color: Colors.grey[600],
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 2, horizontal: 25),
+                              decoration: BoxDecoration(
+                                color: subTheme,
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                              child: const Text(
+                                'タイトル',
+                                style: TextStyle(
+                                    fontSize: 15,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w900,
+                                    fontFamily: "KiwiMaru-Regular"),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 10),
+                        TextField(
+                          controller: _titleController,
+                          decoration: InputDecoration(
+                            hintText: "教材のタイトルを入力してください",
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
+                          ),
+                        ),
+                        SizedBox(height: 20),
+                        Container(
+                          width: MediaQuery.of(context).size.width * 0.9,
+                          margin: EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: subTheme,
+                            borderRadius: BorderRadius.circular(50),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Colors.black26,
+                                blurRadius: 8,
+                                offset: Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: TabBar(
+                            controller: _tabController,
+                            indicator: CustomTabIndicator(),
+                            indicatorSize: TabBarIndicatorSize.label,
+                            labelColor: Colors.white,
+                            unselectedLabelColor: Colors.white70,
+                            tabs: const [
+                              Tab(
+                                child: Text(
+                                  '既存のカテゴリー',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                              Tab(
+                                child: Text(
+                                  'カテゴリーを追加',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(
+                          height: 100,
+                          child: TabBarView(
+                            controller: _tabController,
+                            children: [
+                              SingleChildScrollView(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    DropdownButtonFormField<String>(
+                                      value:
+                                          selectedCategoryId, // 現在選択中のcategoryIdを設定
+                                      hint: Text(
+                                        'カテゴリーを選択',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: Colors.grey[600],
+                                        ),
                                       ),
-                                    ),
-                                    onChanged: (String? newValue) {
-                                      setState(() {
-                                        selectedCategoryId = newValue;
-                                      });
-                                    },
-                                    items: categories.map((category) {
-                                      return DropdownMenuItem<String>(
-                                        value: category['categoryId'],
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                              vertical: 10.0, horizontal: 8.0),
-                                          child: Text(
-                                            category['category'] ?? '',
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 15,
+                                      onChanged: (String? newValue) {
+                                        print(newValue);
+                                        setState(() {
+                                          selectedCategoryId =
+                                              newValue; // 選択されたIDを保持
+                                        });
+                                      },
+                                      items: categories.map((category) {
+                                        return DropdownMenuItem<String>(
+                                          value: category[
+                                              'categoryId'], // valueにはcategoryIdを設定
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 10.0,
+                                              horizontal: 8.0,
+                                            ),
+                                            child: Text(
+                                              category['category'] ??
+                                                  '', // 表示にはcategoryNameを使用
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 15,
+                                              ),
                                             ),
                                           ),
+                                        );
+                                      }).toList(),
+                                      decoration: InputDecoration(
+                                        contentPadding: EdgeInsets.symmetric(
+                                            vertical: 12, horizontal: 10),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                          borderSide: BorderSide(
+                                              color: Colors.grey, width: 1),
                                         ),
-                                      );
-                                    }).toList(),
-                                    decoration: InputDecoration(
-                                      contentPadding: EdgeInsets.symmetric(
-                                          vertical: 12, horizontal: 10),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                        borderSide: BorderSide(
-                                            color: Colors.grey, width: 1),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                          borderSide: BorderSide(
+                                              color: subTheme, width: 1.5),
+                                        ),
+                                        filled: true,
+                                        fillColor: Colors.white,
                                       ),
-                                      focusedBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                        borderSide: BorderSide(
-                                            color: subTheme, width: 1.5),
+                                      dropdownColor: Colors.white,
+                                      icon: Icon(
+                                        Icons.arrow_drop_down,
+                                        color: Colors.grey[700],
                                       ),
-                                      filled: true,
-                                      fillColor: Colors.white,
-                                    ),
-                                    dropdownColor: Colors.white,
-                                    icon: Icon(
-                                      Icons.arrow_drop_down,
-                                      color: Colors.grey[700],
-                                    ),
-                                  )
-                                ],
+                                    )
+                                  ],
+                                ),
                               ),
-                            ),
-                            SingleChildScrollView(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  TextField(
-                                    controller: _newCategoryController,
-                                    decoration: InputDecoration(
-                                      labelText: '新しいカテゴリー名',
-                                      border: OutlineInputBorder(
-                                        borderSide: BorderSide(color: subTheme),
+                              SingleChildScrollView(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    TextField(
+                                      controller: _newCategoryController,
+                                      decoration: InputDecoration(
+                                        labelText: '新しいカテゴリー名',
+                                        border: OutlineInputBorder(
+                                          borderSide:
+                                              BorderSide(color: subTheme),
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 10),
-                      Center(
-                        child: ElevatedButton(
-                          onPressed: () async {
-                            if (_selectedImage != null &&
-                                _titleController.text.isNotEmpty) {
-                              // Get the current user ID (make sure the user is logged in)
-                              final user = FirebaseAuth.instance.currentUser;
-                              if (user != null) {
-                                final userId = user.uid;
-
-                                // Save the image to cache or storage and get the image URL or path
-                                final directory =
-                                    await getApplicationDocumentsDirectory();
-                                final path = directory.path;
-                                String uniqueFileName =
-                                    'image_${DateTime.now().millisecondsSinceEpoch}.png';
-                                final savedImage = await _selectedImage!
-                                    .copy('$path/$uniqueFileName');
-
-                                // If you have storage setup, you might upload the image and get a URL
-                                // For simplicity, we'll use the local path here
-                                String imgUrl = savedImage.path;
-
-                                // Get the title
-                                String title = _titleController.text.trim();
-
-                                // Get or create the category
-                                String categoryName = '';
-                                if (_tabController.index == 1 &&
-                                    _newCategoryController.text
-                                        .trim()
-                                        .isNotEmpty) {
-                                  // User is adding a new category
-                                  categoryName =
-                                      _newCategoryController.text.trim();
-                                  // Save new category to Firestore
-                                  await FirebaseFirestore.instance
-                                      .collection('users')
-                                      .doc(userId)
-                                      .collection('categories')
-                                      .add({'category': categoryName});
-                                  // Refresh the category list
-                                  await fetchCategories();
-                                } else if (selectedCategoryId != null) {
-                                  // User selected an existing category
-                                  categoryName = categories.firstWhere(
-                                      (category) =>
-                                          category['categoryId'] ==
-                                          selectedCategoryId)['category'];
-                                } else {
-                                  // No category selected
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('カテゴリーを選択してください。')),
-                                  );
-                                  return;
-                                }
-
-                                // Generate a unique book ID
-                                String bookId =
-                                    'book_${DateTime.now().millisecondsSinceEpoch}';
-
-                                // Get the current date
-                                DateTime lastUsedDate = DateTime.now();
-                                BookService bookService = BookService();
-                                try {
-                                  await bookService.addPrivateBookToUser(
-                                    userId,
-                                    bookId,
-                                    lastUsedDate,
-                                    categoryName,
-                                    imgUrl,
-                                    title,
-                                  );
-
-                                  // Show a confirmation message or navigate
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('教材が保存されました！')),
-                                  );
-
-                                  // Optionally, clear the fields
-                                  setState(() {
-                                    _selectedImage = null;
-                                    _titleController.clear();
-                                    _newCategoryController.clear();
-                                    selectedCategoryId = null;
-                                  });
-                                } catch (e) {
-                                  // Handle errors
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                        content: Text('保存中にエラーが発生しました: $e')),
-                                  );
-                                }
-                              } else {
-                                // Handle the case when the user is not logged in
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('ログインしてください。')),
-                                );
-                              }
-                            } else {
-                              // Handle the case when image or title is missing
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('画像とタイトルを入力してください。')),
-                              );
-                            }
-                          },
-                          child: Text("教材を保存",
-                              style: TextStyle(
-                                fontSize: 20,
-                                color: subTheme,
-                                fontWeight: FontWeight.bold,
-                              )),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              side: BorderSide(color: subTheme, width: 2),
-                              borderRadius: BorderRadius.circular(5),
-                            ),
+                            ],
                           ),
                         ),
-                      ),
-                    ],
+                        SizedBox(height: 10),
+                        if (isSaving)
+                          CircularProgressIndicator() // 保存中はローディングアニメーションを表示
+                        else
+                          Center(
+                            child: ElevatedButton(
+                              onPressed: () async {
+                                setState(() {
+                                  isSaving = true; // 保存処理開始
+                                });
+
+                                UserService userService = UserService();
+                                String? userId = userService.getCurrentUserId();
+
+                                if (_titleController.text.isNotEmpty) {
+                                  final user =
+                                      FirebaseAuth.instance.currentUser;
+                                  if (user != null) {
+                                    try {
+                                      String? imageUrl;
+
+                                      if (_selectedImage != null) {
+                                        // 画像を圧縮してアップロード
+                                        final compressedImage =
+                                            await FlutterImageCompress
+                                                .compressWithFile(
+                                          _selectedImage!.path,
+                                          minWidth: 800,
+                                          minHeight: 600,
+                                          quality: 70, // 圧縮品質を調整して100kb以下に
+                                        );
+
+                                        if (compressedImage != null) {
+                                          print(
+                                              'Compressed image size: ${compressedImage.length} bytes');
+                                          // Base64エンコード
+                                          String base64Image =
+                                              'data:image/jpeg;base64,' +
+                                                  base64Encode(compressedImage);
+
+                                          // Firebase FunctionsのエンドポイントにPOSTリクエストを送信
+                                          // Firebase FunctionsのエンドポイントにPOSTリクエストを送信
+                                          final response = await http.post(
+                                            Uri.parse(
+                                                'https://us-central1-study-app-6a883.cloudfunctions.net/cloudinary_function'),
+                                            headers: {
+                                              'Content-Type':
+                                                  'application/json',
+                                            },
+                                            body: jsonEncode(
+                                                {'image': base64Image}),
+                                          );
+
+                                          print(
+                                              "Response status: ${response.statusCode}");
+                                          print(
+                                              "Response body: ${response.body}");
+
+// JSONレスポンスを解析
+                                          if (response.statusCode == 200) {
+                                            try {
+                                              final responseData =
+                                                  jsonDecode(response.body);
+                                              print(
+                                                  "Message: ${responseData['message']}");
+                                              print(
+                                                  "URL: ${responseData['url']}");
+                                              imageUrl = responseData['url'];
+                                            } catch (e) {
+                                              print("JSONのパースに失敗しました: $e");
+                                              throw Exception(
+                                                  'レスポンスの解析に失敗しました。');
+                                            }
+                                          } else {
+                                            print(
+                                                "Error: ${response.statusCode}");
+                                            print(
+                                                "Response Body: ${response.body}");
+                                            throw Exception(
+                                                '画像のアップロードに失敗しました。');
+                                          }
+
+                                          if (imageUrl != null) {
+                                            print(
+                                                'Uploaded image URL: $imageUrl');
+                                          } else {
+                                            throw Exception(
+                                                '画像のアップロードに失敗しました。');
+                                          }
+                                        } else {
+                                          // 圧縮失敗時の処理
+                                          throw Exception('画像の圧縮に失敗しました。');
+                                        }
+                                      } else {
+                                        // デフォルト画像の場合、既存の画像URLを使用
+                                        imageUrl = 'デフォルト画像のURL';
+                                      }
+
+                                      // カテゴリー取得または作成
+                                      String categoryName = '';
+                                      if (_tabController.index == 1 &&
+                                          _newCategoryController.text
+                                              .trim()
+                                              .isNotEmpty) {
+                                        // 新しいカテゴリーを追加
+                                        categoryName =
+                                            _newCategoryController.text.trim();
+                                        // Firestoreに新しいカテゴリーを保存
+                                        DocumentReference newCategoryRef =
+                                            await FirebaseFirestore.instance
+                                                .collection('users')
+                                                .doc(userId)
+                                                .collection('categories')
+                                                .add(
+                                                    {'category': categoryName});
+                                        // カテゴリーリストを更新
+                                        await fetchCategories();
+                                        setState(() {
+                                          selectedCategoryId =
+                                              newCategoryRef.id;
+                                        });
+                                      } else if (selectedCategoryId != null) {
+                                        // 既存のカテゴリーを選択
+                                        categoryName = categories.firstWhere(
+                                                (category) =>
+                                                    category['categoryId'] ==
+                                                    selectedCategoryId)[
+                                            'category'] as String;
+                                      } else {
+                                        // カテゴリーが選択されていない場合
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                              content: Text('カテゴリーを選択してください。')),
+                                        );
+                                        setState(() {
+                                          isSaving = false; // 保存処理終了
+                                        });
+                                        return;
+                                      }
+                                      // タイトル取得
+                                      String title =
+                                          _titleController.text.trim();
+                                      if (userId == null) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                              content:
+                                                  Text('ユーザーIDが取得できませんでした。')),
+                                        );
+                                        setState(() {
+                                          isSaving = false; // 保存処理終了
+                                        });
+                                        return;
+                                      }
+
+                                      BookService bookService = BookService();
+                                      await bookService.addPrivateBookToUser(
+                                          userId,
+                                          categoryName,
+                                          imageUrl,
+                                          title);
+
+                                      // 保存成功時の処理
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(content: Text('教材が保存されました！')),
+                                      );
+
+                                      // フィールドのクリア
+                                      setState(() {
+                                        _selectedImage = null;
+                                        _titleController.clear();
+                                        _newCategoryController.clear();
+                                        selectedCategoryId = 'no_category';
+                                        isSaving = false; // 保存処理終了
+                                      });
+
+                                      // 前の画面に戻る
+                                      Navigator.of(context).pop();
+                                    } catch (e) {
+                                      // エラー時の処理
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                            content:
+                                                Text('保存中にエラーが発生しました: $e')),
+                                      );
+                                      setState(() {
+                                        isSaving = false; // 保存処理終了
+                                      });
+                                    }
+                                  } else {
+                                    // ユーザーがログインしていない場合の処理
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('ログインしてください。')),
+                                    );
+                                    setState(() {
+                                      isSaving = false; // 保存処理終了
+                                    });
+                                  }
+                                } else {
+                                  // タイトルが入力されていない場合の処理
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('タイトルを入力してください。')),
+                                  );
+                                  setState(() {
+                                    isSaving = false; // 保存処理終了
+                                  });
+                                }
+                              },
+                              child: Text("教材を保存",
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    color: subTheme,
+                                    fontWeight: FontWeight.bold,
+                                  )),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  side: BorderSide(color: subTheme, width: 2),
+                                  borderRadius: BorderRadius.circular(5),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
+      ),
     );
   }
 }

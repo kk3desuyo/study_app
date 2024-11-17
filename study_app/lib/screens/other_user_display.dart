@@ -87,7 +87,7 @@ class _OtherUserDisplayState extends State<OtherUserDisplay> {
 
       // ユーザーIDに基づいて教材情報を取得
       List<Map<String, dynamic>> bookDetails =
-          await bookService.fetchUserBookDetails(widget.user.id);
+          await bookService.fetchUserBookDetails(widget.user.id, false);
       print(bookDetails);
       List<Book> fetchedBooks = bookDetails.map((bookDetail) {
         return Book(
@@ -95,7 +95,8 @@ class _OtherUserDisplayState extends State<OtherUserDisplay> {
             title: bookDetail['title'],
             imgUrl: bookDetail['imgUrl'],
             category: bookDetail['category'],
-            lastUsedDate: DateTime.now());
+            lastUsedDate: DateTime.now(),
+            isPrivate: bookDetail['isPrivate']);
       }).toList();
 
       // 今日と今週の目標・達成時間を取得

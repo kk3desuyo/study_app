@@ -30,44 +30,26 @@ class BookService {
   }
 
   Future<void> addPrivateBookToUser(
-      String userId,
-      String bookId,
-      DateTime lastUsedDate,
-      String category,
-      String imgUrl,
-      String title) async {
+      String userId, String category, String imgUrl, String title) async {
     final firestore = FirebaseFirestore.instance;
 
     try {
       print("Attempting to add private book for the user...");
       print(
-          "User ID: $userId, Book ID: $bookId, Last Used Date: $lastUsedDate, Category: $category, ImgUrl: $imgUrl, Title: $title");
+          "User ID: $userId, Category: $category, ImgUrl: $imgUrl, Title: $title");
 
       // `privateBooks`コレクションをユーザーのドキュメント直下に作成
       CollectionReference privateBooksCollection =
           firestore.collection('users').doc(userId).collection('privateBooks');
 
-      // プライベートコレクション内に同じbookIdが存在するか確認
-      QuerySnapshot bookQuery = await privateBooksCollection
-          .where('bookId', isEqualTo: bookId)
-          .limit(1)
-          .get();
+      await privateBooksCollection.add({
+        'lastUsedDate': Timestamp.fromDate(DateTime.now()),
+        'category': category,
+        'imgUrl': imgUrl,
+        'title': title,
+      });
 
-      if (bookQuery.docs.isEmpty) {
-        // 本が存在しない場合、新規追加
-        await privateBooksCollection.add({
-          'bookId': bookId,
-          'lastUsedDate': Timestamp.fromDate(lastUsedDate),
-          'category': category,
-          'imgUrl': imgUrl,
-          'title': title,
-        });
-
-        print("Private book added successfully.");
-      } else {
-        print(
-            "Book already exists in the private collection. No action taken.");
-      }
+      print("Private book added successfully.");
     } catch (e) {
       print("Error adding private book: $e");
       throw Exception('Failed to add private book');
@@ -148,7 +130,38 @@ class BookService {
     }
   }
 
-  Future<List<Map<String, dynamic>>> fetchUserBookDetails(String userId) async {
+  Future<void> updatePrivateBook({
+    required String userId, // ユーザーID
+    required String privateBookId, // privateBooks ドキュメントID
+    String? newCategoryId, // 更新する新しいカテゴリーID
+    String? newTitle, // 更新する新しいタイトル
+    String? newImageUrl, // 更新する新しい画像URL
+  }) async {
+    try {
+      // Firestore のドキュメント参照を取得
+      DocumentReference privateBookRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('privateBooks')
+          .doc(privateBookId);
+
+      // 更新するデータをマップで作成
+      Map<String, dynamic> updatedData = {};
+      if (newCategoryId != null) updatedData['category'] = newCategoryId;
+      if (newTitle != null) updatedData['title'] = newTitle;
+      if (newImageUrl != null) updatedData['imgUrl'] = newImageUrl;
+
+      // Firestore ドキュメントを更新
+      await privateBookRef.update(updatedData);
+
+      print('Private book updated successfully!');
+    } catch (e) {
+      print('Error updating private book: $e');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> fetchUserBookDetails(
+      String userId, bool isFetchPrivateBook) async {
     final firestore = FirebaseFirestore.instance;
 
     try {
@@ -158,24 +171,31 @@ class BookService {
 
       QuerySnapshot userBooksSnapshot = await userBooksCollection.get();
 
-      if (userBooksSnapshot.docs.isEmpty) {
-        return []; // 教材が見つからない場合、空のリストを返す
+      // プライベートブック用の準備
+      QuerySnapshot? userPrivateBooksSnapshot; // 初期値を null に設定
+      if (isFetchPrivateBook) {
+        userPrivateBooksSnapshot = await firestore
+            .collection('users')
+            .doc(userId)
+            .collection('privateBooks')
+            .get();
       }
 
       // ユーザーの本の情報をリストに格納
       List<Map<String, dynamic>> userBooks = userBooksSnapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
         return {
           'bookId': doc['bookId'] as String,
           'lastUsedDate': (doc['lastUsedDate'] as Timestamp).toDate(),
           'categoryId': doc['categoryId'] as String,
+          'isPrivate': false,
         };
       }).toList();
 
-      // `bookId` のリストを取得
+      // Step 2: `bookIds` を使って `books` コレクションから本の詳細を取得
       List<String> bookIds =
           userBooks.map((book) => book['bookId'] as String).toList();
 
-      // Step 2: `bookIds` を使って `books` コレクションから本の詳細を取得
       QuerySnapshot booksSnapshot = await firestore
           .collection('books')
           .where(FieldPath.documentId, whereIn: bookIds)
@@ -189,7 +209,6 @@ class BookService {
             'title': doc['title'],
             'imgUrl': doc['imgUrl'],
             'userNum': doc['userNum'],
-            // 必要に応じて他のフィールドを追加
           }
       };
 
@@ -199,21 +218,20 @@ class BookService {
           .toSet()
           .toList();
 
-      // Step 3: ユーザーの `categories` コレクションからカテゴリ名を取得
-      CollectionReference userCategoriesCollection =
-          firestore.collection('users').doc(userId).collection('categories');
-
-      QuerySnapshot categoriesSnapshot = await userCategoriesCollection
+      // Step 3: `categories` コレクションからカテゴリ名を取得
+      QuerySnapshot categoriesSnapshot = await firestore
+          .collection('users')
+          .doc(userId)
+          .collection('categories')
           .where(FieldPath.documentId, whereIn: categoryIds)
           .get();
 
-      // categoryId と category のマップを作成
       Map<String, String> categoryMap = {
         for (var doc in categoriesSnapshot.docs)
           doc.id: doc['category'] as String,
       };
 
-      // 最終的な bookDetails を作成
+      // `bookDetails` を作成
       List<Map<String, dynamic>> bookDetails = userBooks.map((userBook) {
         var bookDetail = bookDetailsMap[userBook['bookId']] ?? {};
         return {
@@ -224,7 +242,31 @@ class BookService {
         };
       }).toList();
 
-      return bookDetails;
+      // プライベート本を取得しない場合にはここでリターン
+      if (!isFetchPrivateBook) {
+        return bookDetails;
+      }
+
+      // Step 4: プライベートブックを追加
+      List<Map<String, dynamic>> privateBooks =
+          (userPrivateBooksSnapshot?.docs ?? [])
+              .map((doc) {
+                final data = doc.data() as Map<String, dynamic>;
+                return {
+                  'bookId': doc.id,
+                  'category': data['category'] ?? 'Unknown',
+                  'imgUrl': data['imgUrl'] ?? '',
+                  'userNum': 0,
+                  'lastUsedDate': (data['lastUsedDate'] as Timestamp).toDate(),
+                  'title': data['title'] ?? 'No Title',
+                  'isPrivate': true,
+                };
+              })
+              .where((book) => book['title'] != null) // 不要なデータを除外
+              .toList();
+
+      // プライベートブックを結合して返す
+      return [...bookDetails, ...privateBooks];
     } catch (e) {
       print("Error fetching user book details: $e");
       return [];

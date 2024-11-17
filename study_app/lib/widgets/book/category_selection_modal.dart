@@ -49,6 +49,7 @@ class _CategorySelectionModalState extends State<CategorySelectionModal>
         isLoading = false;
       });
     } catch (e) {
+      print("category_selection");
       print("Error fetching categories: $e");
       setState(() {
         isLoading = false;

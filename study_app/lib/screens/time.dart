@@ -37,10 +37,10 @@ class _TimePage extends State<TimePage> {
     try {
       // ユーザーIDを指定して本の情報を取得
       List<Map<String, dynamic>> fetchedBooks =
-          await bookService.fetchUserBookDetails((await UserService()
-              .getCurrentUserId())!); // 'userId'を適切なユーザーIDに置き換えてください
-      print("`fetchedBooks");
-      print(fetchedBooks[0]);
+          await bookService.fetchUserBookDetails(
+              (await UserService().getCurrentUserId())!,
+              true); // 'userId'を適切なユーザーIDに置き換えてください
+
       setState(() {
         // 取得した本の情報をマップに変換して格納
         bookInfos = {

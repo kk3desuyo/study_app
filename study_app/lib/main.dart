@@ -1,7 +1,11 @@
 // main.dart
+
+import 'package:cloudinary_url_gen/cloudinary.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
+import 'package:provider/provider.dart';
+
 import 'package:study_app/firebase_options.dart';
 import 'package:study_app/models/book.dart';
 import 'package:study_app/screens/auth.dart';
@@ -23,8 +27,10 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  print("Firebase has been initialized.");
-  runApp(const MyApp());
+
+  runApp(
+    MyApp(),
+  );
 }
 
 class MyApp extends StatelessWidget {

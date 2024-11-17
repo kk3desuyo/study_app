@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:study_app/models/studyMaterial.dart';
 import 'package:study_app/screens/book.dart';
+
 import 'package:study_app/theme/color.dart';
 import 'package:study_app/models/book.dart'; // Bookモデルをインポート
 
@@ -72,7 +73,6 @@ class BookCard extends StatefulWidget {
   final bool isDisplayTime;
   final bool isDisplayName;
   final bool isTapDisabled;
-
   const BookCard({
     Key? key,
     required this.book,
@@ -104,7 +104,11 @@ class _BookCardState extends State<BookCard> {
             padding: EdgeInsets.zero,
           ),
           onPressed: () {
-            if (widget.isTapDisabled) return;
+            if (widget.isTapDisabled) {
+              print(widget.isTapDisabled);
+              print("タップ無効");
+              return;
+            }
             Navigator.push(
                 context,
                 MaterialPageRoute(

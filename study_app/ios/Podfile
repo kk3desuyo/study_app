@@ -1,5 +1,7 @@
+source 'https://github.com/CocoaPods/Specs.git'
+
 # Uncomment this line to define a global platform for your project
-platform :ios, '13.0'
+platform :ios, '14.0'
 
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
@@ -32,7 +34,7 @@ target 'Runner' do
   use_modular_headers!
 
   # Update to use the latest version from the default source
-  pod 'FirebaseFirestore', '~> 11.2.0'
+  # pod 'FirebaseFirestore', '~> 11.2.0'
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
   target 'RunnerTests' do

@@ -79,15 +79,15 @@ class _MyAccountState extends State<MyAccount> {
       List<Map<String, double>> times =
           await studySessionService.fetchStudyTimes(user!.id);
       List<Map<String, dynamic>> bookDetails =
-          await bookService.fetchUserBookDetails(user!.id);
+          await bookService.fetchUserBookDetails(user!.id, true);
       List<Book> fetchedBooks = bookDetails.map((bookDetail) {
         return Book(
-          id: bookDetail['bookId'],
-          title: bookDetail['title'],
-          imgUrl: bookDetail['imgUrl'],
-          category: bookDetail['category'],
-          lastUsedDate: DateTime.now(),
-        );
+            id: bookDetail['bookId'],
+            title: bookDetail['title'],
+            imgUrl: bookDetail['imgUrl'],
+            category: bookDetail['category'],
+            lastUsedDate: DateTime.now(),
+            isPrivate: bookDetail['isPrivate']);
       }).toList();
 
       var dailyGoalData = await goalService.fetchDailyGoalData(user!.id);

@@ -40,7 +40,8 @@ class _BookSelectionPageState extends State<BookSelectionPage> {
     if (selectedCategory == null || selectedCategory == '全てのカテゴリー') {
       // "全てのカテゴリー" が選ばれている場合は、wasUsedRecentlyがtrueのもののみ表示
       filteredBookInfos = Map.fromEntries(widget.bookInfos.entries
-          .where((entry) => entry.value.wasUsedRecently()));
+          .where((entry) => entry.value.wasUsedRecently())
+          .take(6));
     } else {
       // その他のカテゴリーが選ばれている場合は、選ばれたカテゴリーでフィルタリング
       filteredBookInfos = Map.fromEntries(widget.bookInfos.entries
@@ -66,17 +67,6 @@ class _BookSelectionPageState extends State<BookSelectionPage> {
                           context,
                           MaterialPageRoute(builder: (context) => SearchBook()),
                         );
-                        String userId = (await UserService()
-                            .getCurrentUserId())!; // 対象のユーザーID
-                        String bookId = "VQV1veohWImDbXS6W7yH"; // 追加する本のID
-
-                        try {
-                          BookService bookService = BookService();
-                          await bookService.addBookToUser(
-                              userId, bookId, DateTime.now(), "理科");
-                        } catch (e) {
-                          print("Error adding example book ID: $e");
-                        }
                       },
                       child: Container(
                         padding:
@@ -93,7 +83,7 @@ class _BookSelectionPageState extends State<BookSelectionPage> {
                               MainAxisAlignment.center, // アイテムを中央に配置
                           children: [
                             Text(
-                              '教材を追加する',
+                              '教材を管理する',
                               style: TextStyle(
                                 fontSize: 15,
                                 color: subTheme,
@@ -154,7 +144,9 @@ class _BookSelectionPageState extends State<BookSelectionPage> {
                 ],
               ),
             ),
-
+            SizedBox(
+              width: 5,
+            ),
             if (selectedCategory == null || selectedCategory == '全てのカテゴリー') ...[
               Row(
                 children: [
@@ -206,6 +198,7 @@ class _BookSelectionPageState extends State<BookSelectionPage> {
                       book: book,
                       studyTime: 300,
                       isDisplayTime: false,
+                      isTapDisabled: true,
                     ),
                   );
                 },
@@ -259,6 +252,7 @@ class _BookSelectionPageState extends State<BookSelectionPage> {
                     book: book,
                     studyTime: 300,
                     isDisplayTime: false,
+                    isTapDisabled: true,
                   ),
                 );
               },
