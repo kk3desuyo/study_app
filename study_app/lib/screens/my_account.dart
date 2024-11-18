@@ -82,6 +82,7 @@ class _MyAccountState extends State<MyAccount> {
           await bookService.fetchUserBookDetails(user!.id, true);
       List<Book> fetchedBooks = bookDetails.map((bookDetail) {
         return Book(
+            categoryId: bookDetail['categoryId'],
             id: bookDetail['bookId'],
             title: bookDetail['title'],
             imgUrl: bookDetail['imgUrl'],

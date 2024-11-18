@@ -94,15 +94,7 @@ class _HomeState extends State<Home> {
   }
 
   var _pages = <Widget>[
-    BookScreen(
-      book: Book(
-          title: 'Dummy Book',
-          id: "dummy",
-          imgUrl:
-              "https://cdn-ak.f.st-hatena.com/images/fotolife/M/MouseComputer/20240731/20240731110005.jpg",
-          category: "数学",
-          lastUsedDate: DateTime.now()),
-    ),
+    HomeScreen(),
     HomeScreen(), // ランキング画面を追加
     TimePage(),
     NotificationPage(),

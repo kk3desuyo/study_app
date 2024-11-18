@@ -29,14 +29,55 @@ class BookService {
     }
   }
 
+  Future<void> updatePrivateBook(
+    String bookId, {
+    String? title,
+    String? imgUrl,
+    String? categoryId,
+    DateTime? lastUsedDate,
+  }) async {
+    try {
+      // Firestoreインスタンス
+      final firestore = FirebaseFirestore.instance;
+      UserService userService = UserService();
+      String userId = userService.getCurrentUserId()!;
+      // 対象のドキュメント参照
+      final bookRef = firestore
+          .collection('users')
+          .doc(userId)
+          .collection('privateBooks')
+          .doc(bookId);
+
+      // 更新データのマップを作成
+      Map<String, dynamic> updateData = {};
+
+      if (title != null) updateData['title'] = title;
+      if (imgUrl != null) updateData['imgUrl'] = imgUrl;
+      if (categoryId != null) updateData['categoryId'] = categoryId;
+      if (lastUsedDate != null) {
+        updateData['lastUsedDate'] = Timestamp.fromDate(lastUsedDate);
+      }
+
+      // Firestoreの更新
+      if (updateData.isNotEmpty) {
+        await bookRef.update(updateData);
+        print('Book updated successfully!');
+      } else {
+        print('No data to update.');
+      }
+    } catch (e) {
+      print('Failed to update book: $e');
+    }
+  }
+
   Future<void> addPrivateBookToUser(
-      String userId, String category, String imgUrl, String title) async {
+      String userId, String categoryId, String imgUrl, String title) async {
     final firestore = FirebaseFirestore.instance;
 
     try {
       print("Attempting to add private book for the user...");
       print(
-          "User ID: $userId, Category: $category, ImgUrl: $imgUrl, Title: $title");
+          "User ID: $userId, Category: $categoryId, ImgUrl: $imgUrl, Title: $title");
 
       // `privateBooks`コレクションをユーザーのドキュメント直下に作成
       CollectionReference privateBooksCollection =
@@ -44,7 +85,7 @@ class BookService {
 
       await privateBooksCollection.add({
         'lastUsedDate': Timestamp.fromDate(DateTime.now()),
-        'category': category,
+        'categoryId': categoryId,
         'imgUrl': imgUrl,
         'title': title,
       });
@@ -66,6 +107,7 @@ class BookService {
       return snapshot.docs.map((doc) {
         Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
         return Book(
+          categoryId: data['categoryId'] ?? '',
           id: doc.id,
           imgUrl: data['imgUrl'] ?? '',
           title: data['title'] ?? '',
@@ -130,33 +172,50 @@ class BookService {
     }
   }
 
-  Future<void> updatePrivateBook({
-    required String userId, // ユーザーID
-    required String privateBookId, // privateBooks ドキュメントID
-    String? newCategoryId, // 更新する新しいカテゴリーID
-    String? newTitle, // 更新する新しいタイトル
-    String? newImageUrl, // 更新する新しい画像URL
-  }) async {
+  Future<void> deletePublicBook(String userId, String bookId) async {
     try {
-      // Firestore のドキュメント参照を取得
-      DocumentReference privateBookRef = FirebaseFirestore.instance
+      final firestore = FirebaseFirestore.instance;
+
+      // `bookId`が一致する本をクエリで取得
+      QuerySnapshot bookQuery = await firestore
+          .collection('users')
+          .doc(userId)
+          .collection('books')
+          .where('bookId', isEqualTo: bookId)
+          .get();
+
+      // 一致したドキュメントを削除
+      for (QueryDocumentSnapshot doc in bookQuery.docs) {
+        await firestore
+            .collection('users')
+            .doc(userId)
+            .collection('books')
+            .doc(doc.id)
+            .delete();
+      }
+
+      print('Book with bookId: $bookId deleted successfully.');
+    } catch (e) {
+      print('Failed to delete book with bookId: $bookId. Error: $e');
+    }
+  }
+
+  Future<void> deletePrivateBook(String userId, String bookId) async {
+    try {
+      // Firestoreインスタンスを取得
+      final firestore = FirebaseFirestore.instance;
+
+      // ドキュメントを削除
+      await firestore
           .collection('users')
           .doc(userId)
           .collection('privateBooks')
-          .doc(privateBookId);
+          .doc(bookId)
+          .delete();
 
-      // 更新するデータをマップで作成
-      Map<String, dynamic> updatedData = {};
-      if (newCategoryId != null) updatedData['category'] = newCategoryId;
-      if (newTitle != null) updatedData['title'] = newTitle;
-      if (newImageUrl != null) updatedData['imgUrl'] = newImageUrl;
-
-      // Firestore ドキュメントを更新
-      await privateBookRef.update(updatedData);
-
-      print('Private book updated successfully!');
+      print('Private book deleted successfully.');
     } catch (e) {
-      print('Error updating private book: $e');
+      print('Failed to delete private book: $e');
     }
   }
 
@@ -196,14 +255,18 @@ class BookService {
       List<String> bookIds =
           userBooks.map((book) => book['bookId'] as String).toList();
 
-      QuerySnapshot booksSnapshot = await firestore
-          .collection('books')
-          .where(FieldPath.documentId, whereIn: bookIds)
-          .get();
+      List<QueryDocumentSnapshot> booksSnapshotDocs = [];
+      if (bookIds.isNotEmpty) {
+        QuerySnapshot booksSnapshot = await firestore
+            .collection('books')
+            .where(FieldPath.documentId, whereIn: bookIds)
+            .get();
+        booksSnapshotDocs = booksSnapshot.docs;
+      }
 
       // 本の詳細情報をマップに格納
       Map<String, Map<String, dynamic>> bookDetailsMap = {
-        for (var doc in booksSnapshot.docs)
+        for (var doc in booksSnapshotDocs)
           doc.id: {
             'bookId': doc.id,
             'title': doc['title'],
@@ -212,32 +275,54 @@ class BookService {
           }
       };
 
+      // Step 3: カテゴリーIDのリストを作成
+      List<String> categoryIds = [];
+
+      // プライベートブックのカテゴリーIDも追加
+      if (userPrivateBooksSnapshot != null) {
+        List<String> privateBookCategoryIds = userPrivateBooksSnapshot.docs
+            .map((doc) {
+              return doc['categoryId'] as String;
+            })
+            .toSet()
+            .toList();
+        categoryIds.addAll(privateBookCategoryIds);
+      }
+
       // `categoryId` のリストを取得
-      List<String> categoryIds = userBooks
+      categoryIds.addAll(userBooks
           .map((book) => book['categoryId'] as String)
           .toSet()
-          .toList();
+          .toList());
 
-      // Step 3: `categories` コレクションからカテゴリ名を取得
-      QuerySnapshot categoriesSnapshot = await firestore
-          .collection('users')
-          .doc(userId)
-          .collection('categories')
-          .where(FieldPath.documentId, whereIn: categoryIds)
-          .get();
+      // 重複を削除
+      categoryIds = categoryIds.toSet().toList();
 
-      Map<String, String> categoryMap = {
-        for (var doc in categoriesSnapshot.docs)
-          doc.id: doc['category'] as String,
-      };
+      // カテゴリー情報の取得
+      Map<String, String> categoryMap = {};
+      if (categoryIds.isNotEmpty) {
+        QuerySnapshot categoriesSnapshot = await firestore
+            .collection('users')
+            .doc(userId)
+            .collection('categories')
+            .where(FieldPath.documentId, whereIn: categoryIds)
+            .get();
+
+        categoryMap = {
+          for (var doc in categoriesSnapshot.docs)
+            doc.id: doc['category'] as String,
+        };
+      }
 
       // `bookDetails` を作成
       List<Map<String, dynamic>> bookDetails = userBooks.map((userBook) {
         var bookDetail = bookDetailsMap[userBook['bookId']] ?? {};
+
         return {
           ...bookDetail,
           'category':
               categoryMap[userBook['categoryId']] ?? 'Unknown', // カテゴリ名を追加
+          'categoryId': userBook['categoryId'],
           'lastUsedDate': userBook['lastUsedDate'],
         };
       }).toList();
@@ -254,7 +339,8 @@ class BookService {
                 final data = doc.data() as Map<String, dynamic>;
                 return {
                   'bookId': doc.id,
-                  'category': data['category'] ?? 'Unknown',
+                  'category': categoryMap[doc['categoryId']] ?? 'Unknown',
+                  'categoryId': doc['categoryId'] ?? '',
                   'imgUrl': data['imgUrl'] ?? '',
                   'userNum': 0,
                   'lastUsedDate': (data['lastUsedDate'] as Timestamp).toDate(),

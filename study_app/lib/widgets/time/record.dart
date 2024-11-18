@@ -1,25 +1,25 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
+import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
 import 'package:study_app/models/book.dart';
 import 'package:study_app/models/study_session.dart';
+import 'package:study_app/services/study_session.dart';
 import 'package:study_app/services/user/user_service.dart';
 import 'package:study_app/theme/color.dart';
 import 'package:study_app/widgets/time/book_preview.dart';
+
 import 'package:study_app/widgets/time/date_select.dart';
-import '../preview_detail.dart/display_books.dart';
-import 'package:study_app/services/study_session.dart';
+import 'package:study_app/widgets/preview_detail.dart/display_books.dart';
 
 class Record extends StatefulWidget {
   final int studyTime;
-  final Map<int, Book> bookInfos;
   final Function(bool) changeTime;
   final bool isTimeChange;
 
   const Record({
     Key? key,
     required this.studyTime,
-    required this.bookInfos,
     required this.changeTime,
     required this.isTimeChange,
   }) : super(key: key);
@@ -29,38 +29,41 @@ class Record extends StatefulWidget {
 }
 
 class _RecordState extends State<Record> {
-  String isSelectedCategory = '全てのカテゴリー';
   DateTime selectedDate = DateTime.now();
   int selectedHour = 0;
   int selectedMinute = 0;
-  int selectedBook = -1;
+  Book? selectedBook;
   String memo = '';
   final StudySessionService studySessionService = StudySessionService();
   bool _isSaving = false;
   bool _isSuccess = false;
 
-  void _openBookSelectionPage() {
-    Navigator.push(
+  void _openBookSelectionPage() async {
+    void onEditBook(Book book) {
+      setState(() {
+        selectedBook = book;
+      });
+    }
+
+    final result = await PersistentNavBarNavigator.pushNewScreen(
       context,
-      MaterialPageRoute(
-        builder: (context) => BookSelectionPage(
-          bookInfos: widget.bookInfos,
-          onBookSelected: (int selectedBookId) {
-            setState(() {
-              selectedBook = selectedBookId;
-            });
-            Navigator.pop(context);
-          },
-        ),
-      ),
+      screen: BookSelectionPage(onEditBook: onEditBook),
+      withNavBar: false,
+      pageTransitionAnimation: PageTransitionAnimation.cupertino,
     );
+
+    if (result != null && result is Book) {
+      setState(() {
+        selectedBook = result;
+      });
+    }
   }
 
   @override
   void initState() {
     super.initState();
 
-    // Initialize selectedHour and selectedMinute with studyTime
+    // studyTimeからselectedHourとselectedMinuteを初期化
     selectedHour = widget.studyTime ~/ 60;
     selectedMinute = widget.studyTime % 60;
     print("再描画");
@@ -75,9 +78,9 @@ class _RecordState extends State<Record> {
   }
 
   void _saveStudySession() async {
-    if (selectedBook == -1) {
+    if (selectedBook == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text('教材が選択されていません'),
           duration: Duration(seconds: 2),
         ),
@@ -86,7 +89,7 @@ class _RecordState extends State<Record> {
     }
     if (selectedHour * 60 + selectedMinute == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text('勉強時間が0分です'),
           duration: Duration(seconds: 2),
         ),
@@ -101,7 +104,7 @@ class _RecordState extends State<Record> {
 
     StudySession newSession = StudySession(
       id: '',
-      bookId: widget.bookInfos[selectedBook]!.id,
+      bookId: selectedBook!.id,
       isTimeChange: widget.isTimeChange,
       memo: memo,
       studyTime: selectedHour * 60 + selectedMinute,
@@ -121,7 +124,7 @@ class _RecordState extends State<Record> {
       // 成功時にフィールドをリセット
       _resetFields();
 
-      Future.delayed(Duration(seconds: 2), () {
+      Future.delayed(const Duration(seconds: 2), () {
         setState(() {
           _isSuccess = false;
         });
@@ -141,23 +144,23 @@ class _RecordState extends State<Record> {
       selectedDate = DateTime.now();
       selectedHour = 0;
       selectedMinute = 0;
-      selectedBook = -1;
+      selectedBook = null;
       memo = '';
       widget.changeTime(false);
     });
   }
 
-  // エラー発生時のダイアログを表示するメソッドを追加
+  // エラー発生時のダイアログを表示するメソッド
   void _showErrorDialog() {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('エラーが発生しました'),
-          content: Text('データの送信に失敗しました。再度お試しください。'),
+          title: const Text('エラーが発生しました'),
+          content: const Text('データの送信に失敗しました。再度お試しください。'),
           actions: [
             TextButton(
-              child: Text('OK'),
+              child: const Text('OK'),
               onPressed: () {
                 Navigator.of(context).pop();
               },
@@ -226,7 +229,7 @@ class _RecordState extends State<Record> {
                       selectedDate = DateTime.now();
                       selectedHour = 0;
                       selectedMinute = 0;
-                      selectedBook = -1;
+                      selectedBook = null;
                       memo = '';
                       widget.changeTime(false);
                     });
@@ -427,7 +430,7 @@ class _RecordState extends State<Record> {
       // アニメーションのみを表示
       return SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
-        child: Container(
+        child: SizedBox(
           width: double.infinity,
           height: MediaQuery.of(context).size.height * 0.6,
           child: Center(
@@ -445,7 +448,7 @@ class _RecordState extends State<Record> {
       // メインコンテンツを表示
       return SingleChildScrollView(
         padding: const EdgeInsets.only(left: 4, right: 4, top: 10),
-        child: Container(
+        child: SizedBox(
           width: double.infinity,
           child: Column(
             children: [
@@ -600,25 +603,24 @@ class _RecordState extends State<Record> {
                             child: const Text(
                               '教材',
                               style: TextStyle(
-                                  fontSize: 15,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w900,
-                                  fontFamily: "KiwiMaru-Regular"),
+                                fontSize: 15,
+                                color: Colors.white,
+                                fontWeight: FontWeight.w900,
+                                fontFamily: "KiwiMaru-Regular",
+                              ),
                             ),
                           ),
                           const SizedBox(width: 14),
                           GestureDetector(
                             onTap: _openBookSelectionPage,
-                            child: selectedBook == -1
+                            child: selectedBook == null
                                 ? _buildAddBookCard()
-                                : widget.bookInfos.containsKey(selectedBook)
-                                    ? BookCard(
-                                        book: widget.bookInfos[selectedBook]!,
-                                        studyTime: 300,
-                                        isDisplayTime: false,
-                                        isTapDisabled: true,
-                                      )
-                                    : _buildAddBookCard(),
+                                : BookCard(
+                                    book: selectedBook!,
+                                    studyTime: 300,
+                                    isDisplayTime: false,
+                                    isTapDisabled: true,
+                                  ),
                           ),
                         ],
                       ),

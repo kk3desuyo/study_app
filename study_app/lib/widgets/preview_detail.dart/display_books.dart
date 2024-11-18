@@ -98,22 +98,37 @@ class _BookCardState extends State<BookCard> {
     return Column(
       children: [
         ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.transparent,
-            shadowColor: Colors.transparent,
-            padding: EdgeInsets.zero,
+          style: ButtonStyle(
+            backgroundColor: MaterialStateProperty.resolveWith<Color?>(
+              (Set<MaterialState> states) {
+                if (states.contains(MaterialState.disabled)) {
+                  return Colors.transparent; // 無効状態の背景色を透明に設定
+                }
+                return Colors.transparent; // 通常状態の背景色も透明に設定
+              },
+            ),
+            shadowColor: MaterialStateProperty.resolveWith<Color?>(
+              (Set<MaterialState> states) {
+                return Colors.transparent; // 影も透明に設定
+              },
+            ),
+            overlayColor: MaterialStateProperty.resolveWith<Color?>(
+              (Set<MaterialState> states) {
+                return Colors.transparent; // オーバーレイカラーも透明に設定
+              },
+            ),
+            padding: MaterialStateProperty.all<EdgeInsets>(EdgeInsets.zero),
           ),
-          onPressed: () {
-            if (widget.isTapDisabled) {
-              print(widget.isTapDisabled);
-              print("タップ無効");
-              return;
-            }
-            Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => BookScreen(book: widget.book)));
-          },
+          onPressed: widget.isTapDisabled
+              ? null
+              : () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => BookScreen(book: widget.book),
+                    ),
+                  );
+                },
           child: Card(
             color: Colors.white,
             child: Column(

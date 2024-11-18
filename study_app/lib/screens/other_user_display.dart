@@ -91,6 +91,7 @@ class _OtherUserDisplayState extends State<OtherUserDisplay> {
       print(bookDetails);
       List<Book> fetchedBooks = bookDetails.map((bookDetail) {
         return Book(
+            categoryId: bookDetail['categoryId'],
             id: bookDetail['bookId'],
             title: bookDetail['title'],
             imgUrl: bookDetail['imgUrl'],

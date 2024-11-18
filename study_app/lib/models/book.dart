@@ -5,6 +5,7 @@ class Book {
   final String imgUrl;
   final String title;
   final String category;
+  final String categoryId;
   final DateTime lastUsedDate; // lastUsedDateフィールドを追加
   bool? isPrivate;
   int? userNum;
@@ -16,11 +17,13 @@ class Book {
       required this.category,
       required this.lastUsedDate,
       this.userNum = 0, // コンストラクターにlastUsedDateを追加
-      this.isPrivate = false});
+      this.isPrivate = false,
+      required this.categoryId});
 
   // FirestoreのデータからBookオブジェクトを生成するファクトリメソッド
   factory Book.fromFirestore(Map<String, dynamic> data) {
     return Book(
+        categoryId: data['categoryId'] ?? '',
         id: data['bookId'] ?? '',
         imgUrl: data['imgUrl'] ?? '',
         title: data['title'] ?? '',
@@ -36,6 +39,7 @@ class Book {
   // BookオブジェクトをMap形式に変換するメソッド
   Map<String, dynamic> toMap() {
     return {
+      'categoryId': categoryId,
       'id': id,
       'imgUrl': imgUrl,
       'title': title,

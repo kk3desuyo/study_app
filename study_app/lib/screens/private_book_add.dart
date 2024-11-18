@@ -86,11 +86,7 @@ class _CustomBookEntryScreenState extends State<CustomBookEntryScreen>
             };
           }).toList();
           print("カテゴリーなし前");
-          // カテゴリーなしを追加
-          categories.insert(0, {
-            'categoryId': 'no_category',
-            'category': 'カテゴリーなし',
-          });
+
           print("カテゴリーなし亜t");
           for (var category in categories) {
             print(
@@ -509,11 +505,12 @@ class _CustomBookEntryScreenState extends State<CustomBookEntryScreen>
                                         });
                                         return;
                                       }
-
+                                      print("カテゴリーない");
+                                      print(selectedCategoryId);
                                       BookService bookService = BookService();
                                       await bookService.addPrivateBookToUser(
                                           userId,
-                                          categoryName,
+                                          selectedCategoryId ?? 'no_category',
                                           imageUrl,
                                           title);
 

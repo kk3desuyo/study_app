@@ -4,6 +4,7 @@ import 'package:study_app/services/book_service.dart';
 import 'package:study_app/services/user/user_service.dart';
 import 'package:study_app/theme/color.dart';
 import 'package:study_app/widgets/book/category_selection_modal.dart';
+import 'package:study_app/widgets/preview_detail.dart/display_books.dart';
 
 class BookScreen extends StatefulWidget {
   final Book book;
@@ -201,7 +202,7 @@ class _BookScreenState extends State<BookScreen> {
                           ],
                         )
                       ],
-                    )
+                    ),
                   ],
                 ),
               ),

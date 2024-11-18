@@ -121,6 +121,8 @@ class StudySessionService {
   // StudySessionを追加し、DailyGoalのachievedStudyTimeを更新または作成する関数
   Future<void> addStudySession(StudySession session) async {
     try {
+      print(session.userId);
+      print(session.timeStamp);
       await FirebaseFirestore.instance.runTransaction((transaction) async {
         // userIdに基づいてstudySessionサブコレクションに新しいセッションを追加
         DocumentReference studySessionRef =
