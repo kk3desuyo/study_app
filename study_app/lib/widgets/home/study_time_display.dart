@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:study_app/theme/color.dart';
 
 class StudyTimeDisplay extends StatefulWidget {
-  final int studyTime; // Change to int to represent minutes
+  final int studyTime;
 
   StudyTimeDisplay({required this.studyTime});
 
@@ -26,40 +26,48 @@ class _StudyTimeDisplayState extends State<StudyTimeDisplay> {
     return Container(
       width: cardWidth,
       height: 160,
-      child: Card(
-        color: Colors.white,
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Row(
-                children: [
-                  Icon(
-                    Icons.schedule,
-                    color: subTheme,
-                    size: 30,
+      child: Stack(
+        children: [
+          Card(
+            color: Colors.white,
+            margin: EdgeInsets.zero,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 50.0, left: 10, right: 10),
+              child: Center(
+                child: Text(
+                  _formatStudyTime(widget.studyTime),
+                  style: GoogleFonts.roboto(
+                    fontSize: 48,
+                    fontWeight: FontWeight.w900,
                   ),
-                  Text(
-                    '勉強時間',
-                    style: TextStyle(
-                        fontSize: 24,
-                        color: subTheme,
-                        fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-              SizedBox(height: 10),
-              Text(
-                _formatStudyTime(widget.studyTime),
-                style: GoogleFonts.roboto(
-                  fontSize: 48, // フォントサイズを調整
-                  fontWeight: FontWeight.w900, // かなり太いフォント
                 ),
-              )
-            ],
+              ),
+            ),
           ),
-        ),
+          Positioned(
+            top: 10,
+            left: 0,
+            right: 0,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.schedule,
+                  color: subTheme,
+                  size: 30,
+                ),
+                SizedBox(width: 5),
+                Text(
+                  '勉強時間',
+                  style: TextStyle(
+                      fontSize: 24,
+                      color: subTheme,
+                      fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

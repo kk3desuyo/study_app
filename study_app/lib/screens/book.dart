@@ -84,7 +84,15 @@ class _BookScreenState extends State<BookScreen> {
     return Scaffold(
       backgroundColor: backGroundColor,
       appBar: AppBar(
-        title: Text('Book Screen'),
+        title: Text(
+          widget.book.title,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
       ),
       body: isHasBook == null
           ? Center(child: CircularProgressIndicator()) // ローディング表示
@@ -96,6 +104,7 @@ class _BookScreenState extends State<BookScreen> {
                 child: Column(
                   children: [
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Padding(
                           padding:
@@ -129,76 +138,69 @@ class _BookScreenState extends State<BookScreen> {
                             ),
                           ),
                         ),
-                        Column(
-                          children: [
-                            Container(
-                              width: 160,
-                              child: Text(
-                                widget.book.title,
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                      ],
+                    ),
+                    Column(
+                      children: [
+                        if (!widget.book.isPrivate)
+                          Container(
+                            height: 35,
+                            width: 160,
+                            padding: EdgeInsets.symmetric(horizontal: 15),
+                            decoration: BoxDecoration(
+                              color: isHasBook! ? Colors.white : subTheme,
+                              borderRadius: BorderRadius.circular(5),
+                              border: Border.all(color: subTheme),
                             ),
-                            SizedBox(height: 40),
-                            Container(
-                              height: 35,
-                              width: 160,
-                              padding: EdgeInsets.symmetric(horizontal: 15),
-                              decoration: BoxDecoration(
-                                color: isHasBook! ? Colors.white : subTheme,
-                                borderRadius: BorderRadius.circular(5),
-                                border: Border.all(color: subTheme),
-                              ),
-                              child: InkWell(
-                                onTap: () => {
-                                  if (isHasBook != null && !isHasBook!)
-                                    {_openCategorySelectionModal()}
-                                },
-                                child: Center(
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.add,
+                            child: InkWell(
+                              onTap: () => {
+                                if (isHasBook != null && !isHasBook!)
+                                  {_openCategorySelectionModal()}
+                              },
+                              child: Center(
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.add,
+                                      color:
+                                          isHasBook! ? subTheme : Colors.white,
+                                      size: 25,
+                                    ),
+                                    SizedBox(width: 15),
+                                    Text(
+                                      isHasBook! ? "登録済み" : "教材を追加",
+                                      style: TextStyle(
                                         color: isHasBook!
                                             ? subTheme
                                             : Colors.white,
-                                        size: 25,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
                                       ),
-                                      SizedBox(width: 15),
-                                      Text(
-                                        isHasBook! ? "登録済み" : "教材を追加",
-                                        style: TextStyle(
-                                          color: isHasBook!
-                                              ? subTheme
-                                              : Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 13,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
-                          ],
-                        )
+                          ),
                       ],
                     ),
-                    SizedBox(height: 20),
+                    SizedBox(height: 5),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Column(
                           children: [
-                            Text("ユーザー数"),
-                            Text(
-                              widget.book.userNum.toString(),
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
+                            if (!widget.book.isPrivate)
+                              Row(
+                                children: [
+                                  Text("ユーザー数"),
+                                  Text(
+                                    widget.book.userNum.toString(),
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                              ),
                           ],
                         )
                       ],

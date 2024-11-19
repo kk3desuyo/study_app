@@ -97,27 +97,67 @@ class BookService {
     }
   }
 
-  Future<List<Book>> getBooksByIds(List<String> bookIds) async {
+  Future<List<Book>> getBooksByIds(List<String> bookIds, String userId) async {
     try {
+      // booksコレクションから取得
       QuerySnapshot snapshot = await FirebaseFirestore.instance
           .collection('books')
           .where(FieldPath.documentId, whereIn: bookIds)
           .get();
 
-      return snapshot.docs.map((doc) {
-        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-        return Book(
-          categoryId: data['categoryId'] ?? '',
-          id: doc.id,
-          imgUrl: data['imgUrl'] ?? '',
-          title: data['title'] ?? '',
-          category: data['categoryId'] ?? '',
-          lastUsedDate: data['lastUsedDate'] != null
-              ? (data['lastUsedDate'] as Timestamp).toDate()
-              : DateTime.now(),
-          userNum: data['userNum'] ?? 0,
-        );
-      }).toList();
+      // booksコレクションから見つかった本
+      Map<String, Book> foundBooks = {
+        for (var doc in snapshot.docs)
+          doc.id: Book(
+            isPrivate: false,
+            categoryId:
+                (doc.data() as Map<String, dynamic>)['categoryId'] ?? '',
+            id: doc.id,
+            imgUrl: (doc.data() as Map<String, dynamic>)['imgUrl'] ?? '',
+            title: (doc.data() as Map<String, dynamic>)['title'] ?? '',
+            category: (doc.data() as Map<String, dynamic>)['categoryId'] ?? '',
+            lastUsedDate:
+                (doc.data() as Map<String, dynamic>)['lastUsedDate'] != null
+                    ? ((doc.data() as Map<String, dynamic>)['lastUsedDate']
+                            as Timestamp)
+                        .toDate()
+                    : DateTime.now(),
+            userNum: (doc.data() as Map<String, dynamic>)['userNum'] ?? 0,
+          )
+      };
+
+      // booksコレクションに存在しないIDをフィルタリング
+      List<String> missingBookIds =
+          bookIds.where((id) => !foundBooks.containsKey(id)).toList();
+
+      if (missingBookIds.isNotEmpty) {
+        // privateBooksから不足分を取得
+        QuerySnapshot privateSnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .collection('privateBooks')
+            .where(FieldPath.documentId, whereIn: missingBookIds)
+            .get();
+
+        for (var doc in privateSnapshot.docs) {
+          Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+          foundBooks[doc.id] = Book(
+            categoryId: data['categoryId'] ?? '',
+            id: doc.id,
+            imgUrl: data['imgUrl'] ?? '',
+            title: data['title'] ?? '',
+            category: data['categoryId'] ?? '',
+            lastUsedDate: data['lastUsedDate'] != null
+                ? (data['lastUsedDate'] as Timestamp).toDate()
+                : DateTime.now(),
+            isPrivate: true,
+            userNum: 0, // privateBooksには userNum がない場合のデフォルト値
+          );
+        }
+      }
+
+      // 結果をリストとして返す
+      return foundBooks.values.toList();
     } catch (e) {
       print('Error getting books by ids: $e');
       throw Exception('Failed to get books');

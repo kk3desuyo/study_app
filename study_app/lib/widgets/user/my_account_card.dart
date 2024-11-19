@@ -70,6 +70,10 @@ class _MyAccountCardState extends State<MyAccountCard> {
   void initState() {
     super.initState();
     setColorList();
+    setState(() {
+      todayGoalTime = widget.todayGoalTime;
+      weekGoalTime = widget.weekGoalTime;
+    });
   }
 
   void setColorList() {
@@ -122,6 +126,13 @@ class _MyAccountCardState extends State<MyAccountCard> {
     );
   }
 
+  void _onEditGoal(int dailyGoal, int weeklyGoal) {
+    setState(() {
+      todayGoalTime = dailyGoal;
+      weekGoalTime = weeklyGoal;
+    });
+  }
+
   void _onTabSelected(int index) {
     setState(() {
       _selectedIndex = index;
@@ -132,6 +143,8 @@ class _MyAccountCardState extends State<MyAccountCard> {
     widget.onChanged();
   }
 
+  int todayGoalTime = 0;
+  int weekGoalTime = 0;
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
@@ -241,8 +254,10 @@ class _MyAccountCardState extends State<MyAccountCard> {
                       )),
                   // プロフィール編集ボタン
                   Padding(
-                    padding:
-                        const EdgeInsets.only(right: 30, top: 5, bottom: 5),
+                    padding: const EdgeInsets.only(
+                      right: 30,
+                      top: 5,
+                    ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
@@ -254,7 +269,7 @@ class _MyAccountCardState extends State<MyAccountCard> {
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(5),
-                              border: Border.all(color: subTheme),
+                              border: Border.all(color: primary),
                             ),
                             child: InkWell(
                               onTap: _onEditProfile,
@@ -262,7 +277,7 @@ class _MyAccountCardState extends State<MyAccountCard> {
                                 child: Text(
                                   "プロフィールを編集",
                                   style: TextStyle(
-                                    color: subTheme,
+                                    color: primary,
                                     fontWeight: FontWeight.bold,
                                     fontSize: 13,
                                   ),
@@ -277,6 +292,16 @@ class _MyAccountCardState extends State<MyAccountCard> {
                   SizedBox(
                     height: 5,
                   ),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 30, bottom: 5),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [],
+                    ),
+                  ),
+                  SizedBox(
+                    height: 5,
+                  ),
                   // 区切り線
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -284,7 +309,7 @@ class _MyAccountCardState extends State<MyAccountCard> {
                       Container(
                         width: MediaQuery.of(context).size.width * 0.90,
                         height: 1,
-                        color: Colors.black,
+                        color: Colors.grey,
                       ),
                     ],
                   ),
@@ -298,10 +323,11 @@ class _MyAccountCardState extends State<MyAccountCard> {
                     UserStudySummaryCard(userId: widget.user.id),
                     // タブ1のコンテンツ
                     GoalCard(
+                      onEditGoal: _onEditGoal,
                       todayStudyTime: widget.todayStudyTime,
                       weekStudyTime: widget.weekStudyTime,
-                      todayGoalTime: widget.todayGoalTime,
-                      weekGoalTime: widget.weekGoalTime,
+                      todayGoalTime: todayGoalTime,
+                      weekGoalTime: weekGoalTime,
                     ),
                     // 一週間の推移チャート
                     Card(

@@ -7,7 +7,7 @@ class Book {
   final String category;
   final String categoryId;
   final DateTime lastUsedDate; // lastUsedDateフィールドを追加
-  bool? isPrivate;
+  final bool isPrivate;
   int? userNum;
   // コンストラクター
   Book(
@@ -17,7 +17,7 @@ class Book {
       required this.category,
       required this.lastUsedDate,
       this.userNum = 0, // コンストラクターにlastUsedDateを追加
-      this.isPrivate = false,
+      required this.isPrivate,
       required this.categoryId});
 
   // FirestoreのデータからBookオブジェクトを生成するファクトリメソッド

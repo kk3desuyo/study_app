@@ -1,14 +1,19 @@
-class Event {
-  final String id;
-  final String name;
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-  Event({required this.id, required this.name});
+class Event {
+  final String name;
+  final DateTime date;
+
+  Event({
+    required this.name,
+    required this.date,
+  });
 
   // FirestoreのドキュメントをEventオブジェクトに変換
   factory Event.fromDocument(Map<String, dynamic> doc, String docId) {
     return Event(
-      id: docId,
       name: doc['name'] ?? '',
+      date: (doc['date'] as Timestamp).toDate(),
     );
   }
 
@@ -16,6 +21,7 @@ class Event {
   Map<String, dynamic> toMap() {
     return {
       'name': name,
+      'date': date,
     };
   }
 }

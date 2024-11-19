@@ -5,6 +5,7 @@ import 'package:study_app/models/studyMaterial.dart';
 import 'package:study_app/models/user.dart';
 import 'package:study_app/services/comment_service.dart';
 import 'package:study_app/services/like_service.dart';
+import 'package:study_app/services/user/tag_service.dart';
 import 'package:study_app/widgets/user/tag.dart';
 import 'package:study_app/widgets/notification/notification_item.dart';
 
@@ -528,17 +529,15 @@ class UserService {
 
   Future<List<Map<String, dynamic>>> fetchUserTags(String userId) async {
     try {
-      QuerySnapshot tagsSnapshot =
-          await tags.where('userId', isEqualTo: userId).get();
+      TagService tagService = TagService();
+      List<Tag> userTags = await tagService.fetchTagsForUser(userId);
 
-      List<Map<String, dynamic>> userTags = tagsSnapshot.docs.map((doc) {
+      return userTags.map((tag) {
         return {
-          'name': doc['name'] as String,
-          'isAchievement': doc['isAchievement'] as bool,
+          'name': tag.name,
+          'isAchievement': tag.isAchievement,
         };
       }).toList();
-
-      return userTags;
     } catch (e) {
       print('Error fetching user tags: $e');
       return [];
@@ -596,30 +595,14 @@ class UserService {
       profileUpdates['createdAt'] = FieldValue.serverTimestamp();
 
       if (profileUpdates.isNotEmpty) {
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(userId)
-            .update(profileUpdates);
+        await users.doc(userId).update(profileUpdates);
       }
 
       if (newTags != null) {
-        CollectionReference tagsCollection =
-            FirebaseFirestore.instance.collection('tags');
-
-        QuerySnapshot existingTagsSnapshot =
-            await tagsCollection.where('userId', isEqualTo: userId).get();
-
-        for (var doc in existingTagsSnapshot.docs) {
-          await doc.reference.delete();
-        }
-
-        for (var tag in newTags) {
-          await tagsCollection.add({
-            'userId': userId,
-            'name': tag.name,
-            'isAchievement': tag.isAchievement,
-          });
-        }
+        // タグの処理を tag_service の関数で行う
+        TagService tagService = TagService();
+        await tagService.deleteTagsForUser(userId);
+        await tagService.addTagsForUser(userId, newTags);
       }
 
       print("User profile updated successfully.");
@@ -649,30 +632,14 @@ class UserService {
       if (oneWord != null) profileUpdates['oneWord'] = oneWord;
 
       if (profileUpdates.isNotEmpty) {
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(userId)
-            .update(profileUpdates);
+        await users.doc(userId).update(profileUpdates);
       }
 
       if (newTags != null) {
-        CollectionReference tagsCollection =
-            FirebaseFirestore.instance.collection('tags');
-
-        QuerySnapshot existingTagsSnapshot =
-            await tagsCollection.where('userId', isEqualTo: userId).get();
-
-        for (var doc in existingTagsSnapshot.docs) {
-          await doc.reference.delete();
-        }
-
-        for (var tag in newTags) {
-          await tagsCollection.add({
-            'userId': userId,
-            'name': tag.name,
-            'isAchievement': tag.isAchievement,
-          });
-        }
+        // タグの処理を tag_service の関数で行う
+        TagService tagService = TagService();
+        await tagService.deleteTagsForUser(userId);
+        await tagService.addTagsForUser(userId, newTags);
       }
 
       print("User profile updated successfully.");

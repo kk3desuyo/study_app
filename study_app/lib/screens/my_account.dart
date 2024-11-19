@@ -46,7 +46,7 @@ class _MyAccountState extends State<MyAccount> {
 
     if (userId != null) {
       User? fetchedUser = await userService.getUser(userId);
-
+      print(fetchedUser!.profileImgUrl);
       if (fetchedUser != null) {
         setState(() {
           user = fetchedUser;
@@ -64,6 +64,23 @@ class _MyAccountState extends State<MyAccount> {
       setState(() {
         isLoading = false;
       });
+    }
+  }
+
+  Future<void> _fetchWeeklyGoalData() async {
+    final goalService = GoalService();
+
+    // ユーザーIDを指定してデータを取得
+    final weeklyGoalData =
+        await goalService.fetchWeeklyGoalAndSummary(user!.id);
+
+    if (weeklyGoalData != null) {
+      print("Achieved Study Time: ${weeklyGoalData['achievedStudyTime']}");
+      print("Target Study Time: ${weeklyGoalData['targetStudyTime']}");
+      print("Target Week: ${weeklyGoalData['targetWeek']}");
+      print("User ID: ${weeklyGoalData['userId']}");
+    } else {
+      print("No WeeklyGoal data found for the user.");
     }
   }
 
@@ -90,11 +107,14 @@ class _MyAccountState extends State<MyAccount> {
             lastUsedDate: DateTime.now(),
             isPrivate: bookDetail['isPrivate']);
       }).toList();
-
+      print("fetchUse4r");
       var dailyGoalData = await goalService.fetchDailyGoalData(user!.id);
-      var weeklyGoalTime = await goalService.fetchWeeklyGoal(user!.id);
-      var weeklySummary = await goalService.fetchUserWeeklySummary(user!.id);
-
+      print("f---------");
+      print("Weekめ");
+      // ユーザーIDを指定してデータを取得
+      final weeklyGoalData =
+          await goalService.fetchWeeklyGoalAndSummary(user!.id);
+      print("Week後");
       int followersCount = await userService.getFollowersCount(user!.id);
       int followingCount = await userService.getFollowingCount(user!.id);
 
@@ -112,8 +132,8 @@ class _MyAccountState extends State<MyAccount> {
         books = fetchedBooks;
         todayGoalTime = dailyGoalData?['targetStudyTime'] ?? 0;
         todayStudyTime = dailyGoalData?['achievedStudyTime'] ?? 0;
-        weekGoalTime = weeklyGoalTime ?? 0;
-        weekStudyTime = weeklySummary ?? 0;
+        weekGoalTime = weeklyGoalData?['targetStudyTime'] ?? 0;
+        weekStudyTime = weeklyGoalData?['achievedStudyTime'] ?? 0;
         followNum = followingCount;
         followersNum = followersCount;
         isFollow = false;

@@ -49,7 +49,8 @@ class StudySessionService {
 
     // Fetch all books in a single query
     BookService bookService = BookService();
-    List<Book> books = await bookService.getBooksByIds(bookIds.toList());
+    List<Book> books =
+        await bookService.getBooksByIds(bookIds.toList(), userId);
 
     // Create a map for quick lookup
     Map<String, Book> bookMap = {for (var book in books) book.id: book};
@@ -165,6 +166,7 @@ class StudySessionService {
             'oneWord': '',
             'targetDay': todayDate,
             'targetStudyTime': 0,
+            'userId': session.userId,
           });
         }
       });

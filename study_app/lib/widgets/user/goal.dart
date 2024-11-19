@@ -1,18 +1,46 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:study_app/services/event.dart';
+import 'package:study_app/services/goal_service.dart';
+import 'package:study_app/services/user/user_service.dart';
 import 'package:study_app/theme/color.dart';
 
-class GoalCard extends StatelessWidget {
-  final int todayGoalTime;
-  final int weekGoalTime;
+import 'package:study_app/models/event.dart';
+
+class GoalCard extends StatefulWidget {
+  int todayGoalTime;
+  int weekGoalTime;
   final int todayStudyTime;
   final int weekStudyTime;
+  bool isHiddenEditBtn = false;
+  final Function(int, int) onEditGoal;
 
   GoalCard({
     required this.todayGoalTime,
     required this.weekGoalTime,
     required this.todayStudyTime,
     required this.weekStudyTime,
+    required this.onEditGoal,
+    this.isHiddenEditBtn = false,
   });
+
+  @override
+  _GoalCardState createState() => _GoalCardState();
+}
+
+class _GoalCardState extends State<GoalCard> {
+  int _selectedTodayGoal = 0;
+  int _selectedWeekGoal = 0;
+  bool _todayGoalError = false;
+  bool _weekGoalError = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedTodayGoal = widget.todayGoalTime ~/ 60; // 分から時間へ変換
+    _selectedWeekGoal = widget.weekGoalTime ~/ 60; // 分から時間へ変換
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,28 +72,67 @@ class GoalCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding:
-                          EdgeInsets.symmetric(vertical: 2, horizontal: 27),
-                      decoration: BoxDecoration(
-                        color: subTheme,
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      child: Text(
-                        '目標',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                    Row(
+                      children: [
+                        Container(
+                          padding:
+                              EdgeInsets.symmetric(vertical: 2, horizontal: 27),
+                          decoration: BoxDecoration(
+                            color: subTheme,
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          child: Text(
+                            '目標',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
                         ),
-                      ),
+                        if (!widget.isHiddenEditBtn) ...[
+                          Spacer(),
+                          Padding(
+                            padding: const EdgeInsets.only(right: 10),
+                            child: Container(
+                              height: 35,
+                              width: 105,
+                              padding: EdgeInsets.symmetric(horizontal: 5),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(5),
+                                border: Border.all(color: primary),
+                              ),
+                              child: InkWell(
+                                onTap: () {
+                                  _showEditGoalDialog(context);
+                                },
+                                child: Center(
+                                  child: Row(
+                                    children: [
+                                      Text(
+                                        "目標を変更",
+                                        style: TextStyle(
+                                          color: primary,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                      Icon(Icons.navigate_next, color: primary),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ]
+                      ],
                     ),
                     SizedBox(height: 10),
-                    // タイトル行を修正
                     Row(
                       children: [
                         SizedBox(
-                          width: 70, // ラベルの幅に合わせる
+                          width: 70,
                         ),
                         Expanded(
                           child: Text(
@@ -90,44 +157,42 @@ class GoalCard extends StatelessWidget {
                       ],
                     ),
                     SizedBox(height: 10),
-                    // 目標時間と学習時間を表示
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         _buildTimeRow(
                           '目標時間',
-                          _formatTime(todayGoalTime),
-                          _formatTime(weekGoalTime),
+                          _formatTime(widget.todayGoalTime),
+                          _formatTime(widget.weekGoalTime),
                           Colors.blue[100]!,
                         ),
                         SizedBox(height: 8),
                         _buildTimeRow(
                           '学習時間',
-                          _formatTime(todayStudyTime),
-                          _formatTime(weekStudyTime),
+                          _formatTime(widget.todayStudyTime),
+                          _formatTime(widget.weekStudyTime),
                           Colors.green[100]!,
                         ),
                       ],
                     ),
                     SizedBox(height: 20),
-                    // 達成率の円グラフを修正
                     Row(
                       children: [
                         SizedBox(
-                          width: 70, // ラベルの幅に合わせる
+                          width: 70,
                         ),
                         Expanded(
                           child: _buildCircularProgress(
-                            todayGoalTime == 0
+                            widget.todayGoalTime == 0
                                 ? 0
-                                : todayStudyTime / todayGoalTime,
+                                : widget.todayStudyTime / widget.todayGoalTime,
                           ),
                         ),
                         Expanded(
                           child: _buildCircularProgress(
-                            weekGoalTime == 0
+                            widget.weekGoalTime == 0
                                 ? 0
-                                : weekStudyTime / weekGoalTime,
+                                : widget.weekStudyTime / widget.weekGoalTime,
                           ),
                         ),
                       ],
@@ -142,7 +207,6 @@ class GoalCard extends StatelessWidget {
     );
   }
 
-  // 目標時間と学習時間の行を修正
   Widget _buildTimeRow(
       String label, String todayTime, String weekTime, Color color) {
     return Container(
@@ -182,7 +246,6 @@ class GoalCard extends StatelessWidget {
     );
   }
 
-  // 達成率の円グラフを修正
   Widget _buildCircularProgress(double progress) {
     return Stack(
       alignment: Alignment.center,
@@ -208,10 +271,231 @@ class GoalCard extends StatelessWidget {
     );
   }
 
-  // 時間を hh:mm 形式に変換するヘルパー関数
   String _formatTime(int minutes) {
     final int hours = minutes ~/ 60;
     final int remainingMinutes = minutes % 60;
     return '${hours.toString().padLeft(2, '0')}:${remainingMinutes.toString().padLeft(2, '0')}';
+  }
+
+  void _showEditGoalDialog(BuildContext context) {
+    int tempTodayGoal = _selectedTodayGoal;
+    int tempWeekGoal = _selectedWeekGoal;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(builder: (context, setState) {
+          return AlertDialog(
+            title: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Center(
+                child: Container(
+                  padding: EdgeInsets.symmetric(vertical: 1, horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: subTheme,
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Text(
+                    '目標を変更',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 今日の目標時間
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text('今日の目標時間（時間）'),
+                ),
+                Container(
+                  height: 100,
+                  child: CupertinoPicker(
+                    scrollController:
+                        FixedExtentScrollController(initialItem: tempTodayGoal),
+                    itemExtent: 32.0,
+                    onSelectedItemChanged: (int value) {
+                      setState(() {
+                        tempTodayGoal = value;
+                        if (tempTodayGoal <= 0) {
+                          _todayGoalError = true;
+                        } else {
+                          _todayGoalError = false;
+                        }
+                      });
+                    },
+                    children: List<Widget>.generate(25, (int index) {
+                      return Center(
+                        child: Text('$index 時間'),
+                      );
+                    }),
+                  ),
+                ),
+                if (_todayGoalError)
+                  Text(
+                    '1時間以上を選択してください',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                SizedBox(height: 16),
+                // 今週の目標時間
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text('今週の目標時間（時間）'),
+                ),
+                Container(
+                  height: 100,
+                  child: CupertinoPicker(
+                    scrollController:
+                        FixedExtentScrollController(initialItem: tempWeekGoal),
+                    itemExtent: 32.0,
+                    onSelectedItemChanged: (int value) {
+                      setState(() {
+                        tempWeekGoal = value;
+                        if (tempWeekGoal <= 0) {
+                          _weekGoalError = true;
+                        } else {
+                          _weekGoalError = false;
+                        }
+                      });
+                    },
+                    children: List<Widget>.generate(101, (int index) {
+                      return Center(
+                        child: Text('$index 時間'),
+                      );
+                    }),
+                  ),
+                ),
+                if (_weekGoalError)
+                  Text(
+                    '1時間以上を選択してください',
+                    style: TextStyle(color: Colors.red),
+                  ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                child: Text('キャンセル',
+                    style: TextStyle(
+                        color: Colors.red, fontWeight: FontWeight.bold)),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+              Container(
+                height: 35,
+                width: 100,
+                padding: EdgeInsets.symmetric(horizontal: 15),
+                decoration: BoxDecoration(
+                  color: subTheme,
+                  borderRadius: BorderRadius.circular(5),
+                  border: Border.all(color: subTheme),
+                ),
+                child: InkWell(
+                  onTap: () async {
+                    // バリデーションチェック
+                    if (tempTodayGoal <= 0) {
+                      setState(() {
+                        _todayGoalError = true;
+                      });
+                      return;
+                    }
+                    if (tempWeekGoal <= 0) {
+                      setState(() {
+                        _weekGoalError = true;
+                      });
+                      return;
+                    }
+
+                    // 値が変更されたかチェック
+                    if (tempTodayGoal != _selectedTodayGoal ||
+                        tempWeekGoal != _selectedWeekGoal) {
+                      // データベースに保存
+                      int newTodayGoalMinutes = tempTodayGoal * 60;
+                      int newWeekGoalMinutes = tempWeekGoal * 60;
+
+                      // 保存処理を実行
+                      await _saveGoalTimes(
+                          newTodayGoalMinutes, newWeekGoalMinutes);
+
+                      // 状態を更新
+                      setState(() {
+                        _selectedTodayGoal = tempTodayGoal;
+                        _selectedWeekGoal = tempWeekGoal;
+                        widget.todayGoalTime = newTodayGoalMinutes;
+                        widget.weekGoalTime = newWeekGoalMinutes;
+                      });
+
+                      // 親ウィジェットへ新しい目標時間を渡す
+                      widget.onEditGoal(
+                          newTodayGoalMinutes, newWeekGoalMinutes);
+                    }
+
+                    Navigator.of(context).pop();
+                  },
+                  child: Center(
+                    child: Text(
+                      "保存",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        });
+      },
+    );
+  }
+
+  Future<void> _saveGoalTimes(int todayGoal, int weekGoal) async {
+    try {
+      // Firestoreのインスタンスを取得
+      final FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+      // 現在のユーザーIDを取得
+      UserService userService = UserService();
+      String? userId = await userService.getCurrentUserId();
+      if (userId == null) {
+        throw Exception('ユーザーIDの取得に失敗しました。');
+      }
+
+      // WeeklyGoal の goalId を取得
+      String? weeklyGoalId =
+          await GoalService().getWeeklyGoalIdByUserId(userId);
+      if (weeklyGoalId == null) {
+        throw Exception('WeeklyGoal の goalId の取得に失敗しました。');
+      }
+
+      // UserDailyGoals の goalId を取得
+      String? dailyGoalId = await GoalService().getDailyGoalIdByUserId(userId);
+      if (dailyGoalId == null) {
+        throw Exception('UserDailyGoals の goalId の取得に失敗しました。');
+      }
+
+      // WeeklyGoal の targetStudyTime を更新
+      await firestore.collection('WeeklyGoal').doc(weeklyGoalId).update({
+        'targetStudyTime': weekGoal,
+      });
+
+      // UserDailyGoals の targetStudyTime を更新
+      await firestore.collection('UserDailyGoals').doc(dailyGoalId).update({
+        'targetStudyTime': todayGoal,
+      });
+
+      print('目標時間が正常に更新されました。');
+    } catch (e) {
+      print('Firestore 更新中にエラーが発生しました: $e');
+      rethrow;
+    }
   }
 }

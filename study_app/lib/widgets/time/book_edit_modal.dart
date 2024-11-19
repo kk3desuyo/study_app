@@ -12,7 +12,7 @@ import 'package:study_app/services/book_service.dart';
 import 'package:study_app/services/user/user_service.dart';
 import 'package:study_app/theme/color.dart';
 
-// カスタムタブインジケーターのクラス
+/// カスタムタブインジケーターのクラス
 class CustomTabIndicator extends Decoration {
   @override
   BoxPainter createBoxPainter([VoidCallback? onChanged]) {
@@ -45,11 +45,12 @@ class _CustomTabIndicatorPainter extends BoxPainter {
 
 class CustomBookEntryModal extends StatefulWidget {
   final Book book;
-  final Function(Book) onChanged;
+  final Function(Book) onChanged; // 編集後の教材を返すコールバック
+
   const CustomBookEntryModal({
     Key? key,
     required this.book,
-    required this.onChanged,
+    required this.onChanged, // コールバックを受け取る
   }) : super(key: key);
 
   @override
@@ -128,6 +129,16 @@ class _CustomBookEntryModalState extends State<CustomBookEntryModal>
 
   // ギャラリーから画像を選択
   Future<void> _pickImage() async {
+    if (!widget.book.isPrivate) {
+      // プライベートでない場合、メッセージを表示
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('この教材は独自教材ではないため、画像を変更できません。'),
+        ),
+      );
+      return;
+    }
+
     final XFile? pickedFile =
         await _picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
     if (pickedFile != null) {
@@ -147,6 +158,9 @@ class _CustomBookEntryModalState extends State<CustomBookEntryModal>
 
   @override
   Widget build(BuildContext context) {
+    // タイトルが編集可能かどうか
+    bool isTitleEditable = widget.book.isPrivate;
+
     return isLoading
         ? Container(
             height: 200,
@@ -195,8 +209,9 @@ class _CustomBookEntryModalState extends State<CustomBookEntryModal>
                               ),
                               borderRadius: BorderRadius.circular(10), // 角丸の設定
                             ),
-                            child: _selectedImage == null &&
-                                    widget.book.imgUrl.isEmpty
+                            child: (!widget.book.isPrivate &&
+                                    _selectedImage == null &&
+                                    widget.book.imgUrl.isEmpty)
                                 ? Icon(Icons.add_a_photo,
                                     size: 30, color: Colors.white)
                                 : null, // 初期状態のカメラアイコン
@@ -226,15 +241,30 @@ class _CustomBookEntryModalState extends State<CustomBookEntryModal>
                         ],
                       ),
                       SizedBox(height: 10),
-                      TextField(
-                        controller: _titleController,
-                        decoration: InputDecoration(
-                          hintText: "教材のタイトルを入力してください",
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
+                      GestureDetector(
+                        onTap: () {
+                          if (!isTitleEditable) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('この教材は独自教材ではないため、タイトルを変更できません。'),
+                              ),
+                            );
+                          }
+                        },
+                        child: AbsorbPointer(
+                          absorbing: !isTitleEditable,
+                          child: TextField(
+                            controller: _titleController,
+                            readOnly: !isTitleEditable,
+                            decoration: InputDecoration(
+                              hintText: "教材のタイトルを入力してください",
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                              filled: true,
+                              fillColor: Colors.white,
+                            ),
                           ),
-                          filled: true,
-                          fillColor: Colors.white,
                         ),
                       ),
                       SizedBox(height: 20),
@@ -381,7 +411,8 @@ class _CustomBookEntryModalState extends State<CustomBookEntryModal>
                               String currentImgUrl = initialImgUrl;
                               String currentCategoryId = initialCategoryId;
 
-                              if (_selectedImage != null) {
+                              if (widget.book.isPrivate &&
+                                  _selectedImage != null) {
                                 // 画像が変更された場合
                                 // ここでは一時的に画像URLをnullに設定
                                 currentImgUrl = '';
@@ -400,10 +431,11 @@ class _CustomBookEntryModalState extends State<CustomBookEntryModal>
                                 currentCategoryId = selectedCategoryId!;
                               }
 
-                              bool isTitleChanged =
+                              bool isTitleChanged = widget.book.isPrivate &&
                                   currentTitle != initialTitle;
-                              bool isImageChanged = _selectedImage != null ||
-                                  currentImgUrl != initialImgUrl;
+                              bool isImageChanged = widget.book.isPrivate &&
+                                  (_selectedImage != null ||
+                                      currentImgUrl != initialImgUrl);
                               bool isCategoryChanged =
                                   currentCategoryId != initialCategoryId;
 
@@ -425,13 +457,16 @@ class _CustomBookEntryModalState extends State<CustomBookEntryModal>
                               UserService userService = UserService();
                               String? userId = userService.getCurrentUserId();
 
-                              if (currentTitle.isNotEmpty) {
+                              if (currentTitle.isNotEmpty ||
+                                  (!widget.book.isPrivate &&
+                                      currentCategoryId.isNotEmpty)) {
                                 final user = FirebaseAuth.instance.currentUser;
                                 if (user != null) {
                                   try {
                                     String? imageUrl = initialImgUrl;
 
-                                    if (_selectedImage != null) {
+                                    if (widget.book.isPrivate &&
+                                        _selectedImage != null) {
                                       final compressedImage =
                                           await FlutterImageCompress
                                               .compressWithFile(
@@ -533,28 +568,35 @@ class _CustomBookEntryModalState extends State<CustomBookEntryModal>
                                       imgUrl: imageUrl, // 更新された imgUrl を使用
                                       categoryId:
                                           finalCategoryId!, // 更新された categoryId を使用
-                                      lastUsedDate: widget.book.lastUsedDate,
+                                      lastUsedDate:
+                                          DateTime.now(), // 更新日時を現在に設定
                                     );
-                                    String category = categories.firstWhere(
-                                      (category) =>
-                                          category['categoryId'] ==
-                                          finalCategoryId,
-                                      orElse: () => {'category': 'Unknown'},
-                                    )['category']!;
-                                    widget.onChanged(Book(
-                                        id: widget.book.id,
-                                        imgUrl: imageUrl,
-                                        title: title,
-                                        category: category,
-                                        lastUsedDate: widget.book.lastUsedDate,
-                                        categoryId: finalCategoryId!));
+
+                                    // 編集された本の最新データを取得
+                                    Book updatedBook = Book(
+                                      id: widget.book.id,
+                                      title: title,
+                                      imgUrl: imageUrl,
+                                      categoryId:
+                                          finalCategoryId ?? 'no_category',
+                                      category: categoryName,
+                                      lastUsedDate: DateTime.now(),
+                                      isPrivate:
+                                          widget.book.isPrivate, // isPrivateを保持
+                                    );
+
+                                    // コールバックで親に通知
+                                    widget.onChanged(updatedBook);
+
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(content: Text('教材が保存されました！')),
                                     );
 
                                     setState(() {
                                       _selectedImage = null;
-                                      _titleController.clear();
+                                      if (widget.book.isPrivate) {
+                                        _titleController.clear();
+                                      }
                                       _newCategoryController.clear();
                                       selectedCategoryId = 'no_category';
                                       isSaving = false;

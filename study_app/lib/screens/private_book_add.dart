@@ -1,15 +1,15 @@
+// lib/screens/custom_book_entry_screen.dart
 import 'dart:convert';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:study_app/services/book_service.dart';
+
+import 'package:study_app/services/img_upload/image_upload_service.dart';
 import 'package:study_app/services/user/user_service.dart';
 import 'package:study_app/theme/color.dart';
-import 'package:study_app/widgets/home/tab_bar.dart';
 import 'package:http/http.dart' as http;
 
 // Custom Tab Indicator Class
@@ -59,6 +59,7 @@ class _CustomBookEntryScreenState extends State<CustomBookEntryScreen>
   bool isSaving = false; // 保存処理中かどうかのフラグ
   final ImagePicker _picker = ImagePicker();
   late TabController _tabController;
+  final ImageUploadService _imageUploadService = ImageUploadService(); // 追加
 
   @override
   void initState() {
@@ -85,28 +86,35 @@ class _CustomBookEntryScreenState extends State<CustomBookEntryScreen>
               'category': doc['category'] as String,
             };
           }).toList();
-          print("カテゴリーなし前");
 
-          print("カテゴリーなし亜t");
+          // 「カテゴリーなし」が存在するか確認し、存在しなければ追加
+          if (!categories
+              .any((category) => category['categoryId'] == 'no_category')) {
+            categories.insert(0, {
+              'categoryId': 'no_category',
+              'category': 'カテゴリーなし',
+            });
+          }
+
+          // デフォルトで「カテゴリーなし」を選択
+          selectedCategoryId = 'no_category';
+
+          print("カテゴリー一覧:");
           for (var category in categories) {
             print(
                 'Category ID: ${category['categoryId']}, Category: ${category['category']}');
           }
-          setState(() {
-            // デフォルトでカテゴリーなしを選択
-            selectedCategoryId = 'no_category';
-          });
 
           isLoading = false;
         });
       } catch (e) {
-        print("Error fetching categories: $e");
+        print("カテゴリー取得エラー: $e");
         setState(() {
           isLoading = false;
         });
       }
     } else {
-      print("User not logged in");
+      print("ユーザーがログインしていません");
       setState(() {
         isLoading = false;
       });
@@ -118,7 +126,6 @@ class _CustomBookEntryScreenState extends State<CustomBookEntryScreen>
     final XFile? pickedFile =
         await _picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
     if (pickedFile != null) {
-      // 選択した画像ファイルを取得
       setState(() {
         _selectedImage = File(pickedFile.path);
       });
@@ -157,7 +164,7 @@ class _CustomBookEntryScreenState extends State<CustomBookEntryScreen>
                       children: [
                         Center(
                           child: GestureDetector(
-                            onTap: _pickImage,
+                            onTap: isSaving ? null : _pickImage, // 保存中はタップ不可
                             child: Container(
                               width: 120,
                               height: 120,
@@ -258,7 +265,7 @@ class _CustomBookEntryScreenState extends State<CustomBookEntryScreen>
                           ),
                         ),
                         SizedBox(
-                          height: 100,
+                          height: 150,
                           child: TabBarView(
                             controller: _tabController,
                             children: [
@@ -341,7 +348,81 @@ class _CustomBookEntryScreenState extends State<CustomBookEntryScreen>
                                         border: OutlineInputBorder(
                                           borderSide:
                                               BorderSide(color: subTheme),
+                                          borderRadius:
+                                              BorderRadius.circular(15),
                                         ),
+                                      ),
+                                    ),
+                                    SizedBox(height: 10),
+                                    ElevatedButton(
+                                      onPressed: isSaving
+                                          ? null
+                                          : () async {
+                                              String newCategory =
+                                                  _newCategoryController.text
+                                                      .trim();
+                                              if (newCategory.isEmpty) {
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  SnackBar(
+                                                      content: Text(
+                                                          'カテゴリー名を入力してください。')),
+                                                );
+                                                return;
+                                              }
+
+                                              setState(() {
+                                                isSaving = true;
+                                              });
+
+                                              try {
+                                                // Firestoreに新しいカテゴリーを追加
+                                                DocumentReference
+                                                    newCategoryRef =
+                                                    await FirebaseFirestore
+                                                        .instance
+                                                        .collection('users')
+                                                        .doc(FirebaseAuth
+                                                            .instance
+                                                            .currentUser!
+                                                            .uid)
+                                                        .collection(
+                                                            'categories')
+                                                        .add({
+                                                  'category': newCategory
+                                                });
+
+                                                // カテゴリーリストを更新
+                                                await fetchCategories();
+                                                setState(() {
+                                                  selectedCategoryId =
+                                                      newCategoryRef.id;
+                                                  _newCategoryController
+                                                      .clear();
+                                                });
+
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  SnackBar(
+                                                      content: Text(
+                                                          'カテゴリーが追加されました。')),
+                                                );
+                                              } catch (e) {
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  SnackBar(
+                                                      content: Text(
+                                                          'カテゴリーの追加に失敗しました: $e')),
+                                                );
+                                              } finally {
+                                                setState(() {
+                                                  isSaving = false;
+                                                });
+                                              }
+                                            },
+                                      child: Text("カテゴリーを追加"),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: subTheme,
                                       ),
                                     ),
                                   ],
@@ -372,80 +453,13 @@ class _CustomBookEntryScreenState extends State<CustomBookEntryScreen>
                                       String? imageUrl;
 
                                       if (_selectedImage != null) {
-                                        // 画像を圧縮してアップロード
-                                        final compressedImage =
-                                            await FlutterImageCompress
-                                                .compressWithFile(
-                                          _selectedImage!.path,
-                                          minWidth: 800,
-                                          minHeight: 600,
-                                          quality: 70, // 圧縮品質を調整して100kb以下に
-                                        );
-
-                                        if (compressedImage != null) {
-                                          print(
-                                              'Compressed image size: ${compressedImage.length} bytes');
-                                          // Base64エンコード
-                                          String base64Image =
-                                              'data:image/jpeg;base64,' +
-                                                  base64Encode(compressedImage);
-
-                                          // Firebase FunctionsのエンドポイントにPOSTリクエストを送信
-                                          // Firebase FunctionsのエンドポイントにPOSTリクエストを送信
-                                          final response = await http.post(
-                                            Uri.parse(
-                                                'https://us-central1-study-app-6a883.cloudfunctions.net/cloudinary_function'),
-                                            headers: {
-                                              'Content-Type':
-                                                  'application/json',
-                                            },
-                                            body: jsonEncode(
-                                                {'image': base64Image}),
-                                          );
-
-                                          print(
-                                              "Response status: ${response.statusCode}");
-                                          print(
-                                              "Response body: ${response.body}");
-
-// JSONレスポンスを解析
-                                          if (response.statusCode == 200) {
-                                            try {
-                                              final responseData =
-                                                  jsonDecode(response.body);
-                                              print(
-                                                  "Message: ${responseData['message']}");
-                                              print(
-                                                  "URL: ${responseData['url']}");
-                                              imageUrl = responseData['url'];
-                                            } catch (e) {
-                                              print("JSONのパースに失敗しました: $e");
-                                              throw Exception(
-                                                  'レスポンスの解析に失敗しました。');
-                                            }
-                                          } else {
-                                            print(
-                                                "Error: ${response.statusCode}");
-                                            print(
-                                                "Response Body: ${response.body}");
-                                            throw Exception(
-                                                '画像のアップロードに失敗しました。');
-                                          }
-
-                                          if (imageUrl != null) {
-                                            print(
-                                                'Uploaded image URL: $imageUrl');
-                                          } else {
-                                            throw Exception(
-                                                '画像のアップロードに失敗しました。');
-                                          }
-                                        } else {
-                                          // 圧縮失敗時の処理
-                                          throw Exception('画像の圧縮に失敗しました。');
-                                        }
+                                        // 画像をアップロードサービスで処理
+                                        imageUrl = await _imageUploadService
+                                            .uploadImage(
+                                                _selectedImage!, 'bookImg');
                                       } else {
                                         // デフォルト画像の場合、既存の画像URLを使用
-                                        imageUrl = 'デフォルト画像のURL';
+                                        imageUrl = 'デフォルト画像のURL'; // 必要に応じて修正
                                       }
 
                                       // カテゴリー取得または作成
@@ -457,7 +471,6 @@ class _CustomBookEntryScreenState extends State<CustomBookEntryScreen>
                                         // 新しいカテゴリーを追加
                                         categoryName =
                                             _newCategoryController.text.trim();
-                                        // Firestoreに新しいカテゴリーを保存
                                         DocumentReference newCategoryRef =
                                             await FirebaseFirestore.instance
                                                 .collection('users')
@@ -473,11 +486,11 @@ class _CustomBookEntryScreenState extends State<CustomBookEntryScreen>
                                         });
                                       } else if (selectedCategoryId != null) {
                                         // 既存のカテゴリーを選択
-                                        categoryName = categories.firstWhere(
-                                                (category) =>
-                                                    category['categoryId'] ==
-                                                    selectedCategoryId)[
-                                            'category'] as String;
+                                        categoryName = categories
+                                            .firstWhere((category) =>
+                                                category['categoryId'] ==
+                                                selectedCategoryId)['category']!
+                                            .toString();
                                       } else {
                                         // カテゴリーが選択されていない場合
                                         ScaffoldMessenger.of(context)
@@ -490,6 +503,7 @@ class _CustomBookEntryScreenState extends State<CustomBookEntryScreen>
                                         });
                                         return;
                                       }
+
                                       // タイトル取得
                                       String title =
                                           _titleController.text.trim();
@@ -505,8 +519,9 @@ class _CustomBookEntryScreenState extends State<CustomBookEntryScreen>
                                         });
                                         return;
                                       }
-                                      print("カテゴリーない");
-                                      print(selectedCategoryId);
+
+                                      print("カテゴリーID: $selectedCategoryId");
+
                                       BookService bookService = BookService();
                                       await bookService.addPrivateBookToUser(
                                           userId,

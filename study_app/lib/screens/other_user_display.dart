@@ -102,9 +102,12 @@ class _OtherUserDisplayState extends State<OtherUserDisplay> {
 
       // 今日と今週の目標・達成時間を取得
       var dailyGoalData = await goalService.fetchDailyGoalData(widget.user.id);
-      var weeklyGoalTime = await goalService.fetchWeeklyGoal(widget.user.id);
-      var weeklySummary =
-          await goalService.fetchUserWeeklySummary(widget.user.id);
+
+      // ユーザーIDを指定してデータを取得
+      final weeklyGoalData =
+          await goalService.fetchWeeklyGoalAndSummary(widget.user.id);
+      var weeklyGoalTime = weeklyGoalData?['targetStudyTime'] ?? 0;
+      var weeklySummary = weeklyGoalData?['achievedStudyTime'] ?? 0;
 
       // タグ情報を取得
       List<Map<String, dynamic>> userTags =

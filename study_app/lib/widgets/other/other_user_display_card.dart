@@ -281,6 +281,8 @@ class _OtherUserDisplayCardState extends State<OtherUserDisplayCard> {
                         ),
                         if (_selectedIndex == 0) ...[
                           GoalCard(
+                            onEditGoal: (int a, int b) {},
+                            isHiddenEditBtn: true,
                             todayStudyTime: widget.todayStudyTime,
                             weekStudyTime: widget.weekStudyTime,
                             todayGoalTime: widget.todayGoalTime,

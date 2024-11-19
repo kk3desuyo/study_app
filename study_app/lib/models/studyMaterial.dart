@@ -13,6 +13,7 @@ class StudyMaterial {
   factory StudyMaterial.fromFirestore(Map<String, dynamic> data) {
     // FirestoreからのデータをBookオブジェクトに変換
     Book book = Book(
+      isPrivate: data['isPrivate'] ?? true,
       categoryId: data['categoryId'] ?? '',
       id: data['id'] ?? '',
       imgUrl: data['imgUrl'] ?? '',

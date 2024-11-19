@@ -90,7 +90,7 @@ class GoalCalender extends StatelessWidget {
       child: Card(
         color: Colors.white,
         child: Padding(
-          padding: EdgeInsets.all(8), // パディングを少し小さく
+          padding: EdgeInsets.all(0), // パディングを少し小さく
           child: Column(
             children: [
               Row(

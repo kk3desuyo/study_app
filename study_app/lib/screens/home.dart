@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:study_app/models/app/app_setting.dart';
+import 'package:study_app/models/event.dart';
 import 'package:study_app/screens/account_register.dart';
 import 'package:study_app/services/event.dart';
 import 'package:study_app/services/user/app/app_service.dart';
@@ -30,8 +31,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   bool _isDataLoaded = false;
   List<Map<String, dynamic>> followedUserStudySummary = [];
-  String eventName = "-----";
-  List<DateTime> achievements = [];
 
   @override
   void initState() {
@@ -58,6 +57,13 @@ class _HomeScreenState extends State<HomeScreen> {
       });
       print('データの取得に失敗しました: $e');
     }
+  }
+
+  int calculateDaysLeft(DateTime eventDate) {
+    final today =
+        DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+    final eventDay = DateTime(eventDate.year, eventDate.month, eventDate.day);
+    return eventDay.difference(today).inDays;
   }
 
   @override
@@ -128,57 +134,63 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _home() {
     return SingleChildScrollView(
-      child: Column(
-        children: [
-          RankCard(rank: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(child: StudyTimeDisplay(studyTime: 200)),
-              StreamBuilder<String>(
-                stream: EventService().getUserEventNameStream(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Center(
-                      child: LoadingAnimationWidget.staggeredDotsWave(
-                        color: primary,
-                        size: 80,
-                      ),
-                    );
-                  }
-                  if (snapshot.hasError) {
-                    return Center(child: Text('エラーが発生しました'));
-                  }
-                  return Expanded(
-                    child: EventDisplay(
-                      daysLeft: 10,
-                      eventName: snapshot.data ?? "----",
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 5),
+        child: Column(
+          children: [
+            RankCard(rank: 3),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(child: StudyTimeDisplay(studyTime: 200)),
+                SizedBox(width: 5),
+                Expanded(
+                  child: StreamBuilder<Event?>(
+                    stream: EventService().getUserEventStream(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Center(
+                          child: CircularProgressIndicator(), // ローディングインジケータ
+                        );
+                      }
+                      if (snapshot.hasError) {
+                        return Center(child: Text('エラーが発生しました'));
+                      }
+
+                      final event = snapshot.data;
+                      return EventDisplay(
+                        daysLeft:
+                            event != null ? calculateDaysLeft(event.date) : 0,
+                        eventName: event?.name ?? "-----",
+                        isEventSet: event != null,
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+            StreamBuilder<List<DateTime>>(
+              stream:
+                  UserDailyAchievementsService().getAchievementDatesStream(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(
+                    child: LoadingAnimationWidget.staggeredDotsWave(
+                      color: primary,
+                      size: 80,
                     ),
                   );
-                },
-              ),
-            ],
-          ),
-          StreamBuilder<List<DateTime>>(
-            stream: UserDailyAchievementsService().getAchievementDatesStream(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return Center(
-                  child: LoadingAnimationWidget.staggeredDotsWave(
-                    color: primary,
-                    size: 80,
-                  ),
+                }
+                if (snapshot.hasError) {
+                  return Center(child: Text('エラーが発生しました'));
+                }
+                return GoalCalender(
+                  achievedDates: snapshot.data ?? [],
                 );
-              }
-              if (snapshot.hasError) {
-                return Center(child: Text('エラーが発生しました'));
-              }
-              return GoalCalender(
-                achievedDates: snapshot.data ?? [],
-              );
-            },
-          ),
-        ],
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
