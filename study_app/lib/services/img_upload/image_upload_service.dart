@@ -2,13 +2,11 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
-import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 class ImageUploadService {
-  final String uploadUrl =
-      'https://us-central1-study-app-6a883.cloudfunctions.net/cloudinary_function';
-
-  /// 画像を圧縮し、Base64エンコードしてアップロードする関数
+  /// 画像を圧縮し、Firebase Storageにアップロードする関数
   /// 成功すると画像のURLを返し、失敗すると例外を投げます。
   Future<String> uploadImage(File imageFile, String type) async {
     try {
@@ -17,36 +15,38 @@ class ImageUploadService {
         imageFile.path,
         minWidth: 800,
         minHeight: 600,
-        quality: 70, // 圧縮品質を調整
+        quality: 2, // 圧縮品質を調整
       );
-
+      print('Compressed image size: ${compressedImage!.length} bytes');
       if (compressedImage == null) {
         throw Exception('画像の圧縮に失敗しました。');
       }
 
-      // Base64エンコード
-      String base64Image =
-          'data:image/jpeg;base64,' + base64Encode(compressedImage);
+      // 圧縮した画像を一時ファイルとして保存
+      final tempDir = await getTemporaryDirectory();
+      final tempFile = File('${tempDir.path}/temp_image.jpg');
+      await tempFile.writeAsBytes(compressedImage);
 
-      // Firebase FunctionsのエンドポイントにPOSTリクエストを送信
-      final response = await http.post(
-        Uri.parse(uploadUrl),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({'image': base64Image}),
-      );
+      // Firebase Storageの参照を取得
+      String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+      Reference storageRef =
+          FirebaseStorage.instance.ref().child('images/$fileName');
 
-      if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
-        if (responseData['url'] != null) {
-          return responseData['url'];
-        } else {
-          throw Exception('レスポンスに画像URLが含まれていません。');
-        }
-      } else {
-        throw Exception('画像のアップロードに失敗しました。ステータスコード: ${response.statusCode}');
-      }
+      // アップロードタスクを開始
+      UploadTask uploadTask = storageRef.putFile(tempFile);
+
+      // アップロードの完了を待つ
+      TaskSnapshot snapshot = await uploadTask.whenComplete(() => null);
+
+      // ダウンロードURLを取得
+      String downloadURL = await snapshot.ref.getDownloadURL();
+
+      print('Upload successful. Download URL: $downloadURL');
+
+      // 一時ファイルを削除
+      await tempFile.delete();
+
+      return downloadURL;
     } catch (e) {
       print('画像アップロードエラー: $e');
       throw Exception('画像のアップロード中にエラーが発生しました。');

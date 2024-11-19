@@ -10,8 +10,9 @@ import 'package:study_app/theme/color.dart';
 
 class UserStudySummaryCard extends StatelessWidget {
   final String userId;
-
-  const UserStudySummaryCard({Key? key, required this.userId})
+  final bool isCurrentUserSummary;
+  const UserStudySummaryCard(
+      {Key? key, required this.userId, this.isCurrentUserSummary = false})
       : super(key: key);
 
   @override
@@ -55,7 +56,9 @@ class UserStudySummaryCard extends StatelessWidget {
           itemCount: studySummaries.length,
           itemBuilder: (context, index) {
             final goal = studySummaries[index];
-
+            print("------------------");
+            print(goal['targetStudyTime']);
+            print(goal['targetStudyTime']);
             // ゼロ除算を防ぐためにチェックを追加
             int achievementLevel = 0;
             if (goal['targetStudyTime'] != null &&
@@ -87,6 +90,7 @@ class UserStudySummaryCard extends StatelessWidget {
               commentNum: goal['commentNum'] ?? 0,
               achivementLevel: achievementLevel,
               oneWord: goal['oneWord'] ?? '',
+              isCurrentUserSummary: isCurrentUserSummary,
             );
           },
         );

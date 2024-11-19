@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:study_app/models/book.dart';
 import 'package:study_app/models/study_card.dart';
+import 'package:study_app/models/tag_modale.dart';
 import 'package:study_app/models/user.dart';
+import 'package:study_app/services/user/tag_service.dart';
 import 'package:study_app/widgets/preview_detail.dart/display_books.dart';
 import 'package:study_app/theme/color.dart';
 import 'package:study_app/services/book_service.dart';
@@ -117,13 +119,13 @@ class _MyAccountState extends State<MyAccount> {
       print("Week後");
       int followersCount = await userService.getFollowersCount(user!.id);
       int followingCount = await userService.getFollowingCount(user!.id);
-
-      List<Map<String, dynamic>> userTags =
-          await userService.fetchUserTags(user!.id);
+      TagService tagService = TagService();
+      List<Tag> userTags = await tagService.fetchTagsForUser(user!.id);
       List<Tag> fetchedTags = userTags.map((tagData) {
         return Tag(
-          name: tagData['name'],
-          isAchievement: tagData['isAchievement'],
+          id: tagData.id,
+          name: tagData.name,
+          isAchievement: tagData.isAchievement,
         );
       }).toList();
 

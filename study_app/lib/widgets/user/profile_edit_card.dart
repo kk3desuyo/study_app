@@ -1,13 +1,16 @@
 // lib/widgets/profile_form.dart
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // For rootBundle
+import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
+import 'package:study_app/models/tag_modale.dart';
 import 'package:study_app/services/img_upload/image_upload_service.dart';
 import 'package:study_app/services/user/user_service.dart';
-
 import 'package:study_app/widgets/user/tag.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:study_app/theme/color.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:study_app/screens/tag_selection.dart';
 
 class ProfileForm extends StatefulWidget {
   final String name;
@@ -34,8 +37,6 @@ class _ProfileFormState extends State<ProfileForm> {
 
   late TextEditingController nameController;
   late TextEditingController oneWordController;
-  late TextEditingController tag1Controller;
-  late TextEditingController tag2Controller;
 
   late List<Tag> tags;
   File? _selectedImage;
@@ -43,6 +44,8 @@ class _ProfileFormState extends State<ProfileForm> {
   bool isSaving = false; // 保存中フラグ
   final ImagePicker _picker = ImagePicker();
   final ImageUploadService _imageUploadService = ImageUploadService();
+
+  List<Map<String, dynamic>> categories = [];
 
   @override
   void initState() {
@@ -53,25 +56,32 @@ class _ProfileFormState extends State<ProfileForm> {
     if (tags.length < 2) {
       int tagsToAdd = 2 - tags.length;
       for (int i = 0; i < tagsToAdd; i++) {
-        tags.add(Tag(name: "", isAchievement: false));
+        tags.add(Tag(id: '', name: '', isAchievement: false));
       }
     }
 
     nameController = TextEditingController(text: widget.name);
     oneWordController = TextEditingController(text: widget.oneWord);
-    tag1Controller = TextEditingController(text: tags[0].name);
-    tag2Controller = TextEditingController(text: tags[1].name);
 
     tag1IsAchievement = tags[0].isAchievement;
     tag2IsAchievement = tags[1].isAchievement;
+
+    loadCategoriesAndTags();
+  }
+
+  Future<void> loadCategoriesAndTags() async {
+    String data =
+        await rootBundle.loadString('assets/data/categories_and_tags.json');
+    List<dynamic> jsonResult = json.decode(data);
+    setState(() {
+      categories = jsonResult.cast<Map<String, dynamic>>();
+    });
   }
 
   @override
   void dispose() {
     nameController.dispose();
     oneWordController.dispose();
-    tag1Controller.dispose();
-    tag2Controller.dispose();
     super.dispose();
   }
 
@@ -79,8 +89,18 @@ class _ProfileFormState extends State<ProfileForm> {
     setState(() {
       if (tagNumber == 1) {
         tag1IsAchievement = newIsAchievement;
+        tags[0] = Tag(
+          id: tags[0].id,
+          name: tags[0].name,
+          isAchievement: newIsAchievement,
+        );
       } else {
         tag2IsAchievement = newIsAchievement;
+        tags[1] = Tag(
+          id: tags[1].id,
+          name: tags[1].name,
+          isAchievement: newIsAchievement,
+        );
       }
     });
   }
@@ -88,13 +108,59 @@ class _ProfileFormState extends State<ProfileForm> {
   Future<void> _pickImage() async {
     if (isSaving) return; // 保存中は画像選択不可
     final XFile? pickedFile =
-        await _picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
+        await _picker.pickImage(source: ImageSource.gallery, imageQuality: 10);
     if (pickedFile != null) {
       setState(() {
         _selectedImage = File(pickedFile.path);
         _imageChanged = true;
       });
     }
+  }
+
+  void _openTagListModal(int tagNumber, Map<String, dynamic> category) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        var tagsList = category['tags'] as List<dynamic>;
+        return Container(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('タグを選択 - ${category['categoryName']}'),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: tagsList.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    var tag = tagsList[index];
+                    return ListTile(
+                      title: Text(tag['name']),
+                      onTap: () {
+                        Navigator.pop(context);
+                        setState(() {
+                          if (tagNumber == 1) {
+                            tags[0] = Tag(
+                              id: tag['id'],
+                              name: tag['name'],
+                              isAchievement: tag1IsAchievement,
+                            );
+                          } else {
+                            tags[1] = Tag(
+                              id: tag['id'],
+                              name: tag['name'],
+                              isAchievement: tag2IsAchievement,
+                            );
+                          }
+                        });
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -199,18 +265,51 @@ class _ProfileFormState extends State<ProfileForm> {
                             ),
                             SizedBox(width: 10),
                             Expanded(
-                              child: TextField(
-                                decoration: InputDecoration(
-                                  labelText: 'タグ1',
-                                  border: OutlineInputBorder(
-                                    borderSide: BorderSide(color: subTheme),
+                              child: ElevatedButton(
+                                  child: Text(
+                                    tags[0].name.isNotEmpty
+                                        ? tags[0].name
+                                        : 'タグ1を選択',
                                   ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(color: subTheme),
-                                  ),
-                                ),
-                                controller: tag1Controller,
-                              ),
+                                  onPressed: () => {
+                                        PersistentNavBarNavigator.pushNewScreen(
+                                          context,
+                                          screen: TagSelectionScreen(
+                                            tagNumber: 1,
+                                            categories: categories,
+                                            onTagSelected: (selectedTagNumber,
+                                                selectedTag) {
+                                              setState(() {
+                                                if (selectedTagNumber == 1) {
+                                                  print("1");
+                                                  print(selectedTag['id']);
+                                                  print(selectedTag['name']);
+                                                  tags[0] = Tag(
+                                                    id: selectedTag['id'],
+                                                    name: selectedTag['name'],
+                                                    isAchievement:
+                                                        tag1IsAchievement,
+                                                  );
+                                                } else {
+                                                  print("2");
+                                                  print(selectedTag['id']);
+                                                  print(selectedTag['name']);
+                                                  tags[1] = Tag(
+                                                    id: selectedTag['id'],
+                                                    name: selectedTag['name'],
+                                                    isAchievement:
+                                                        tag2IsAchievement,
+                                                  );
+                                                }
+                                              });
+                                            },
+                                          ), // 遷移先の画面
+                                          withNavBar: false, // ナビゲーションバーを非表示にする
+                                          pageTransitionAnimation:
+                                              PageTransitionAnimation
+                                                  .cupertino, // アニメーションの種類
+                                        )
+                                      }),
                             ),
                           ],
                         ),
@@ -253,18 +352,45 @@ class _ProfileFormState extends State<ProfileForm> {
                             ),
                             SizedBox(width: 10),
                             Expanded(
-                              child: TextField(
-                                decoration: InputDecoration(
-                                  labelText: 'タグ2',
-                                  border: OutlineInputBorder(
-                                    borderSide: BorderSide(color: subTheme),
+                              child: ElevatedButton(
+                                  child: Text(
+                                    tags[1].name.isNotEmpty
+                                        ? tags[1].name
+                                        : 'タグ2を選択',
                                   ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(color: subTheme),
-                                  ),
-                                ),
-                                controller: tag2Controller,
-                              ),
+                                  onPressed: () => {
+                                        PersistentNavBarNavigator.pushNewScreen(
+                                          context,
+                                          screen: TagSelectionScreen(
+                                            tagNumber: 2,
+                                            categories: categories,
+                                            onTagSelected: (selectedTagNumber,
+                                                selectedTag) {
+                                              setState(() {
+                                                if (selectedTagNumber == 1) {
+                                                  tags[0] = Tag(
+                                                    id: selectedTag['id'],
+                                                    name: selectedTag['name'],
+                                                    isAchievement:
+                                                        tag1IsAchievement,
+                                                  );
+                                                } else {
+                                                  tags[1] = Tag(
+                                                    id: selectedTag['id'],
+                                                    name: selectedTag['name'],
+                                                    isAchievement:
+                                                        tag2IsAchievement,
+                                                  );
+                                                }
+                                              });
+                                            },
+                                          ), // 遷移先の画面
+                                          withNavBar: false, // ナビゲーションバーを非表示にする
+                                          pageTransitionAnimation:
+                                              PageTransitionAnimation
+                                                  .cupertino, // アニメーションの種類
+                                        )
+                                      }),
                             ),
                           ],
                         ),
@@ -306,20 +432,7 @@ class _ProfileFormState extends State<ProfileForm> {
                                     String updatedOneWord =
                                         oneWordController.text.trim();
 
-                                    Tag updatedTag1 = Tag(
-                                      name: tag1Controller.text.trim(),
-                                      isAchievement: tag1IsAchievement,
-                                    );
-
-                                    Tag updatedTag2 = Tag(
-                                      name: tag2Controller.text.trim(),
-                                      isAchievement: tag2IsAchievement,
-                                    );
-
-                                    List<Tag> updatedTags = [
-                                      updatedTag1,
-                                      updatedTag2
-                                    ];
+                                    List<Tag> updatedTags = tags;
 
                                     await UserService().updateUserProfile(
                                       name: updatedName,

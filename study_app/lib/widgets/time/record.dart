@@ -531,12 +531,7 @@ class _RecordState extends State<Record> {
                                 selectedDate = date;
                               });
                             },
-                            onTimeChanged: (time) {
-                              setState(() {
-                                selectedHour = time.hour;
-                                selectedMinute = time.minute;
-                              });
-                            },
+                            onTimeChanged: (time) {},
                           ),
                         ],
                       ),

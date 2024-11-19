@@ -1,121 +1,28 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:study_app/models/tag_modale.dart';
 import 'package:study_app/services/user/user_service.dart';
 import 'package:study_app/widgets/user/tag.dart';
 
 class TagService {
-  // Constructor
   TagService();
 
-  // Method to add a tag
-  Future<List<Map<String, dynamic>>> fetchUserTags(String userId) async {
-    try {
-      List<Tag> userTags = await fetchTagsForUser(userId);
-
-      return userTags.map((tag) {
-        return {
-          'name': tag.name,
-          'isAchievement': tag.isAchievement,
-        };
-      }).toList();
-    } catch (e) {
-      print('Error fetching user tags: $e');
-      return [];
-    }
-  }
-
-  Future<void> updateUserProfile({
-    String? name,
-    String? profileImgUrl,
-    String? oneWord,
-    List<Tag>? newTags,
-  }) async {
-    UserService userService = UserService();
-    String? userId = userService.getCurrentUserId();
-
-    if (userId == null) {
-      throw Exception('User not logged in');
-    }
-
-    try {
-      Map<String, dynamic> profileUpdates = {};
-      if (name != null) profileUpdates['name'] = name;
-      if (profileImgUrl != null)
-        profileUpdates['profileImgUrl'] = profileImgUrl;
-      if (oneWord != null) profileUpdates['oneWord'] = oneWord;
-
-      if (profileUpdates.isNotEmpty) {
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(userId)
-            .update(profileUpdates);
-      }
-
-      if (newTags != null) {
-        await deleteTagsForUser(userId);
-        await addTagsForUser(userId, newTags);
-      }
-
-      print("User profile updated successfully.");
-    } catch (e) {
-      print('Error updating user profile: $e');
-      throw Exception('Failed to update user profile');
-    }
-  }
-
-  Future<void> firstUserProfileAdd({
-    String? name,
-    String profileImgUrl = "",
-    String? oneWord,
-    List<Tag>? newTags,
-    bool? isPublic = false,
-  }) async {
-    UserService userService = UserService();
-    String? userId = userService.getCurrentUserId();
-
-    if (userId == null) {
-      throw Exception('User not logged in');
-    }
-
-    try {
-      Map<String, dynamic> profileUpdates = {};
-      if (name != null) profileUpdates['name'] = name;
-
-      profileUpdates['profileImgUrl'] = profileImgUrl;
-      if (oneWord != null) profileUpdates['oneWord'] = oneWord;
-      profileUpdates['isRegistering'] = true;
-      profileUpdates['isPublic'] = isPublic;
-      profileUpdates['createdAt'] = FieldValue.serverTimestamp();
-
-      if (profileUpdates.isNotEmpty) {
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(userId)
-            .update(profileUpdates);
-      }
-
-      if (newTags != null) {
-        await deleteTagsForUser(userId);
-        await addTagsForUser(userId, newTags);
-      }
-
-      print("User profile updated successfully.");
-    } catch (e) {
-      print('Error updating user profile: $e');
-      throw Exception('Failed to update user profile');
-    }
-  } // タグを取得する関数
-
+// Fetch tags for a specific user
   Future<List<Tag>> fetchTagsForUser(String userId) async {
     try {
-      QuerySnapshot tagsSnapshot = await FirebaseFirestore.instance
+      // Get the user's tags subcollection
+      QuerySnapshot userTagsSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
           .collection('tags')
-          .where('userId', isEqualTo: userId)
           .get();
 
-      List<Tag> userTags = tagsSnapshot.docs.map((doc) {
+      // Build the tag list directly from the user's tags subcollection
+      List<Tag> userTags = userTagsSnapshot.docs.map((doc) {
         return Tag(
-          name: doc['name'],
-          isAchievement: doc['isAchievement'],
+          id: doc.id,
+          name: doc['name'] ?? 'Unknown', // フィールド 'name' が存在しない場合のデフォルト値
+          isAchievement:
+              doc['isAchievement'] ?? false, // フィールド 'isAchievement' のデフォルト値
         );
       }).toList();
 
@@ -126,30 +33,59 @@ class TagService {
     }
   }
 
-// ユーザーの既存のタグを削除する関数
-  Future<void> deleteTagsForUser(String userId) async {
-    CollectionReference tagsCollection =
-        FirebaseFirestore.instance.collection('tags');
+  // Add selected tags for a user
+  Future<void> addTagsForUser(String userId, List<Tag> tags) async {
+    try {
+      CollectionReference userTagsCollection = FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('tags');
 
-    QuerySnapshot existingTagsSnapshot =
-        await tagsCollection.where('userId', isEqualTo: userId).get();
-
-    for (var doc in existingTagsSnapshot.docs) {
-      await doc.reference.delete();
+      // Add references to selected tag IDs with additional fields
+      for (var tag in tags) {
+        await userTagsCollection.doc(tag.id).set({
+          'isAchievement': tag.isAchievement,
+          'name': tag.name,
+        });
+      }
+    } catch (e) {
+      print('Error adding tags for user: $e');
     }
   }
 
-// 新しいタグを追加する関数
-  Future<void> addTagsForUser(String userId, List<Tag> newTags) async {
-    CollectionReference tagsCollection =
-        FirebaseFirestore.instance.collection('tags');
+  // Delete all tags for a user
+  Future<void> deleteTagsForUser(String userId) async {
+    try {
+      CollectionReference userTagsCollection = FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('tags');
 
-    for (var tag in newTags) {
-      await tagsCollection.add({
-        'userId': userId,
-        'name': tag.name,
-        'isAchievement': tag.isAchievement,
-      });
+      QuerySnapshot userTagsSnapshot = await userTagsCollection.get();
+      for (var doc in userTagsSnapshot.docs) {
+        await doc.reference.delete();
+      }
+    } catch (e) {
+      print('Error deleting user tags: $e');
+    }
+  }
+
+  // Fetch all pre-defined tags
+  Future<List<Tag>> fetchAllTags() async {
+    try {
+      QuerySnapshot tagsSnapshot =
+          await FirebaseFirestore.instance.collection('tags').get();
+
+      return tagsSnapshot.docs.map((doc) {
+        return Tag(
+          id: doc.id,
+          name: doc['name'],
+          isAchievement: doc['isAchievement'],
+        );
+      }).toList();
+    } catch (e) {
+      print('Error fetching all tags: $e');
+      return [];
     }
   }
 }

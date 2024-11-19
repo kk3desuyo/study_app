@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:study_app/models/tag_modale.dart';
 import 'package:study_app/theme/color.dart';
 
 class TagsWidget extends StatefulWidget {
@@ -69,11 +70,4 @@ class TagWidget extends StatelessWidget {
             ],
           );
   }
-}
-
-class Tag {
-  final String name;
-  final bool isAchievement;
-
-  Tag({required this.name, required this.isAchievement});
 }

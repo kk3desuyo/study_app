@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:study_app/models/book.dart';
 import 'package:study_app/models/study_card.dart';
+import 'package:study_app/models/tag_modale.dart';
 import 'package:study_app/models/user.dart';
 import 'package:study_app/widgets/home/study_summary_card.dart';
 import 'package:study_app/widgets/preview_detail.dart/display_books.dart';
@@ -145,8 +146,11 @@ class _MyAccountCardState extends State<MyAccountCard> {
 
   int todayGoalTime = 0;
   int weekGoalTime = 0;
+
   @override
   Widget build(BuildContext context) {
+    print("MyAccountCard");
+
     return RefreshIndicator(
       onRefresh: _onRefresh,
       child: Column(
@@ -160,6 +164,7 @@ class _MyAccountCardState extends State<MyAccountCard> {
                   Row(
                     children: [
                       UserIcon(
+                        size: 70,
                         profileImgUrl: widget.user.profileImgUrl,
                         onTap: () {
                           // アイコンがタップされたときの処理
@@ -320,7 +325,8 @@ class _MyAccountCardState extends State<MyAccountCard> {
                   ),
                   // タブの内容
                   if (_selectedIndex == 0) ...[
-                    UserStudySummaryCard(userId: widget.user.id),
+                    UserStudySummaryCard(
+                        userId: widget.user.id, isCurrentUserSummary: true),
                     // タブ1のコンテンツ
                     GoalCard(
                       onEditGoal: _onEditGoal,

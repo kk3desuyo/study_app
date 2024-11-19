@@ -46,6 +46,7 @@ dependencies:
   http: ^1.2.2
   shared_preferences: ^2.3.3
   dropdown_button2: ^2.3.9
+  firebase_storage: ^12.3.6
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -61,5 +62,6 @@ flutter:
     - assets/animation/success.json
     - assets/images/google_logo.png
     - assets/images/default_book_img.jpg
+    - assets/data/categories_and_tags.json
 
     

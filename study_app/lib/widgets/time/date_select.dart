@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart';
 import 'package:study_app/theme/color.dart'; // 日付のフォーマットに使用
 
@@ -30,35 +31,89 @@ class _DateTimePickerWidgetState extends State<DateTimePickerWidget> {
     _selectedTime = widget.initialTime;
   }
 
-  // 日付選択ダイアログを表示
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
+  // ドラムロール形式の日付ピッカーを表示
+  Future<void> _showDatePicker(BuildContext context) async {
+    showModalBottomSheet(
       context: context,
-      initialDate: _selectedDate, // 現在の日付を初期値に設定
-      firstDate: DateTime(2000), // 選択可能な最小の日付
-      lastDate: DateTime(2101), // 選択可能な最大の日付
-      locale: const Locale('ja'), // 日本語ロケールを設定
+      builder: (BuildContext builder) {
+        return Container(
+          height: 250,
+          color: Colors.white,
+          child: Column(
+            children: [
+              Container(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text('完了'),
+                ),
+              ),
+              Expanded(
+                child: CupertinoDatePicker(
+                  mode: CupertinoDatePickerMode.date,
+                  initialDateTime: _selectedDate,
+                  minimumDate: DateTime(2000),
+                  maximumDate: DateTime(2101),
+                  onDateTimeChanged: (DateTime newDate) {
+                    setState(() {
+                      _selectedDate = newDate;
+                    });
+                    widget.onDateChanged(_selectedDate);
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
-    if (picked != null && picked != _selectedDate) {
-      setState(() {
-        _selectedDate = picked;
-      });
-      widget.onDateChanged(_selectedDate);
-    }
   }
 
-  // 時刻選択ダイアログを表示
-  Future<void> _selectTime(BuildContext context) async {
-    final TimeOfDay? picked = await showTimePicker(
+  // ドラムロール形式の時刻ピッカーを表示
+  Future<void> _showTimePicker(BuildContext context) async {
+    showModalBottomSheet(
       context: context,
-      initialTime: _selectedTime, // 現在の時刻を初期値に設定
+      builder: (BuildContext builder) {
+        return Container(
+          height: 250,
+          color: Colors.white,
+          child: Column(
+            children: [
+              Container(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text('完了'),
+                ),
+              ),
+              Expanded(
+                child: CupertinoDatePicker(
+                  mode: CupertinoDatePickerMode.time,
+                  initialDateTime: DateTime(
+                    _selectedDate.year,
+                    _selectedDate.month,
+                    _selectedDate.day,
+                    _selectedTime.hour,
+                    _selectedTime.minute,
+                  ),
+                  use24hFormat: true,
+                  onDateTimeChanged: (DateTime newTime) {
+                    setState(() {
+                      _selectedTime = TimeOfDay.fromDateTime(newTime);
+                    });
+                    widget.onTimeChanged(_selectedTime);
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
-    if (picked != null && picked != _selectedTime) {
-      setState(() {
-        _selectedTime = picked;
-      });
-      widget.onTimeChanged(_selectedTime);
-    }
   }
 
   @override
@@ -72,7 +127,7 @@ class _DateTimePickerWidgetState extends State<DateTimePickerWidget> {
         children: [
           // 日付を表示するボタン
           ElevatedButton(
-            onPressed: () => _selectDate(context),
+            onPressed: () => _showDatePicker(context),
             child: Text(
               DateFormat.yMMMMd('ja').format(_selectedDate), // 日本語で日付をフォーマット
               style:
@@ -92,7 +147,7 @@ class _DateTimePickerWidgetState extends State<DateTimePickerWidget> {
           ),
           // 時刻を表示するボタン
           ElevatedButton(
-            onPressed: () => _selectTime(context),
+            onPressed: () => _showTimePicker(context),
             child: Text(
               _selectedTime.format(context), // 時刻のフォーマット
               style:

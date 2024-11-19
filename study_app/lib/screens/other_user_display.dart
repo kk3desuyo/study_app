@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:study_app/models/book.dart';
+import 'package:study_app/models/tag_modale.dart';
 import 'package:study_app/services/book_service.dart';
 import 'package:study_app/services/study_session.dart';
 import 'package:study_app/services/goal_service.dart'; // GoalServiceを追加
+import 'package:study_app/services/user/tag_service.dart';
 import 'package:study_app/services/user/user_service.dart';
 import 'package:study_app/theme/color.dart';
 import 'package:study_app/widgets/controller_manager.dart';
@@ -109,13 +111,13 @@ class _OtherUserDisplayState extends State<OtherUserDisplay> {
       var weeklyGoalTime = weeklyGoalData?['targetStudyTime'] ?? 0;
       var weeklySummary = weeklyGoalData?['achievedStudyTime'] ?? 0;
 
-      // タグ情報を取得
-      List<Map<String, dynamic>> userTags =
-          await userService.fetchUserTags(widget.user.id);
+      TagService tagService = TagService();
+      List<Tag> userTags = await tagService.fetchTagsForUser(widget.user!.id);
       List<Tag> fetchedTags = userTags.map((tagData) {
         return Tag(
-          name: tagData['name'],
-          isAchievement: tagData['isAchievement'],
+          id: tagData.id,
+          name: tagData.name,
+          isAchievement: tagData.isAchievement,
         );
       }).toList();
 

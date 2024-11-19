@@ -124,7 +124,7 @@ class _CustomBookEntryScreenState extends State<CustomBookEntryScreen>
   // ギャラリーから画像を選択
   Future<void> _pickImage() async {
     final XFile? pickedFile =
-        await _picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
+        await _picker.pickImage(source: ImageSource.gallery, imageQuality: 10);
     if (pickedFile != null) {
       setState(() {
         _selectedImage = File(pickedFile.path);
@@ -354,77 +354,6 @@ class _CustomBookEntryScreenState extends State<CustomBookEntryScreen>
                                       ),
                                     ),
                                     SizedBox(height: 10),
-                                    ElevatedButton(
-                                      onPressed: isSaving
-                                          ? null
-                                          : () async {
-                                              String newCategory =
-                                                  _newCategoryController.text
-                                                      .trim();
-                                              if (newCategory.isEmpty) {
-                                                ScaffoldMessenger.of(context)
-                                                    .showSnackBar(
-                                                  SnackBar(
-                                                      content: Text(
-                                                          'カテゴリー名を入力してください。')),
-                                                );
-                                                return;
-                                              }
-
-                                              setState(() {
-                                                isSaving = true;
-                                              });
-
-                                              try {
-                                                // Firestoreに新しいカテゴリーを追加
-                                                DocumentReference
-                                                    newCategoryRef =
-                                                    await FirebaseFirestore
-                                                        .instance
-                                                        .collection('users')
-                                                        .doc(FirebaseAuth
-                                                            .instance
-                                                            .currentUser!
-                                                            .uid)
-                                                        .collection(
-                                                            'categories')
-                                                        .add({
-                                                  'category': newCategory
-                                                });
-
-                                                // カテゴリーリストを更新
-                                                await fetchCategories();
-                                                setState(() {
-                                                  selectedCategoryId =
-                                                      newCategoryRef.id;
-                                                  _newCategoryController
-                                                      .clear();
-                                                });
-
-                                                ScaffoldMessenger.of(context)
-                                                    .showSnackBar(
-                                                  SnackBar(
-                                                      content: Text(
-                                                          'カテゴリーが追加されました。')),
-                                                );
-                                              } catch (e) {
-                                                ScaffoldMessenger.of(context)
-                                                    .showSnackBar(
-                                                  SnackBar(
-                                                      content: Text(
-                                                          'カテゴリーの追加に失敗しました: $e')),
-                                                );
-                                              } finally {
-                                                setState(() {
-                                                  isSaving = false;
-                                                });
-                                              }
-                                            },
-                                      child: Text("カテゴリーを追加"),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: subTheme,
-                                      ),
-                                    ),
                                   ],
                                 ),
                               ),

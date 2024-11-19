@@ -19,8 +19,8 @@ class UserIcon extends StatelessWidget {
           ? Padding(
               padding: EdgeInsets.only(left: 10, bottom: 3, right: 20),
               child: Container(
-                width: 42.0,
-                height: 42.0,
+                width: size,
+                height: size,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(21.0),
                   image: DecorationImage(

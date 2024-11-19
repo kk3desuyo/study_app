@@ -2,6 +2,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as auth;
 import 'package:study_app/models/studyMaterial.dart';
+import 'package:study_app/models/tag_modale.dart';
 import 'package:study_app/models/user.dart';
 import 'package:study_app/services/comment_service.dart';
 import 'package:study_app/services/like_service.dart';
@@ -140,7 +141,7 @@ class UserService {
 
       // 指定されたuserIdのデイリーゴールを取得
       QuerySnapshot goalsSnapshot = await _firestore
-          .collection('dailyGoals')
+          .collection('UserDailyGoals')
           .where('userId', isEqualTo: userId)
           .get();
 
@@ -526,23 +527,6 @@ class UserService {
 
   final CollectionReference tags =
       FirebaseFirestore.instance.collection('tags');
-
-  Future<List<Map<String, dynamic>>> fetchUserTags(String userId) async {
-    try {
-      TagService tagService = TagService();
-      List<Tag> userTags = await tagService.fetchTagsForUser(userId);
-
-      return userTags.map((tag) {
-        return {
-          'name': tag.name,
-          'isAchievement': tag.isAchievement,
-        };
-      }).toList();
-    } catch (e) {
-      print('Error fetching user tags: $e');
-      return [];
-    }
-  }
 
   Future<void> addUser() async {
     try {

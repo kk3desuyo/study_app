@@ -23,6 +23,8 @@ class StudyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    print("study_card");
+    print(book.title);
     return Card(
       color: backGroundColor,
       shape: RoundedRectangleBorder(
@@ -110,7 +112,7 @@ class StudyCard extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                "高校数学 [tyー後色]数学問題集",
+                                book.title.isEmpty ? '-----' : book.title,
                                 // book.title.isNotEmpty ? book.title : '-----',
                                 style: TextStyle(
                                   fontSize: 18,

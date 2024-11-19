@@ -24,9 +24,9 @@ class StudySummaryCard extends StatefulWidget {
   final int achivementLevel;
   final String oneWord;
   final String dailyGoalId;
-
+  bool isCurrentUserSummary;
   // コンストラクタ
-  const StudySummaryCard({
+  StudySummaryCard({
     Key? key,
     required this.user,
     required this.studyTime,
@@ -36,6 +36,7 @@ class StudySummaryCard extends StatefulWidget {
     required this.achivementLevel,
     required this.oneWord,
     required this.dailyGoalId,
+    this.isCurrentUserSummary = false,
   }) : super(key: key);
 
   @override
@@ -202,11 +203,12 @@ class _StudySummaryCardState extends State<StudySummaryCard> {
                 SizedBox(
                   width: 10,
                 ),
-                LikeButton(
-                    padding: EdgeInsets.only(right: 20),
-                    isLiked: widget.isPushFavorite,
-                    likeCount: widget.goodNum,
-                    onTap: onLikeButtonTapped),
+                if (!widget.isCurrentUserSummary)
+                  LikeButton(
+                      padding: EdgeInsets.only(right: 20),
+                      isLiked: widget.isPushFavorite,
+                      likeCount: widget.goodNum,
+                      onTap: onLikeButtonTapped),
               ],
             )
           ],

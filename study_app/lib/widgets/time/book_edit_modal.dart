@@ -473,7 +473,7 @@ class _CustomBookEntryModalState extends State<CustomBookEntryModal>
                                         _selectedImage!.path,
                                         minWidth: 800,
                                         minHeight: 600,
-                                        quality: 70,
+                                        quality: 10,
                                       );
 
                                       if (compressedImage != null) {
