@@ -11,12 +11,13 @@
 ## 目的
 このアプリを開発しようと思ったきっかけは、大学受験時に使用していた勉強記録アプリの経験からです。以前のアプリでは勉強時間をリアルタイムで共有できましたが、他のユーザーがあまり勉強していないと「自分も勉強しなくて良いかもしれない」と安心してしまうことがありました。この課題を解決するために、プログラミングを学んだ今、自分自身の手で新しい勉強記録アプリを作りたいと考え、開発を始めました。
 
-# 技術スタック
-## アーキテクチャー図
+## 技術スタック
+[![My Skills](https://skillicons.dev/icons?i=flutter,dart,py,firebase)](https://skillicons.dev)
 
+
+## アーキテクチャー図
 ![アーキテクチャー図](https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/3788663/576aba47-e643-40ab-7106-5a94e83f3ba0.png)
 
 
-## 技術スタック
-[![My Skills](https://skillicons.dev/icons?i=flutter,dart,py,firebase)](https://skillicons.dev)
+
 
